@@ -1,0 +1,98 @@
+{
+  "unit_id": "qwen__q4__C_edit__C2_text_utils__rep1",
+  "model": "qwen",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+  "suite": "C_edit",
+  "task": "C2_text_utils",
+  "rep": 1,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 12,
+    "wall_s": 76.88,
+    "ttft_ms_per_turn": [
+      31735,
+      1074,
+      830,
+      680,
+      744,
+      818,
+      879,
+      921,
+      2269,
+      null,
+      764,
+      765
+    ],
+    "decode_tps_per_turn": [
+      61.9,
+      64.1,
+      55.6,
+      57.0,
+      48.2,
+      48.3,
+      56.7,
+      81.2,
+      52.3,
+      null,
+      63.5,
+      54.1
+    ],
+    "tokens": {
+      "think": 618,
+      "answer": 1876,
+      "prompt_total": 238917
+    },
+    "think_answer_ratio": 0.329,
+    "tool_calls": {
+      "total": 13,
+      "malformed": 4
+    },
+    "termination": "clean",
+    "session_id": "ses_0a796eab4ffec1u27LqJWkMBGq",
+    "repo_dir": "./eval/runs/qwen__q4__C_edit__C2_text_utils__rep1/repo",
+    "answer_file": "./eval/runs/qwen__q4__C_edit__C2_text_utils__rep1/answer.txt"
+  },
+  "grade": {
+    "pytest": {
+      "grader": "pytest",
+      "passed": 9,
+      "failed": 2,
+      "errors": 0,
+      "total": 11,
+      "pass_rate": 0.818,
+      "failure_class": "assertion",
+      "duration_s": 0.041,
+      "detail": "2 failed: test_dedupe_lines_case_and_whitespace_insensitive"
+    },
+    "diff": {
+      "grader": "diff",
+      "files_touched": 2,
+      "lines_added": 74,
+      "lines_removed": 3,
+      "touched_expected_only": false,
+      "noise_comment_acted_on": true,
+      "surgical_score": 0.15
+    }
+  },
+  "ram": {
+    "rss_peak_gb": 24.9,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "qwen4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-12T22:18:29.041662+00:00",
+  "duration_s": 78.0,
+  "schema_version": 1
+}

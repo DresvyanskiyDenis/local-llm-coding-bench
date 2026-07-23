@@ -1,0 +1,72 @@
+{
+  "unit_id": "glm__q5__B_review__B1_customer_cleaning__rep2",
+  "model": "glm",
+  "quant": "q5",
+  "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+  "suite": "B_review",
+  "task": "B1_customer_cleaning",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/GLM-4.7-Flash-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 2,
+    "wall_s": 73.39,
+    "ttft_ms_per_turn": [
+      31928,
+      3914
+    ],
+    "decode_tps_per_turn": [
+      33.5,
+      29.6
+    ],
+    "tokens": {
+      "think": 880,
+      "answer": 1084,
+      "prompt_total": 34506
+    },
+    "think_answer_ratio": 0.812,
+    "tool_calls": {
+      "total": 1,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0a23f1da5ffeGm3m9xhE9Nw7wh",
+    "repo_dir": "./eval/runs/glm__q5__B_review__B1_customer_cleaning__rep2/repo",
+    "answer_file": "./eval/runs/glm__q5__B_review__B1_customer_cleaning__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 2,
+    "hallucinated": 0,
+    "recall": 0.667,
+    "precision": 1.0,
+    "matched_ids": [
+      "b2_mutable_default_arg",
+      "b3_off_by_one_loop"
+    ],
+    "missed_ids": [
+      "b1_missing_none_check"
+    ],
+    "ambiguous": []
+  },
+  "ram": {
+    "rss_peak_gb": 26.8,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "glm",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T23:12:29.249023+00:00",
+  "duration_s": 74.2,
+  "schema_version": 1
+}

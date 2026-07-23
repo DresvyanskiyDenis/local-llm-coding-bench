@@ -1,0 +1,75 @@
+{
+  "unit_id": "ornith__q4__A_coding__A2_record_validation__rep2",
+  "model": "ornith",
+  "quant": "q4",
+  "opencode_model_id": "tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF",
+  "suite": "A_coding",
+  "task": "A2_record_validation",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 6,
+    "wall_s": 37.65,
+    "ttft_ms_per_turn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      204
+    ],
+    "decode_tps_per_turn": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      47.3
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 1356,
+      "prompt_total": 83067
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 6,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_091cb6a4bffeuC8RfcpI4zE70z",
+    "repo_dir": "./eval/runs/ornith__q4__A_coding__A2_record_validation__rep2/repo",
+    "answer_file": "./eval/runs/ornith__q4__A_coding__A2_record_validation__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 19,
+    "failed": 0,
+    "errors": 0,
+    "total": 19,
+    "pass_rate": 1.0,
+    "failure_class": null,
+    "duration_s": 0.022,
+    "detail": "all passed"
+  },
+  "ram": {
+    "rss_peak_gb": 25.3,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "ornith",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T03:52:47.116416+00:00",
+  "duration_s": 38.5,
+  "schema_version": 1
+}

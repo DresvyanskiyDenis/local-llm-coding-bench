@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Silicon Bench — Local Model Field Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   SILICON BENCH — design tokens
+   ============================================================ */
+:root{
+  /* surfaces */
+  --bg:#0B0E14;
+  --bg-2:#0E131C;
+  --panel:#141A24;
+  --panel-2:#171F2B;
+  --hair:#232B38;
+  --hair-bright:#33404f;
+
+  /* text */
+  --ink:#E6EAF2;
+  --ink-2:#9AA6B8;
+  --ink-3:#5F6B7E;
+
+  /* thermal accents */
+  --amber:#FFB454;   /* energy / primary */
+  --teal:#3DD6C4;    /* pass / cold compute */
+  --coral:#FF6B6B;   /* fail / heat */
+  --violet:#A78BFA;  /* reasoning */
+  --amber-dim:rgba(255,180,84,.14);
+  --teal-dim:rgba(61,214,196,.14);
+  --coral-dim:rgba(255,107,107,.14);
+
+  /* type */
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+
+  --maxw:1180px;
+  --r:16px;
+  --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ambient aurora + grid backdrop ---------------------------- */
+.backdrop{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.backdrop::before{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(42% 42% at 18% 12%, rgba(255,180,84,.10), transparent 60%),
+    radial-gradient(46% 46% at 82% 8%, rgba(61,214,196,.10), transparent 60%),
+    radial-gradient(60% 55% at 60% 100%, rgba(167,139,250,.08), transparent 60%);
+  animation:drift 26s var(--ease) infinite alternate;
+}
+.backdrop::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--hair) 1px,transparent 1px),
+    linear-gradient(90deg,var(--hair) 1px,transparent 1px);
+  background-size:52px 52px;
+  -webkit-mask-image:radial-gradient(120% 80% at 50% 0%,#000 40%,transparent 85%);
+          mask-image:radial-gradient(120% 80% at 50% 0%,#000 40%,transparent 85%);
+  opacity:.35;
+}
+@keyframes drift{
+  from{transform:translate3d(-2%,-1%,0) scale(1)}
+  to{transform:translate3d(3%,2%,0) scale(1.08)}
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+header.hero{padding:56px 0 30px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--amber);
+  display:inline-flex;align-items:center;gap:10px;margin:0 0 18px;
+}
+.eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--amber);
+  box-shadow:0 0 0 0 rgba(255,180,84,.6);animation:beacon 2.4s infinite}
+@keyframes beacon{
+  0%{box-shadow:0 0 0 0 rgba(255,180,84,.55)}
+  70%{box-shadow:0 0 0 9px rgba(255,180,84,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
+}
+
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:end}
+h1.title{
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(46px,8vw,88px);line-height:.94;
+  letter-spacing:-.02em;margin:0;
+}
+h1.title .lo{display:block;color:var(--ink-3)}
+h1.title .hi{
+  display:block;
+  background:linear-gradient(96deg,var(--amber),#ffd9a0 45%,var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{color:var(--ink-2);font-size:18px;max-width:44ch;margin:22px 0 0}
+.lede b{color:var(--ink);font-weight:600}
+
+/* ---- system telemetry panel (the machine as hero) -------- */
+.machine{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--hair);border-radius:var(--r);
+  padding:20px 20px 18px;position:relative;overflow:hidden;
+  box-shadow:0 24px 60px -30px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.machine .m-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.machine .m-name{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em}
+.machine .m-tag{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.12em}
+
+.cores{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin:2px 0 16px}
+.core{aspect-ratio:1;border-radius:3px;background:var(--hair);position:relative}
+.core.on{background:linear-gradient(160deg,var(--teal),#1f8f83);
+  box-shadow:0 0 8px rgba(61,214,196,.5);animation:flick 3s ease-in-out infinite}
+@keyframes flick{0%,100%{opacity:.55}50%{opacity:1}}
+.cores-label{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:10px;color:var(--ink-3);letter-spacing:.1em;margin-top:-8px}
+
+.gauge{margin-top:8px}
+.gauge .g-row{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-bottom:6px;letter-spacing:.08em}
+.gauge .g-row b{color:var(--ink);font-weight:500}
+.bar{height:8px;border-radius:6px;background:var(--bg);overflow:hidden;position:relative;
+  border:1px solid var(--hair)}
+.bar>span{display:block;height:100%;width:0;border-radius:6px;
+  background:linear-gradient(90deg,var(--amber),var(--coral));
+  transition:width 1.4s var(--ease)}
+.bar .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--teal);
+  box-shadow:0 0 6px var(--teal)}
+.g-note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:9px;line-height:1.5}
+.g-note b{color:var(--teal);font-weight:500}
+
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:16px;
+  background:var(--hair);border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--hair)}
+.spec{background:var(--panel);padding:9px 12px}
+.spec .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.spec .v{font-family:var(--mono);font-size:13px;color:var(--ink);margin-top:2px}
+
+/* ============================================================
+   STAT STRIP
+   ============================================================ */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:34px 0 10px}
+.stat{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:18px 18px 16px;
+  position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--amber))}
+.stat .n{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;letter-spacing:-.02em}
+.stat .l{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);
+  text-transform:uppercase;margin-top:8px}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+.controls{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
+  margin:40px 0 22px;padding-top:26px;border-top:1px solid var(--hair)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;background:var(--panel);border:1px solid var(--hair);
+  border-radius:999px;padding:5px}
+.tab{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-2);
+  border:none;background:transparent;padding:8px 15px;border-radius:999px;cursor:pointer;
+  transition:color .2s var(--ease),background .2s var(--ease)}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--amber-dim);color:var(--amber)}
+.tab .c{opacity:.5;margin-left:5px}
+.sort{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase}
+.sort select{font-family:var(--mono);font-size:12px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--hair);border-radius:8px;padding:7px 10px;cursor:pointer}
+
+/* ============================================================
+   MODEL CARDS
+   ============================================================ */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding-bottom:40px}
+.card{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--hair);border-radius:var(--r);padding:20px 20px 18px;
+  position:relative;overflow:hidden;
+  opacity:0;transform:translateY(14px);
+  animation:rise .6s var(--ease) forwards;
+  transition:border-color .25s var(--ease),transform .25s var(--ease),box-shadow .25s var(--ease);
+}
+@keyframes rise{to{opacity:1;transform:none}}
+.card:hover{transform:translateY(-4px);border-color:var(--hair-bright);
+  box-shadow:0 24px 50px -28px rgba(0,0,0,.85)}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:var(--edge,var(--hair));opacity:.9}
+.card[data-verdict="broken"]{--edge:var(--coral)}
+.card[data-verdict="keep"]{--edge:var(--teal)}
+.card[data-verdict="maybe"]{--edge:var(--amber)}
+.card[data-verdict="untested"]{--edge:var(--hair-bright)}
+
+.c-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.c-name{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-.01em;line-height:1.15}
+.c-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px;letter-spacing:.04em}
+
+.verdict{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;
+  border:1px solid transparent}
+.verdict[data-v="broken"]{color:var(--coral);background:var(--coral-dim);border-color:rgba(255,107,107,.3)}
+.verdict[data-v="keep"]{color:var(--teal);background:var(--teal-dim);border-color:rgba(61,214,196,.3)}
+.verdict[data-v="maybe"]{color:var(--amber);background:var(--amber-dim);border-color:rgba(255,180,84,.3)}
+.verdict[data-v="untested"]{color:var(--ink-3);background:rgba(255,255,255,.03);border-color:var(--hair)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-2);
+  border:1px solid var(--hair);border-radius:6px;padding:3px 8px;text-transform:uppercase}
+.chip.mlx{color:var(--amber);border-color:rgba(255,180,84,.28);background:var(--amber-dim)}
+.chip.rt{color:var(--ink);}
+
+/* capability readout — the signature element */
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 4px;
+  padding:14px 12px;background:var(--bg);border:1px solid var(--hair);border-radius:var(--r-sm)}
+.cap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cap .led{width:12px;height:12px;border-radius:50%;background:var(--ink-3);position:relative}
+.cap .led::after{content:"";position:absolute;inset:-4px;border-radius:50%;opacity:0}
+.cap[data-s="pass"] .led{background:var(--teal);box-shadow:0 0 10px rgba(61,214,196,.6)}
+.cap[data-s="pass"] .led::after{background:radial-gradient(circle,rgba(61,214,196,.4),transparent 70%);
+  animation:halo 2.6s ease-in-out infinite}
+.cap[data-s="partial"] .led{background:var(--amber);box-shadow:0 0 10px rgba(255,180,84,.55)}
+.cap[data-s="fail"] .led{background:var(--coral);box-shadow:0 0 10px rgba(255,107,107,.6)}
+.cap[data-s="fail"] .led::after{background:radial-gradient(circle,rgba(255,107,107,.4),transparent 70%);
+  animation:halo 1.8s ease-in-out infinite}
+.cap[data-s="na"] .led{background:transparent;border:1px dashed var(--hair-bright)}
+@keyframes halo{0%,100%{opacity:0;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.cap .cl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase}
+.cap .cv{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-2)}
+
+.c-note{color:var(--ink-2);font-size:14.5px;margin:15px 0 0;line-height:1.6}
+.c-note.empty{color:var(--ink-3);font-style:italic}
+.c-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;
+  padding-top:13px;border-top:1px solid var(--hair)}
+.tps{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.tps b{font-family:var(--display);font-size:17px;font-weight:600}
+.tps .u{color:var(--ink-3);font-size:11px}
+.date{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.08em}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer{border-top:1px solid var(--hair);padding:26px 0 60px;margin-top:20px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em}
+.foot a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--hair)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:880px){
+  .hero-grid{grid-template-columns:1fr;gap:28px}
+  .machine{order:2}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .wrap{padding:0 16px}
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .controls{flex-direction:column;align-items:stretch}
+}
+
+/* accessibility: honour reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .card{opacity:1;transform:none}
+  .backdrop::before{animation:none}
+}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"></div>
+
+<div class="wrap">
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <p class="eyebrow"><span class="pulse"></span>Local inference · field log</p>
+    <div class="hero-grid">
+      <div>
+        <h1 class="title"><span class="lo">SILICON</span><span class="hi">BENCH</span></h1>
+        <p class="lede">The five models behind the team-setup fleet, run on the <b>M4&nbsp;Max</b> through <b>Unsloth&nbsp;Studio</b>'s GGUF builds — with a plain verdict on whether each one earned a keep. Three have been through a full smoke test so far; <b>gpt-oss-20b</b> and <b>North-Mini-Code-1.0</b> are in the fleet too but have no logged bench entry yet.</p>
+      </div>
+
+      <!-- the machine, rendered as a live instrument -->
+      <aside class="machine" aria-label="Host machine telemetry">
+        <div class="m-top">
+          <span class="m-name">MacBook&nbsp;Pro · M4&nbsp;Max</span>
+          <span class="m-tag" id="hostId">Mac16,5</span>
+        </div>
+
+        <div class="cores" id="cores" aria-hidden="true"></div>
+        <div class="cores-label"><span>GPU · 32 CORES</span><span id="coreActive">METAL 4</span></div>
+
+        <div class="gauge">
+          <div class="g-row"><span>UNIFIED MEMORY</span><b>36&nbsp;GB · 546&nbsp;GB/s</b></div>
+          <div class="bar"><span id="memBar"></span><i class="mark" style="left:49%" title="≈ largest model footprint"></i></div>
+          <p class="g-note">Teal mark ≈ a <b>35B model at 4-bit</b> (~17&nbsp;GB weights). Comfortable headroom for everything on this bench.</p>
+        </div>
+
+        <div class="specs">
+          <div class="spec"><div class="k">CPU</div><div class="v">14-core · 10P + 4E</div></div>
+          <div class="spec"><div class="k">GPU</div><div class="v">32-core · Metal 4</div></div>
+          <div class="spec"><div class="k">macOS</div><div class="v">26.5.1 · 25F80</div></div>
+          <div class="spec"><div class="k">Silicon</div><div class="v">Apple M4 Max</div></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ============ STATS ============ -->
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <!-- ============ CONTROLS ============ -->
+  <div class="controls">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Filter models"></div>
+    <label class="sort">Sort
+      <select id="sort" aria-label="Sort models">
+        <option value="recent">Most recent</option>
+        <option value="verdict">Verdict</option>
+        <option value="name">Name</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- ============ CARDS ============ -->
+  <main class="grid" id="grid" aria-live="polite"></main>
+
+  <footer>
+    <div class="foot">
+      <span>SILICON BENCH · a personal local-model logbook</span>
+      <span>Host auto-detected on 2026-07-03 · <a href="./README.md">team-setup docs →</a></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   MODEL LOG — the single source of truth.
+   Add a new experience = add / edit one object below.
+
+   verdict : "keep" | "maybe" | "broken" | "untested"
+   caps.*  : "pass" | "partial" | "fail" | "na" | "untested"
+             (tools, reasoning, coding, speed)
+   tps     : tokens/sec you measured, or null for "—"
+   ============================================================ */
+const MODELS = [
+  {
+    name: "Qwen3.6 35B A3B — MTP",
+    id: "unsloth/Qwen3.6-35B-A3B-MTP-GGUF (UD-Q5_K_S)",
+    runtime: "Unsloth Studio", format: "GGUF", params: "35B A3B",
+    verdict: "keep", date: "2026-07-05",
+    caps: { tools:"pass", reasoning:"pass", coding:"pass", speed:"pass" },
+    tps: 87,
+    note: "The daily driver behind OpenCode. Smoke test: 6/6 tool-calling scenarios pass, including nested-object arguments and parallel calls — median 87 tok/s. In long agentic sessions generation settles at 34–50 tok/s with MTP speculative decoding (draft acceptance 0.37–0.76); prefill (~200–400 tok/s) is the real bottleneck, not generation. Thinking mode is kept ON deliberately — it measurably improves results here. One server run threw tool-call grammar-parse errors; a restart cleared it, and I'm watching for recurrence against the known llama.cpp thinking-mode parsing issue (opencode#24316). Hybrid attention (10/40 attention layers, 2 KV heads) makes 131k context cheap — about 1.3 GB of KV cache at q8_0."
+  },
+  {
+    name: "GLM-4.7-Flash",
+    id: "unsloth/GLM-4.7-Flash-GGUF (UD-Q5_K_XL)",
+    runtime: "Unsloth Studio", format: "GGUF", params: "30B A3B",
+    verdict: "keep", date: "2026-07-11",
+    caps: { tools:"pass", reasoning:"pass", coding:"pass", speed:"pass" },
+    tps: 65,
+    note: "Second agentic-coding driver in rotation — a slower-but-higher-quality peer to the MTP daily driver, not just a challenger. Smoke-verified 2026-07-11 on the non-MTP UD-Q5_K_XL: 6/6 tool-calling scenarios pass (single, nested-object args, multi-turn chain, parallel calls, no-tool control, long-context tool), median ~65 tok/s. Used in practice for coding, spawning subagents, and embedding review comments into PRs — best published tool-calling of any 30B-class open model (τ²-Bench 79.5%, SWE-bench 59.2%). Served non-MTP because the MTP variant (meshllm/GLM-4.7-Flash-MTP-GGUF) won't load on this stack (\"wrong number of tensors; expected 868, got 862\" — needs upstream llama.cpp PR #24868), which is why it's slower than the ~87 tok/s MTP Qwen. Context bumped to 131k (2026-07-10); MLA latent-KV keeps that cheap (< ~1 GB extra)."
+  },
+  {
+    name: "Qwen3.6 35B A3B — Opus 4.6 distill",
+    id: "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF (Q5_K_M)",
+    runtime: "Unsloth Studio", format: "GGUF", params: "35B A3B",
+    verdict: "keep", date: "2026-07-06",
+    caps: { tools:"pass", reasoning:"pass", coding:"pass", speed:"pass" },
+    tps: 78,
+    note: "Redemption confirmed — the MLX-broken distill runs clean on GGUF. Smoke test 6/6 pass (single, nested-object, multi-turn, parallel, no-tool control, long-context), median 77.7 tok/s at Q5_K_M (~23 GB). Full SFT on Claude Opus reasoning traces; always-thinking, but no malformed tool calls surfaced in the smoke run. A genuine second daily-driver option alongside the MTP Qwen — slightly slower (78 vs 87 tok/s) but the strongest reasoning of the local set."
+  }
+];
+
+/* ---------- render helpers ---------- */
+const VERDICT_LABEL = { keep:"Keep", maybe:"Maybe", broken:"Broken", untested:"Untested" };
+const VERDICT_RANK  = { keep:0, maybe:1, broken:2, untested:3 };
+const CAP_ORDER = [["tools","Tools"],["reasoning","Reason"],["coding","Code"],["speed","Speed"]];
+const CAP_VALUE = { pass:"PASS", partial:"PART", fail:"FAIL", na:"N/A", untested:"—" };
+
+const grid = document.getElementById("grid");
+let filter = "all", sortBy = "recent";
+
+function matches(m){
+  if(filter==="all") return true;
+  if(filter==="lmstudio") return m.runtime==="LM Studio";
+  if(filter==="unsloth") return m.runtime==="Unsloth Studio";
+  if(filter==="mlx") return /MLX/.test(m.format);
+  if(filter==="untested") return m.verdict==="untested";
+  return true;
+}
+function sorter(a,b){
+  if(sortBy==="name") return a.name.localeCompare(b.name);
+  if(sortBy==="verdict") return VERDICT_RANK[a.verdict]-VERDICT_RANK[b.verdict];
+  return b.date.localeCompare(a.date); // recent
+}
+
+function cardHTML(m,i){
+  const caps = CAP_ORDER.map(([k,label])=>{
+    const s = m.caps[k] || "untested";
+    const state = s==="untested" ? "untested" : s;
+    return `<div class="cap" data-s="${state}">
+        <span class="led"></span>
+        <span class="cl">${label}</span>
+        <span class="cv">${CAP_VALUE[s]||"—"}</span>
+      </div>`;
+  }).join("");
+
+  const noteHTML = m.note
+    ? `<p class="c-note">${m.note}</p>`
+    : `<p class="c-note empty">No notes yet — awaiting a run.</p>`;
+
+  const tps = m.tps!=null
+    ? `<span class="tps"><b>${m.tps}</b> <span class="u">tok/s</span></span>`
+    : `<span class="tps"><b>—</b> <span class="u">tok/s</span></span>`;
+
+  return `<article class="card" data-verdict="${m.verdict}" style="animation-delay:${i*70}ms">
+    <div class="c-head">
+      <div>
+        <h3 class="c-name">${m.name}</h3>
+        <div class="c-sub">${m.id}</div>
+      </div>
+      <span class="verdict" data-v="${m.verdict}">${VERDICT_LABEL[m.verdict]}</span>
+    </div>
+    <div class="chips">
+      <span class="chip rt">${m.runtime}</span>
+      <span class="chip ${/MLX/.test(m.format)?'mlx':''}">${m.format}</span>
+      <span class="chip">${m.params}</span>
+    </div>
+    <div class="readout" aria-label="Capability readout">${caps}</div>
+    ${noteHTML}
+    <div class="c-foot">${tps}<span class="date">${m.date}</span></div>
+  </article>`;
+}
+
+function render(){
+  const list = MODELS.filter(matches).sort(sorter);
+  grid.innerHTML = list.length
+    ? list.map(cardHTML).join("")
+    : `<p style="color:var(--ink-3);font-family:var(--mono);padding:40px 0">No models match this filter.</p>`;
+}
+
+/* ---------- tabs ---------- */
+const TABS = [
+  ["all","All"],["unsloth","Unsloth Studio"]
+];
+const tabsEl = document.getElementById("tabs");
+tabsEl.innerHTML = TABS.map(([k,label])=>{
+  const count = MODELS.filter(m=>{const f=filter;filter=k;const r=matches(m);filter=f;return r;}).length;
+  return `<button class="tab" role="tab" data-k="${k}" aria-selected="${k==='all'}">
+    ${label}<span class="c">${count}</span></button>`;
+}).join("");
+tabsEl.addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  filter=b.dataset.k;
+  [...tabsEl.children].forEach(t=>t.setAttribute("aria-selected", t===b));
+  render();
+});
+document.getElementById("sort").addEventListener("change",e=>{sortBy=e.target.value;render();});
+
+/* ---------- stats strip (with count-up) ---------- */
+const total = MODELS.length;
+const chatModels = MODELS.filter(m=>m.format!=="Image");
+const toolsPass = chatModels.filter(m=>m.caps.tools==="pass").length;
+const tested = MODELS.filter(m=>m.verdict!=="untested").length;
+const broken = MODELS.filter(m=>m.verdict==="broken").length;
+const STATS = [
+  {n:total, l:"Models logged", accent:"var(--amber)"},
+  {n:tested, l:"With a verdict", accent:"var(--teal)"},
+  {n:broken, l:"Broken on arrival", accent:"var(--coral)"},
+  {n:toolsPass, l:"Tool-calling passes", accent:"var(--violet)"}
+];
+document.getElementById("stats").innerHTML = STATS.map(s=>
+  `<div class="stat" style="--accent:${s.accent}"><div class="n" data-to="${s.n}">0</div><div class="l">${s.l}</div></div>`
+).join("");
+document.querySelectorAll(".stat .n").forEach(el=>{
+  const to=+el.dataset.to; if(!to){el.textContent="0";return;}
+  let cur=0; const step=Math.max(1,Math.round(to/24));
+  const t=setInterval(()=>{cur+=step; if(cur>=to){cur=to;clearInterval(t);} el.textContent=cur;},34);
+});
+
+/* ---------- machine panel: GPU cores + memory gauge ---------- */
+const coresEl=document.getElementById("cores");
+const activePattern=[2,3,7,8,9,13,16,18,22,23,27,30]; // deterministic "busy" cores
+for(let i=0;i<32;i++){
+  const d=document.createElement("div");
+  d.className="core"+(activePattern.includes(i)?" on":"");
+  if(d.classList.contains("on")) d.style.animationDelay=(i*90)+"ms";
+  coresEl.appendChild(d);
+}
+requestAnimationFrame(()=>{ // animate memory bar to a resting footprint
+  document.getElementById("memBar").style.width="34%";
+});
+
+render();
+</script>
+</body>
+</html>

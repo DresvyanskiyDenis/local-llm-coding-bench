@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Leaderboard — Silicon Bench</title>
+<meta name="description" content="Composite ranking and full metric breakdown for the 3-night local-model agentic-coding benchmark on an M4 Max." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   SILICON BENCH — design tokens (shared verbatim with index.html)
+   ============================================================ */
+:root{
+  /* surfaces */
+  --bg:#0B0E14;
+  --bg-2:#0E131C;
+  --panel:#141A24;
+  --panel-2:#171F2B;
+  --hair:#232B38;
+  --hair-bright:#33404f;
+
+  /* text */
+  --ink:#E6EAF2;
+  --ink-2:#9AA6B8;
+  --ink-3:#5F6B7E;
+
+  /* thermal accents */
+  --amber:#FFB454;   /* energy / primary */
+  --teal:#3DD6C4;    /* pass / cold compute */
+  --coral:#FF6B6B;   /* fail / heat */
+  --violet:#A78BFA;  /* reasoning */
+  --amber-dim:rgba(255,180,84,.14);
+  --teal-dim:rgba(61,214,196,.14);
+  --coral-dim:rgba(255,107,107,.14);
+  --violet-dim:rgba(167,139,250,.14);
+
+  /* type */
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+
+  --maxw:1180px;
+  --r:16px;
+  --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:clip; /* clip (not hidden): clips horizontal overflow without turning body into a scroll container */
+}
+
+/* ambient aurora + grid backdrop ---------------------------- */
+.backdrop{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.backdrop::before{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(42% 42% at 18% 12%, rgba(255,180,84,.10), transparent 60%),
+    radial-gradient(46% 46% at 82% 8%, rgba(61,214,196,.10), transparent 60%),
+    radial-gradient(60% 55% at 60% 100%, rgba(167,139,250,.08), transparent 60%);
+  animation:drift 26s var(--ease) infinite alternate;
+}
+.backdrop::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--hair) 1px,transparent 1px),
+    linear-gradient(90deg,var(--hair) 1px,transparent 1px);
+  background-size:52px 52px;
+  -webkit-mask-image:radial-gradient(120% 80% at 50% 0%,#000 40%,transparent 85%);
+          mask-image:radial-gradient(120% 80% at 50% 0%,#000 40%,transparent 85%);
+  opacity:.35;
+}
+@keyframes drift{
+  from{transform:translate3d(-2%,-1%,0) scale(1)}
+  to{transform:translate3d(3%,2%,0) scale(1.08)}
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+header.hero{padding:56px 0 30px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--amber);
+  display:inline-flex;align-items:center;gap:10px;margin:0 0 18px;
+}
+.eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--amber);
+  box-shadow:0 0 0 0 rgba(255,180,84,.6);animation:beacon 2.4s infinite}
+@keyframes beacon{
+  0%{box-shadow:0 0 0 0 rgba(255,180,84,.55)}
+  70%{box-shadow:0 0 0 9px rgba(255,180,84,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
+}
+
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:end}
+h1.title{
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(46px,8vw,84px);line-height:.94;
+  letter-spacing:-.02em;margin:0;
+}
+h1.title .lo{display:block;color:var(--ink-3)}
+h1.title .hi{
+  display:block;
+  background:linear-gradient(96deg,var(--amber),#ffd9a0 45%,var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{color:var(--ink-2);font-size:18px;max-width:48ch;margin:22px 0 0}
+.lede b{color:var(--ink);font-weight:600}
+
+/* ---- correction instrument panel (this page's signature) --- */
+.instrument{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--hair);border-radius:var(--r);
+  padding:20px 20px 18px;position:relative;overflow:hidden;
+  box-shadow:0 24px 60px -30px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.instrument .i-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.instrument .i-name{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-.01em}
+.instrument .i-tag{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+
+.correction{display:flex;align-items:center;gap:14px;padding:6px 0 4px}
+.c-figure{flex:1;text-align:center}
+.c-value{font-family:var(--display);font-weight:700;font-size:38px;letter-spacing:-.02em;line-height:1}
+.c-value.before{color:var(--coral)}
+.c-value.after{
+  background:linear-gradient(96deg,var(--teal),#8ff0e4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.c-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);
+  text-transform:uppercase;margin-top:6px}
+.c-arrow{font-family:var(--mono);font-size:20px;color:var(--ink-3);flex-shrink:0}
+
+.i-note{font-family:var(--mono);font-size:11px;color:var(--ink-2);line-height:1.6;margin:16px 0 0}
+.i-note b{color:var(--teal);font-weight:500}
+
+.i-specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:16px;
+  background:var(--hair);border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--hair)}
+.i-spec{background:var(--panel);padding:9px 12px}
+.i-spec .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.i-spec .v{font-family:var(--mono);font-size:12.5px;color:var(--ink);margin-top:2px}
+
+/* ============================================================
+   STAT STRIP
+   ============================================================ */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:34px 0 10px}
+.stat{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:18px 18px 16px;
+  position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--amber))}
+.stat .n{font-family:var(--display);font-weight:700;font-size:32px;line-height:1;letter-spacing:-.02em}
+.stat .n .u{font-size:16px;color:var(--ink-2);font-weight:600;margin-left:2px}
+.stat .l{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-3);
+  text-transform:uppercase;margin-top:8px}
+
+/* ============================================================
+   SECTION SCAFFOLDING
+   ============================================================ */
+.section{padding-top:44px;margin-top:36px;border-top:1px solid var(--hair)}
+.s-eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 10px}
+.s-eyebrow b{color:var(--amber);font-weight:600}
+h2.s-title{font-family:var(--display);font-weight:600;font-size:clamp(26px,4vw,36px);
+  letter-spacing:-.01em;margin:0 0 12px}
+.s-lede{color:var(--ink-2);font-size:15.5px;max-width:74ch;margin:0 0 28px;line-height:1.65}
+.s-lede b{color:var(--ink);font-weight:600}
+
+/* ============================================================
+   VERDICT CARDS
+   ============================================================ */
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.vcard{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--hair);border-radius:var(--r);padding:22px 20px 20px;
+  position:relative;overflow:hidden;
+}
+.vcard::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--edge,var(--hair))}
+.vcard.pick-best{--edge:var(--teal)}
+.vcard.pick-coder{--edge:var(--amber)}
+.vcard.pick-safe{--edge:var(--violet)}
+.v-medal{font-size:26px;line-height:1}
+.v-name{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:12px 0 2px}
+.v-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.03em;margin-bottom:14px}
+.v-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.v-chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink-2);
+  border:1px solid var(--hair);border-radius:6px;padding:4px 8px;white-space:nowrap}
+.v-note{color:var(--ink-2);font-size:14px;line-height:1.65;margin:0}
+
+.oneliners{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.oline{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r-sm);padding:14px 16px}
+.oline .o-tag{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:5px;display:block}
+.oline p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.55}
+.oline b{color:var(--ink);font-weight:600}
+
+/* ============================================================
+   COMPOSITE RANKING (formula + ranked bars)
+   ============================================================ */
+.formula-box{
+  background:var(--bg);border:1px solid var(--hair);border-radius:var(--r-sm);
+  padding:16px 18px;margin-bottom:10px;overflow-x:auto;
+}
+.formula-box code{font-family:var(--mono);font-size:13.5px;color:var(--ink);white-space:pre;line-height:1.7}
+.formula-box code .op{color:var(--ink-3)}
+.formula-box code .term{color:var(--amber)}
+
+.weight-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:18px 0 10px;
+  border:1px solid var(--hair);background:var(--bg)}
+.weight-seg{height:100%}
+.weight-seg + .weight-seg{border-left:2px solid var(--bg)}
+.wleg{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:32px}
+.wleg-item{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.wleg-sw{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.wleg-item b{color:var(--ink);font-weight:600}
+
+.explore-note{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);line-height:1.7;
+  background:var(--panel);border:1px solid var(--hair);border-left:3px solid var(--violet);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;padding:12px 16px;margin:26px 0 0}
+.explore-note a{color:var(--violet);text-decoration:none;border-bottom:1px solid rgba(167,139,250,.35)}
+
+.rank-list{display:flex;flex-direction:column;gap:9px}
+.rank-row{display:grid;grid-template-columns:30px 118px 1fr 62px;align-items:center;gap:14px}
+.rank-num{font-family:var(--mono);font-size:13px;color:var(--ink-3);text-align:center}
+.rank-row.lead .rank-num{color:var(--teal);font-weight:600}
+.rank-name{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-row.lead .rank-name{color:var(--teal)}
+/* model → Hugging Face repo links (table Model column + rank bars) */
+.hf-link{color:inherit;text-decoration:none;border-bottom:1px solid var(--hair-bright);
+  transition:color .12s ease,border-color .12s ease}
+.hf-link:hover,.hf-link:focus-visible{color:var(--violet);border-bottom-color:var(--violet)}
+.hf-link:focus-visible{outline:2px solid var(--violet);outline-offset:2px;border-radius:2px}
+.hf-ext{font-size:.72em;margin-left:3px;opacity:.5;vertical-align:super}
+.hf-link:hover .hf-ext,.hf-link:focus-visible .hf-ext{opacity:1}
+table.lb td .hf-link{font-weight:600}
+.rank-track{height:11px;background:var(--bg);border:1px solid var(--hair);border-radius:6px;
+  overflow:hidden;position:relative}
+.rank-fill{height:100%;border-radius:6px;background:var(--hair-bright);width:0;
+  transition:width 1s var(--ease)}
+.rank-row.lead .rank-fill{background:linear-gradient(90deg,var(--teal),#1f8f83);
+  box-shadow:0 0 10px rgba(61,214,196,.45)}
+.rank-score{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;
+  text-align:right}
+.rank-row.lead .rank-score{color:var(--teal)}
+
+/* ============================================================
+   COMPARISON TABLE
+   ============================================================ */
+.table-note{font-family:var(--mono);font-size:12px;color:var(--ink-3);line-height:1.7;margin:0 0 16px}
+.table-wrap{overflow-x:auto;border:1px solid var(--hair);border-radius:var(--r);background:var(--panel)}
+table.lb{width:100%;min-width:1000px;border-collapse:collapse;font-size:13.5px}
+table.lb thead th{
+  position:sticky;top:0;background:var(--panel-2);z-index:1;
+  border-bottom:1px solid var(--hair-bright);padding:0;
+}
+table.lb .sort-btn{
+  width:100%;display:flex;align-items:center;gap:6px;justify-content:flex-start;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-2);background:transparent;border:none;cursor:pointer;
+  padding:12px 14px;text-align:left;white-space:nowrap;transition:color .2s var(--ease);
+}
+table.lb .sort-btn:hover{color:var(--ink)}
+table.lb th[aria-sort="ascending"] .sort-btn,
+table.lb th[aria-sort="descending"] .sort-btn{color:var(--amber)}
+table.lb .caret{font-size:9px;color:var(--ink-3);opacity:.6}
+table.lb th[aria-sort="ascending"] .caret,
+table.lb th[aria-sort="descending"] .caret{color:var(--amber);opacity:1}
+table.lb td{padding:10px 14px;border-bottom:1px solid var(--hair);color:var(--ink-2);white-space:nowrap}
+table.lb td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+table.lb td:first-child,table.lb th:first-child{padding-left:18px}
+table.lb td:last-child,table.lb th:last-child{padding-right:18px}
+table.lb tbody tr:last-of-type td{border-bottom:none}
+table.lb tbody tr:hover td{background:rgba(255,255,255,.02)}
+table.lb td.tier-good{color:var(--teal);background:var(--teal-dim)}
+table.lb td.tier-mid{color:var(--amber);background:var(--amber-dim)}
+table.lb td.tier-bad{color:var(--coral);background:var(--coral-dim)}
+table.lb tr.row-broken td{color:var(--ink-3);opacity:.55;font-style:italic}
+table.lb tr.row-broken td.num{color:var(--ink-3)}
+table.lb sup.dagger{color:var(--coral);font-style:normal;margin-left:2px}
+.table-caption{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:12px 2px 0;line-height:1.6}
+
+/* ============================================================
+   METRIC GLOSSARY
+   ============================================================ */
+.glossary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.gcard{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r-sm);padding:16px 16px 15px}
+.gcard .g-key{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber);
+  letter-spacing:.03em;margin-bottom:8px;display:block}
+.gcard p{margin:0;color:var(--ink-2);font-size:13px;line-height:1.6}
+.gcard p b{color:var(--ink);font-weight:600}
+
+/* ============================================================
+   METHODOLOGY
+   ============================================================ */
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);
+  border:1px solid var(--hair);border-radius:var(--r-sm);overflow:hidden;margin-bottom:24px}
+.fact{background:var(--panel);padding:14px 16px}
+.fact .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-3);
+  text-transform:uppercase;margin-bottom:5px}
+.fact .v{color:var(--ink-2);font-size:13.5px;line-height:1.55}
+.fact .v b{color:var(--ink);font-weight:600}
+.fact .v code{font-family:var(--mono);font-size:12.5px;color:var(--teal)}
+
+.quirks{background:var(--panel);border:1px solid var(--hair);border-left:3px solid var(--amber);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;padding:16px 18px;margin-bottom:36px}
+.quirks .q-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber);margin:0 0 10px}
+.quirks ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:13.5px;line-height:1.7}
+.quirks li{margin-bottom:6px}
+.quirks li:last-child{margin-bottom:0}
+.quirks b{color:var(--ink);font-weight:600}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer{border-top:1px solid var(--hair);padding:32px 0 60px;margin-top:44px}
+.foot-head{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--coral);margin:0 0 12px}
+.foot-body{color:var(--ink-2);font-size:13.5px;line-height:1.7;max-width:76ch;margin:0 0 16px}
+.foot-body b{color:var(--ink);font-weight:600}
+.foot ul{margin:0 0 18px;padding-left:18px;color:var(--ink-2);font-size:13px;line-height:1.65}
+.foot-bottom{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;
+  padding-top:16px;border-top:1px solid var(--hair)}
+.foot-bottom a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--hair)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:880px){
+  .hero-grid{grid-template-columns:1fr;gap:28px}
+  .instrument{order:2}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .vgrid{grid-template-columns:1fr}
+  .oneliners{grid-template-columns:1fr}
+  .glossary{grid-template-columns:repeat(2,1fr)}
+  .facts{grid-template-columns:1fr}
+  .rank-row{grid-template-columns:26px 90px 1fr 54px;gap:10px}
+}
+@media(max-width:480px){
+  .wrap{padding:0 16px}
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .glossary{grid-template-columns:1fr}
+  .rank-name{font-size:13px}
+}
+
+/* accessibility: honour reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .backdrop::before{animation:none}
+  .rank-fill{transition:none}
+}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"></div>
+
+<div class="wrap">
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <p class="eyebrow"><span class="pulse"></span>Local inference · composite leaderboard</p>
+    <div class="hero-grid">
+      <div>
+        <h1 class="title"><span class="lo">LEADER</span><span class="hi">BOARD</span></h1>
+        <p class="lede">By a transparent agentic-coding weighting, <b>ornith is the #1 local model of this benchmark (88.3/100)</b> — the only one with no weak axis across coding, code-review and prose. Change the weighting and the leader changes: the ranking and the full table below show exactly how.</p>
+      </div>
+
+      <!-- signature element: the #1 readout, stated on merits -->
+      <aside class="instrument" aria-label="Overall number-one summary">
+        <div class="i-top">
+          <span class="i-name">#1 overall · ornith</span>
+          <span class="i-tag">COMPOSITE · 9 MODELS</span>
+        </div>
+        <div class="correction">
+          <div class="c-figure">
+            <div class="c-value after">88.3</div>
+            <div class="c-label">Overall / 100</div>
+          </div>
+          <div class="c-arrow" aria-hidden="true">·</div>
+          <div class="c-figure">
+            <div class="c-value after">#1</div>
+            <div class="c-label">of 9 models</div>
+          </div>
+        </div>
+        <p class="i-note">The only model with <b>no weak axis</b>: near-top coding, plus the <b>best</b> code-review recall and the <b>best</b> prose of the entire fleet.</p>
+        <div class="i-specs">
+          <div class="i-spec"><div class="k">Coding A</div><div class="v">0.987</div></div>
+          <div class="i-spec"><div class="k">Review · Prose</div><div class="v">0.556 · 9.83</div></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ============ STATS ============ -->
+    <div class="stats">
+      <div class="stat" style="--accent:var(--amber)"><div class="n">9</div><div class="l">Models benchmarked</div></div>
+      <div class="stat" style="--accent:var(--teal)"><div class="n">450</div><div class="l">Test units run</div></div>
+      <div class="stat" style="--accent:var(--violet)"><div class="n">4</div><div class="l">Suites — A · B · C · D</div></div>
+      <div class="stat" style="--accent:var(--ink-3)"><div class="n">36<span class="u">GB</span></div><div class="l">Mac · M4 Max</div></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ 1. THE VERDICT ============ -->
+    <section class="section" id="verdict" aria-labelledby="verdict-h">
+      <p class="s-eyebrow">Who's #1, and why</p>
+      <h2 class="s-title" id="verdict-h">Three verdicts, plain language</h2>
+      <p class="s-lede">Every claim below traces to a cell in the comparison table further down the page.</p>
+
+      <div class="vgrid">
+        <article class="vcard pick-best">
+          <div class="v-medal" aria-hidden="true">🥇</div>
+          <h3 class="v-name">Best overall — ornith</h3>
+          <div class="v-sub">Ornith-1.0 35B, MTP-graft, non-thinking</div>
+          <div class="v-chips">
+            <span class="v-chip">A 0.987</span>
+            <span class="v-chip">B_recall 0.556 · best</span>
+            <span class="v-chip">D_text 9.83 · best</span>
+            <span class="v-chip">Tools 9%</span>
+            <span class="v-chip">74 t/s</span>
+          </div>
+          <p class="v-note">No weak axis: near-top coding, <b>the best planted-bug review recall</b> and <b>the best prose</b> of all nine, acceptable tool reliability, fast decode.</p>
+        </article>
+
+        <article class="vcard pick-coder">
+          <div class="v-medal" aria-hidden="true">⌨️</div>
+          <h3 class="v-name">Best pure coder — qwopus / qwen</h3>
+          <div class="v-sub">A 0.994 (qwopus) · A 0.991 (qwen)</div>
+          <div class="v-chips">
+            <span class="v-chip">qwopus: tools 3%</span>
+            <span class="v-chip">qwopus: ~63 t/s</span>
+            <span class="v-chip">qwen: tools 28–32%</span>
+          </div>
+          <p class="v-note">Highest pytest pass-rates of the fleet. Pick <b>qwopus</b> for clean tool-calls (3% malformed, non-thinking, ~63 t/s); pick <b>qwen</b> only if you'll tolerate its 28–32% malformed-call retry tax.</p>
+        </article>
+
+        <article class="vcard pick-safe">
+          <div class="v-medal" aria-hidden="true">🛡️</div>
+          <h3 class="v-name">Safest daily driver — opus</h3>
+          <div class="v-sub">Qwen3.6-35B Opus-4.6 distill, thinking-on</div>
+          <div class="v-chips">
+            <span class="v-chip">A 0.976</span>
+            <span class="v-chip">Tools 3–5%</span>
+            <span class="v-chip">~51–55 s / task</span>
+          </div>
+          <p class="v-note">The most balanced and the actually-proven daily driver: top-3 coding, cleanest-tier tools, the fastest genuine task completion. Boring, reliable, thinking-on.</p>
+        </article>
+      </div>
+
+      <div class="oneliners">
+        <div class="oline">
+          <span class="o-tag">gemma</span>
+          <p>Fastest + cleanest tools of the fleet — but <b>4 timeouts per quant</b> on runaway reasoning.</p>
+        </div>
+        <div class="oline">
+          <span class="o-tag">gpt-oss</span>
+          <p>The <b>13.6&nbsp;GB tiny-RAM pick</b> — everything else runs 24–28&nbsp;GB.</p>
+        </div>
+        <div class="oline">
+          <span class="o-tag">katdev</span>
+          <p>Correct and cleanest-tier tools, but a <b>dense 32B</b> — so it's slow.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. COMPOSITE RANKING ============ -->
+    <section class="section" id="ranking" aria-labelledby="ranking-h">
+      <p class="s-eyebrow">How "#1" is decided</p>
+      <h2 class="s-title" id="ranking-h">Overall ranking — and the exact formula behind it</h2>
+      <p class="s-lede">An opinionated but explicit weighting for <b>a local agentic-coding driver in OpenCode</b> — using the q4 quant unless noted, decode normalized to the fleet max of 137&nbsp;t/s.</p>
+
+      <div class="formula-box">
+        <code>Overall <span class="op">=</span> <span class="term">0.35</span>·A_coding <span class="op">+</span> <span class="term">0.25</span>·(1 − tool_malformed%) <span class="op">+</span> <span class="term">0.15</span>·C_edit <span class="op">+</span> <span class="term">0.10</span>·B_recall <span class="op">+</span> <span class="term">0.10</span>·(D_text/10) <span class="op">+</span> <span class="term">0.05</span>·(decode/137)  <span class="op">&rarr; ×100</span></code>
+      </div>
+
+      <div class="weight-bar" role="img" aria-label="Weight composition: A_coding 35%, Tools 25%, C_edit 15%, B_recall 10%, D_text 10%, Decode speed 5%">
+        <div class="weight-seg" style="width:35%;background:var(--teal)"></div>
+        <div class="weight-seg" style="width:25%;background:var(--amber)"></div>
+        <div class="weight-seg" style="width:15%;background:var(--violet)"></div>
+        <div class="weight-seg" style="width:10%;background:var(--ink-2)"></div>
+        <div class="weight-seg" style="width:10%;background:var(--ink-3)"></div>
+        <div class="weight-seg" style="width:5%;background:var(--hair-bright)"></div>
+      </div>
+      <div class="wleg">
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--teal)"></span>A_coding <b>35%</b> — writes correct code</span>
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--amber)"></span>Tools <b>25%</b> — drives tools reliably</span>
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--violet)"></span>C_edit <b>15%</b> — surgical-edit precision</span>
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--ink-2)"></span>B_recall <b>10%</b> — planted-bug review</span>
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--ink-3)"></span>D_text <b>10%</b> — prose / communication</span>
+        <span class="wleg-item"><span class="wleg-sw" style="background:var(--hair-bright)"></span>Decode <b>5%</b> — speed, tiebreaker only</span>
+      </div>
+      <p class="table-note" style="margin-bottom:28px">Why these weights: for an agentic coding driver the two things that matter most are does it write correct code (A, 35%) and does it reliably drive tools without malformed calls (tools, 25%); surgical-edit precision (C, 15%) is next; planted-bug review (B, 10%) and prose (D, 10%) are secondary; raw speed (5%) is a tiebreaker — all models are usable except the noted slow one. RAM is a constraint, not scored.</p>
+
+      <div class="rank-list" id="rankList" aria-label="Composite ranking, 9 models"></div>
+
+      <p class="explore-note">This is <b>one</b> weighting. Sort the <a href="#comparison">table below</a> by any column to explore other priorities — qwen leads on raw coding &amp; prose, gemma on speed, opus on balance.</p>
+    </section>
+
+    <!-- ============ 3. COMPARISON TABLE ============ -->
+    <section class="section" id="comparison" aria-labelledby="comparison-h">
+      <p class="s-eyebrow">The core deliverable</p>
+      <h2 class="s-title" id="comparison-h">Full comparison, sortable</h2>
+      <p class="table-note">Click any column header to sort — click again to reverse. Split cells show <code>q4 / q5</code> (katdev: <code>q4 / iq4</code>); their sort key and color tier use the pair's average. ⊘ = non-thinking. RAM is a constraint, not scored, so it's left uncolored. Cell color is computed per column from this fleet's own min–max range: teal = top tercile, amber = mid, coral = bottom tercile.</p>
+
+      <div class="table-wrap">
+        <table class="lb" id="lbTable">
+          <thead><tr id="lbHead"></tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </div>
+      <p class="table-caption">† qwen27 — smoke-failed both quants, 0 units — a serve/template issue.</p>
+    </section>
+
+    <!-- ============ 4. METRIC GLOSSARY ============ -->
+    <section class="section" id="glossary" aria-labelledby="glossary-h">
+      <p class="s-eyebrow">What each column measures</p>
+      <h2 class="s-title" id="glossary-h">Metric glossary</h2>
+      <div class="glossary">
+        <div class="gcard">
+          <span class="g-key">A_coding</span>
+          <p><b>pass_rate, 0–1.</b> Suite A: the model implements a coding task in an OpenCode session; score = fraction of a hidden pytest suite that passes. 5 tasks × reps. Higher = writes more correct code.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">C_edit</span>
+          <p><b>pass_rate + surgical_score.</b> Suite C: apply a surgical edit to existing code — fix the target without touching unrelated lines. A separate surgical_score measures diff minimality and whether planted "noise" edit-requests were correctly ignored.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">B_review</span>
+          <p><b>recall / precision.</b> Suite B: review code with planted bugs and report them. Recall = fraction found; precision = fraction of reports that were real. The fleet-wide weakness — recall spans 0.11–0.56.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">D_text</span>
+          <p><b>0–10, LLM-judged.</b> Suite D: free-text tasks (summarize a doc; de-duplicate approaches), judged 0–10 by an offline Opus judge against a fixed rubric. 3 reps each × 2 tasks.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">Tools malformed</span>
+          <p><b>%.</b> Share of tool-calls that were malformed (bad JSON / wrong schema) and had to be retried. The reliability axis for agentic use — a high number means a working model that still wastes turns.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">Decode t/s</span>
+          <p>Tokens/sec generation speed from a dedicated speed probe (warm). Separate from prefill (time-to-first-token), which is cold-dominated.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">RAM GB</span>
+          <p>Peak unified-memory footprint on the 36&nbsp;GB Mac. A constraint, not a quality score.</p>
+        </div>
+        <div class="gcard">
+          <span class="g-key">Termination taxonomy</span>
+          <p><code style="color:var(--teal)">clean</code> finished the task · <code style="color:var(--coral)">no_tools</code> emitted prose and stopped without ever calling a tool · <code style="color:var(--amber)">hit_timeout</code> ran into the 900&nbsp;s wall.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. METHODOLOGY ============ -->
+    <section class="section" id="methodology" aria-labelledby="methodology-h">
+      <p class="s-eyebrow">How the experiment was run</p>
+      <h2 class="s-title" id="methodology-h">Methodology</h2>
+
+      <div class="facts">
+        <div class="fact"><div class="k">Machine</div><div class="v">One MacBook Pro, Apple <b>M4 Max</b>, <b>36&nbsp;GB</b> unified memory, 32-core GPU (Metal 4). Nothing leaves the laptop — fully local inference.</div></div>
+        <div class="fact"><div class="k">Serving</div><div class="v">Each model served locally by <code>llama.cpp llama-server</code> (via <code>unsloth-serve</code>) on <code>127.0.0.1:8888</code>, one model in RAM at a time, strictly serial. Quants are GGUF (q4/q5/iq4/mxfp4 as noted).</div></div>
+        <div class="fact"><div class="k">Driver</div><div class="v">Models drive <b>OpenCode</b> headless (<code>opencode run … --agent build</code>) as real agentic coding sessions — the same harness used daily, not a synthetic prompt.</div></div>
+        <div class="fact"><div class="k">Unit of measurement</div><div class="v">One <code>(model, quant, suite, task, rep)</code>. Idempotent per-unit results on disk; <b>450 units</b> across 9 working models.</div></div>
+        <div class="fact"><div class="k">Suites</div><div class="v">A_coding (correctness), B_review (planted-bug recall/precision), C_edit (surgical edits), D_text (free-text, judge-scored). 3 reps per text task.</div></div>
+        <div class="fact"><div class="k">Quants tested</div><div class="v">Most models at q4 <b>and</b> q5; single-quant for qwopus (q5), ornith (q4), gpt-oss (mxfp4); katdev at q4 + iq4. Finding: <b>Q4 ≥ Q5 on coding</b> across the board.</div></div>
+      </div>
+
+      <div class="quirks">
+        <p class="q-title">Two quirks disclosed for honesty</p>
+        <ul>
+          <li><b>(a)</b> MTP speculative-decode acceptance rate was never captured — the probe didn't record it.</li>
+          <li><b>(b)</b> Three of the models were driven with a deterministic <b>12.7&nbsp;K</b> base prompt (all MCP tools stripped) vs. <b>15.8–18.8&nbsp;K</b> for the other six — that delta is tool schemas the tasks never call, so it doesn't move the quality metrics; speed comparability rides the separate raw-endpoint probe.</li>
+        </ul>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ============ FOOTER: CORRECTIONS & HONESTY ============ -->
+  <footer>
+    <p class="foot-head">Honesty notes</p>
+    <ul>
+      <li>MTP speculative-decode acceptance rate was never captured by the speed probe.</li>
+      <li>Three models were driven with a 12.7&nbsp;K base prompt (MCP tools stripped) vs. 15.8–18.8&nbsp;K for the other six — tool-schema tokens the tasks never call, so quality metrics are unaffected; speed comparability rides the separate raw-endpoint probe.</li>
+    </ul>
+    <div class="foot-bottom">
+      <span>SILICON BENCH · leaderboard, 3-night composite</span>
+      <span>Raw per-unit results → <a href="./eval/results/">./eval/results/</a></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   DATA — verbatim from the build spec. Do not recompute.
+   ============================================================ */
+const ROWS = [
+  {rank:1, id:"ornith",    full:"Ornith-1.0 35B MTP-graft (Q4_K_M)",       type:"⊘ non-thinking, MoE 35B-A3B",   a:"0.987",         c:"0.863",         b:"0.556",         d:"9.83", tools:"9%",       decode:"74",     ram:"25.3",      overall:"88.3", hf:"tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF"},
+  {rank:2, id:"gemma",     full:"Gemma-4 26B-A4B-it (UD-Q4/Q5)",           type:"thinking, MoE 26B-A4B",          a:"0.911 / 0.911", c:"0.863",         b:"0.333 / 0.445", d:"9.67", tools:"3% / 2%",  decode:"137 / 92", ram:"27.5 / 24.1", overall:"87.1", hf:"unsloth/gemma-4-26B-A4B-it-GGUF"},
+  {rank:3, id:"qwopus",    full:"Qwopus3.6 Coder MTP (Q5_K_M)",            type:"⊘ non-thinking, MoE 35B-A3B",   a:"0.994",         c:"0.863",         b:"0.389",         d:"8.83", tools:"3%",       decode:"63",     ram:"27.1",      overall:"87.0", hf:"Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF"},
+  {rank:4, id:"opus",      full:"Qwen3.6-35B Opus-4.6 distill (Q4/Q5)",    type:"thinking, MoE 35B-A3B",          a:"0.976 / 0.923", c:"0.863 / 0.818", b:"0.445 / 0.611", d:"8.67", tools:"5% / 3%",  decode:"72 / 68", ram:"24.0 / 25.9", overall:"86.6", hf:"hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF"},
+  {rank:5, id:"glm",       full:"GLM-4.7-Flash (UD-Q4/Q5, non-MTP)",       type:"thinking, MoE 30B-A3B",          a:"0.916 / 0.880", c:"0.879 / 0.909", b:"0.445",         d:"8.83", tools:"3% / 4%",  decode:"58 / 65", ram:"24.7 / 26.8", overall:"84.9", hf:"unsloth/GLM-4.7-Flash-GGUF"},
+  {rank:6, id:"northmini", full:"North-Mini-Code 1.0 (UD-Q5)",             type:"⊘ non-thinking",                a:"0.942 / 0.898", c:"0.879 / 0.803", b:"0.556 / 0.444", d:"9.58", tools:"19% / 18%", decode:"58 / 55", ram:"26.1 / 24.4", overall:"83.7", hf:"unsloth/North-Mini-Code-1.0-GGUF"},
+  {rank:7, id:"qwen",      full:"Qwen3.6-35B-A3B MTP (UD-Q4/Q5)",          type:"thinking, MoE 35B-A3B",          a:"0.991 / 0.970", c:"0.894 / 0.863", b:"0.500 / 0.556", d:"9.75", tools:"32% / 28%", decode:"87 / 93", ram:"24.9 / 27.6", overall:"83.0", hf:"unsloth/Qwen3.6-35B-A3B-MTP-GGUF"},
+  {rank:8, id:"katdev",    full:"KAT-Dev 32B (Q4 / IQ4)",                  type:"⊘ non-thinking, DENSE 32B",     a:"0.885 / 0.946", c:"0.863",         b:"0.333 / 0.278", d:"9.08", tools:"2% / 5%",  decode:"13 / 14", ram:"27.7 / 27.8", overall:"82.2", hf:"bartowski/Kwaipilot_KAT-Dev-GGUF"},
+  {rank:9, id:"gpt-oss",   full:"gpt-oss-20b (MXFP4)",                    type:"thinking, 20B",                  a:"0.883",         c:"0.863",         b:"0.111",         d:"8.83", tools:"11%",      decode:"30",     ram:"13.6",      overall:"77.1", hf:"ggml-org/gpt-oss-20b-GGUF"}
+];
+const BROKEN = {
+  id:"qwen27", full:"Qwen3.6-27B MTP (dense)", type:"BROKEN",
+  note:"smoke-failed both quants, 0 units — a serve/template issue.",
+  hf:"froggeric/Qwen3.6-27B-MTP-GGUF"
+};
+
+/* ---------- column config ---------- */
+const COLUMNS = [
+  {key:"rank",    label:"Rank",       kind:"num",  defaultDir:"asc",  color:false},
+  {key:"id",      label:"Model",      kind:"text", defaultDir:"asc",  color:false},
+  {key:"full",    label:"Full name",  kind:"text", defaultDir:"asc",  color:false},
+  {key:"type",    label:"Type",       kind:"text", defaultDir:"asc",  color:false},
+  {key:"a",       label:"A_coding",   kind:"num",  defaultDir:"desc", color:true, dir:"high"},
+  {key:"c",       label:"C_edit",     kind:"num",  defaultDir:"desc", color:true, dir:"high"},
+  {key:"b",       label:"B_recall",   kind:"num",  defaultDir:"desc", color:true, dir:"high"},
+  {key:"d",       label:"D_text",     kind:"num",  defaultDir:"desc", color:true, dir:"high"},
+  {key:"tools",   label:"Tools malf", kind:"num",  defaultDir:"asc",  color:true, dir:"low"},
+  {key:"decode",  label:"Decode t/s", kind:"num",  defaultDir:"desc", color:true, dir:"high"},
+  {key:"ram",     label:"RAM GB",     kind:"num",  defaultDir:"asc",  color:false},
+  {key:"overall", label:"Overall",    kind:"num",  defaultDir:"desc", color:true, dir:"high"}
+];
+
+/* ---------- helpers ---------- */
+// Extract every number in a display string ("0.911 / 0.911", "3% / 2%", "137 / 92")
+// and average them. Used ONLY to derive a sort/color key — the displayed text
+// (spec-verbatim) never changes.
+function nums(str){ return (String(str).match(/-?\d+\.?\d*/g) || []).map(Number); }
+function avgVal(str){ const n = nums(str); return n.length ? n.reduce((a,b)=>a+b,0)/n.length : null; }
+function accessor(row, key){
+  if(key === "rank") return row.rank;
+  if(key === "id" || key === "full" || key === "type") return row[key];
+  return avgVal(row[key]);
+}
+// Model name → link to its Hugging Face repo (the exact GGUF served in the run).
+function hfLink(repo, label){
+  return `<a class="hf-link" href="https://huggingface.co/${repo}" target="_blank" rel="noopener" title="${repo} · Hugging Face">${label}<span class="hf-ext" aria-hidden="true">↗</span></a>`;
+}
+
+/* ---------- pre-compute color tiers (fixed to the fleet range; independent of sort) --- */
+COLUMNS.filter(c => c.color).forEach(col => {
+  const vals = ROWS.map(r => avgVal(r[col.key]));
+  const min = Math.min(...vals), max = Math.max(...vals);
+  ROWS.forEach(r => {
+    const v = avgVal(r[col.key]);
+    const norm = (max === min) ? 1 : (col.dir === "low" ? (max - v) / (max - min) : (v - min) / (max - min));
+    r.tiers = r.tiers || {};
+    r.tiers[col.key] = norm >= 0.66 ? "good" : (norm >= 0.33 ? "mid" : "bad");
+  });
+});
+
+/* ---------- sort state ---------- */
+let sortKey = "overall", sortDir = "desc";
+
+function cmp(a, b, col){
+  const av = accessor(a, col.key), bv = accessor(b, col.key);
+  let r;
+  if(col.kind === "text") r = String(av).localeCompare(String(bv));
+  else r = (av - bv);
+  return sortDir === "asc" ? r : -r;
+}
+
+/* ---------- render: header ---------- */
+const headEl = document.getElementById("lbHead");
+function renderHead(){
+  headEl.innerHTML = COLUMNS.map(col => {
+    const active = col.key === sortKey;
+    const ariaSort = active ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+    const caret = active ? (sortDir === "asc" ? "▲" : "▼") : "↕";
+    return `<th scope="col" aria-sort="${ariaSort}">` +
+      `<button type="button" class="sort-btn" data-key="${col.key}">${col.label}` +
+      `<span class="caret" aria-hidden="true">${caret}</span></button></th>`;
+  }).join("");
+  headEl.querySelectorAll(".sort-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key;
+      const col = COLUMNS.find(c => c.key === key);
+      if(sortKey === key) sortDir = (sortDir === "asc") ? "desc" : "asc";
+      else { sortKey = key; sortDir = col.defaultDir; }
+      renderHead();
+      renderBody();
+    });
+  });
+}
+
+/* ---------- render: body ---------- */
+const bodyEl = document.getElementById("lbBody");
+function renderBody(){
+  const col = COLUMNS.find(c => c.key === sortKey);
+  const sorted = ROWS.slice().sort((a, b) => cmp(a, b, col));
+  const rowsHTML = sorted.map(r => {
+    const cells = COLUMNS.map(c => {
+      let raw = r[c.key];
+      const classes = [];
+      if(c.kind === "num") classes.push("num");
+      if(c.color) classes.push("tier-" + r.tiers[c.key]);
+      if(c.key === "id" && r.hf) raw = hfLink(r.hf, r.id);
+      return `<td class="${classes.join(" ")}">${raw}</td>`;
+    }).join("");
+    return `<tr>${cells}</tr>`;
+  }).join("");
+  const brokenCells = [
+    `<td class="num">—</td>`,
+    `<td>${BROKEN.hf ? hfLink(BROKEN.hf, BROKEN.id) : BROKEN.id}<sup class="dagger">†</sup></td>`,
+    `<td>${BROKEN.full}</td>`,
+    `<td>${BROKEN.type}</td>`,
+    `<td class="num">—</td>`,`<td class="num">—</td>`,`<td class="num">—</td>`,`<td class="num">—</td>`,
+    `<td class="num">—</td>`,`<td class="num">—</td>`,`<td class="num">—</td>`,`<td class="num">—</td>`
+  ].join("");
+  bodyEl.innerHTML = rowsHTML + `<tr class="row-broken" title="${BROKEN.note}">${brokenCells}</tr>`;
+}
+
+renderHead();
+renderBody();
+
+/* ---------- composite ranking bars (section 2) — driven by the same Overall field --- */
+const rankListEl = document.getElementById("rankList");
+const RANK_MAX = Math.max(...ROWS.map(r => avgVal(r.overall))); // scales bars, 0-baseline
+rankListEl.innerHTML = ROWS
+  .slice()
+  .sort((a, b) => avgVal(b.overall) - avgVal(a.overall))
+  .map((r, i) => {
+    const score = avgVal(r.overall);
+    const width = (score / 100) * 100; // true 0-100 baseline — honest bar length
+    const isLead = i === 0;
+    return `<div class="rank-row${isLead ? " lead" : ""}">
+      <span class="rank-num">${r.rank}</span>
+      <span class="rank-name">${hfLink(r.hf, r.id)}${r.id === "katdev" ? " (iq4)" : ""}</span>
+      <span class="rank-track"><span class="rank-fill" style="width:${width}%"></span></span>
+      <span class="rank-score">${r.overall}</span>
+    </div>`;
+  }).join("");
+</script>
+</body>
+</html>

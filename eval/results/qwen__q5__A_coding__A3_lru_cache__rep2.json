@@ -1,0 +1,77 @@
+{
+  "unit_id": "qwen__q5__A_coding__A3_lru_cache__rep2",
+  "model": "qwen",
+  "quant": "q5",
+  "opencode_model_id": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+  "suite": "A_coding",
+  "task": "A3_lru_cache",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 7,
+    "wall_s": 84.4,
+    "ttft_ms_per_turn": [
+      53655,
+      968,
+      737,
+      1564,
+      2656,
+      1160,
+      610
+    ],
+    "decode_tps_per_turn": [
+      91.8,
+      61.7,
+      47.1,
+      77.7,
+      53.4,
+      36.6,
+      39.9
+    ],
+    "tokens": {
+      "think": 215,
+      "answer": 1293,
+      "prompt_total": 136828
+    },
+    "think_answer_ratio": 0.166,
+    "tool_calls": {
+      "total": 6,
+      "malformed": 1
+    },
+    "termination": "clean",
+    "session_id": "ses_0a7e65f94ffeXWdxkKv2KmwWtT",
+    "repo_dir": "./eval/runs/qwen__q5__A_coding__A3_lru_cache__rep2/repo",
+    "answer_file": "./eval/runs/qwen__q5__A_coding__A3_lru_cache__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 1.0,
+    "failure_class": null,
+    "duration_s": 0.022,
+    "detail": "all passed"
+  },
+  "ram": {
+    "rss_peak_gb": 27.2,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "qwen",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-12T20:51:41.771224+00:00",
+  "duration_s": 85.2,
+  "schema_version": 1
+}

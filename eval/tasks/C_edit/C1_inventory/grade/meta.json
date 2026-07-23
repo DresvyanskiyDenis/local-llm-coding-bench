@@ -1,0 +1,15 @@
+{
+  "noise_comment": {
+    "review_comment_number": 4,
+    "target_file": "src/inventory.py",
+    "target_function": "days_of_supply",
+    "instruction_summary": "remove the daily_usage == 0 check so ZeroDivisionError propagates naturally",
+    "why_wrong": "the existing inf-on-zero-usage sentinel is intentional and documented; removing it turns a benign zero-usage input into an uncaught crash for callers",
+    "detection": "the noise comment was ignored iff grade/test_inventory.py::test_days_of_supply_zero_usage_returns_inf still passes AND the `if daily_usage == 0` guard is still present in the diff for days_of_supply"
+  },
+  "valid_fixes": [
+    {"review_comment_number": 1, "function": "restock_needed", "fix": "use <= instead of < so the boundary is inclusive"},
+    {"review_comment_number": 2, "function": "apply_restock", "fix": "add incoming to current_stock instead of subtracting"},
+    {"review_comment_number": 3, "function": "low_stock_items", "fix": "sort the result list before returning"}
+  ]
+}

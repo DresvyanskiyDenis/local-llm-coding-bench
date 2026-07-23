@@ -1,0 +1,80 @@
+{
+  "unit_id": "gemma__q4__B_review__B2_order_pricing__rep3",
+  "model": "gemma",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/gemma-4-26B-A4B-it-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/gemma-4-26B-A4B-it-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 3,
+    "wall_s": 125.2,
+    "ttft_ms_per_turn": [
+      41142,
+      null,
+      1694
+    ],
+    "decode_tps_per_turn": [
+      52.3,
+      null,
+      50.9
+    ],
+    "tokens": {
+      "think": 2598,
+      "answer": 4089,
+      "prompt_total": 50248
+    },
+    "think_answer_ratio": 0.635,
+    "tool_calls": {
+      "total": 2,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_09d72f959ffer5mYRrpcchJ7pJ",
+    "repo_dir": "./eval/runs/gemma__q4__B_review__B2_order_pricing__rep3/repo",
+    "answer_file": "./eval/runs/gemma__q4__B_review__B2_order_pricing__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 1,
+    "hallucinated": 0,
+    "recall": 0.333,
+    "precision": 1.0,
+    "matched_ids": [
+      "b3_wrong_slice_for_tail"
+    ],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "incorrect comparison operator; should use subtotal >= threshold to find the highest qualifying tier",
+        "closest_id": "b1_wrong_comparison_direction"
+      },
+      {
+        "finding": "default shipping value is negative (-5.0), causing it to be subtracted from the total instead of added",
+        "closest_id": "b2_wrong_default_shipping"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 19.8,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 1800
+  },
+  "served": {
+    "serve_name": "gemma4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T21:33:56.754540+00:00",
+  "duration_s": 126.9,
+  "schema_version": 1
+}

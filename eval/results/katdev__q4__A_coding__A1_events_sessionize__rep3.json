@@ -1,0 +1,54 @@
+{
+  "unit_id": "katdev__q4__A_coding__A1_events_sessionize__rep3",
+  "model": "katdev",
+  "quant": "q4",
+  "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+  "suite": "A_coding",
+  "task": "A1_events_sessionize",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "stalled",
+    "turns": null,
+    "wall_s": 356.21,
+    "ttft_ms_per_turn": null,
+    "decode_tps_per_turn": null,
+    "tokens": null,
+    "think_answer_ratio": null,
+    "tool_calls": null,
+    "termination": null,
+    "session_id": "ses_092e8b07dffe62uCq0Aqq9PnGr",
+    "repo_dir": "./eval/runs/katdev__q4__A_coding__A1_events_sessionize__rep3/repo",
+    "answer_file": "./eval/runs/katdev__q4__A_coding__A1_events_sessionize__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 1.0,
+    "failure_class": null,
+    "duration_s": 1.006,
+    "detail": "all passed"
+  },
+  "ram": {
+    "rss_peak_gb": 27.7,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "katdev",
+    "real_ctx": 65536,
+    "port": 8888
+  },
+  "started_ts": "2026-07-16T22:41:11.323209+00:00",
+  "duration_s": 360.6,
+  "schema_version": 1
+}

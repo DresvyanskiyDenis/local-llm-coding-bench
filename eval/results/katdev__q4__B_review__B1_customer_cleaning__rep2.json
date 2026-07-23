@@ -1,0 +1,82 @@
+{
+  "unit_id": "katdev__q4__B_review__B1_customer_cleaning__rep2",
+  "model": "katdev",
+  "quant": "q4",
+  "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+  "suite": "B_review",
+  "task": "B1_customer_cleaning",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 4,
+    "wall_s": 93.26,
+    "ttft_ms_per_turn": [
+      48759,
+      7625,
+      998,
+      1031
+    ],
+    "decode_tps_per_turn": [
+      12.4,
+      12.3,
+      12.2,
+      12.2
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 414,
+      "prompt_total": 53929
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 3,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0928ce7c9ffewsOhoM6O915oSR",
+    "repo_dir": "./eval/runs/katdev__q4__B_review__B1_customer_cleaning__rep2/repo",
+    "answer_file": "./eval/runs/katdev__q4__B_review__B1_customer_cleaning__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 0,
+    "hallucinated": 1,
+    "recall": 0.0,
+    "precision": 0.0,
+    "matched_ids": [],
+    "missed_ids": [
+      "b1_missing_none_check"
+    ],
+    "ambiguous": [
+      {
+        "finding": "Modifies input 'tags' parameter instead of creating copy",
+        "closest_id": "b2_mutable_default_arg"
+      },
+      {
+        "finding": "Incorrect range start: should skip first record (index 1), not second (index 2)",
+        "closest_id": "b3_off_by_one_loop"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 27.7,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "katdev",
+    "real_ctx": 65536,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T00:21:26.559845+00:00",
+  "duration_s": 94.1,
+  "schema_version": 1
+}

@@ -1,0 +1,84 @@
+{
+  "unit_id": "northmini__q5__B_review__B2_order_pricing__rep3",
+  "model": "northmini",
+  "quant": "q5",
+  "opencode_model_id": "unsloth/North-Mini-Code-1.0-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/North-Mini-Code-1.0-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 5,
+    "wall_s": 136.52,
+    "ttft_ms_per_turn": [
+      29891,
+      737,
+      2809,
+      1855,
+      1946
+    ],
+    "decode_tps_per_turn": [
+      38.4,
+      1.2,
+      50.5,
+      51.4,
+      51.0
+    ],
+    "tokens": {
+      "think": 1866,
+      "answer": 1934,
+      "prompt_total": 86291
+    },
+    "think_answer_ratio": 0.965,
+    "tool_calls": {
+      "total": 4,
+      "malformed": 1
+    },
+    "termination": "clean",
+    "session_id": "ses_09c95f124ffevcRNuz9RnRQRfX",
+    "repo_dir": "./eval/runs/northmini__q5__B_review__B2_order_pricing__rep3/repo",
+    "answer_file": "./eval/runs/northmini__q5__B_review__B2_order_pricing__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 1,
+    "hallucinated": 0,
+    "recall": 0.333,
+    "precision": 1.0,
+    "matched_ids": [
+      "b3_wrong_slice_for_tail"
+    ],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "tier qualification logic is backwards - should check subtotal >= threshold, not < threshold",
+        "closest_id": "b1_wrong_comparison_direction"
+      },
+      {
+        "finding": "shipping parameter default value is -5.0, which is counterintuitive (should be positive for actual shipping costs)",
+        "closest_id": "b2_wrong_default_shipping"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 24.4,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "northmini",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-15T01:35:22.310251+00:00",
+  "duration_s": 138.1,
+  "schema_version": 1
+}

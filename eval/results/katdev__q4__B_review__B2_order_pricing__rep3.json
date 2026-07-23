@@ -1,0 +1,80 @@
+{
+  "unit_id": "katdev__q4__B_review__B2_order_pricing__rep3",
+  "model": "katdev",
+  "quant": "q4",
+  "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 3,
+    "wall_s": 98.04,
+    "ttft_ms_per_turn": [
+      53107,
+      7976,
+      1062
+    ],
+    "decode_tps_per_turn": [
+      12.0,
+      12.2,
+      12.2
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 421,
+      "prompt_total": 40125
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 2,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0927c71c0ffeQgCc2se7LFUlC4",
+    "repo_dir": "./eval/runs/katdev__q4__B_review__B2_order_pricing__rep3/repo",
+    "answer_file": "./eval/runs/katdev__q4__B_review__B2_order_pricing__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 1,
+    "hallucinated": 0,
+    "recall": 0.333,
+    "precision": 1.0,
+    "matched_ids": [
+      "b1_wrong_comparison_direction"
+    ],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "default shipping cost should be positive 5.0 instead of negative -5.0",
+        "closest_id": "b2_wrong_default_shipping"
+      },
+      {
+        "finding": "slice should be order_totals[-n:] to get last n items, not [1:n]",
+        "closest_id": "b3_wrong_slice_for_tail"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 27.7,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "katdev",
+    "real_ctx": 65536,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T00:39:25.329311+00:00",
+  "duration_s": 98.9,
+  "schema_version": 1
+}

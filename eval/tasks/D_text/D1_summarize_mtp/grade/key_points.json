@@ -1,0 +1,45 @@
+{
+  "key_points": [
+    {
+      "id": "kp1",
+      "point": "Prefill (processing the prompt) is compute-bound / parallel over prompt tokens, and determines time-to-first-token (TTFT).",
+      "weight": "high"
+    },
+    {
+      "id": "kp2",
+      "point": "Decode (generating one token at a time) is memory-bandwidth-bound, not compute-bound, because each step moves the KV cache + weights through memory but does little arithmetic per byte.",
+      "weight": "high"
+    },
+    {
+      "id": "kp3",
+      "point": "The KV cache stores per-layer key/value projections for all tokens generated so far, so attention doesn't need to be recomputed over the whole prefix at every decode step.",
+      "weight": "high"
+    },
+    {
+      "id": "kp4",
+      "point": "KV cache size grows with context length (and layers/heads), competing with model weights for a fixed memory budget -- especially on unified-memory (Apple Silicon) machines.",
+      "weight": "medium"
+    },
+    {
+      "id": "kp5",
+      "point": "Speculative decoding proposes several candidate tokens cheaply (a draft), then verifies them all in a single forward pass of the target model, without sacrificing output quality.",
+      "weight": "high"
+    },
+    {
+      "id": "kp6",
+      "point": "MTP (Multi-Token Prediction) attaches extra prediction heads directly to the base model instead of using a separate draft model, so there's no second set of weights to keep in memory.",
+      "weight": "high"
+    },
+    {
+      "id": "kp7",
+      "point": "Acceptance rate (fraction of drafted tokens accepted) is the key metric determining real-world speedup; it varies by workload -- code tends to have higher acceptance rates than free-form prose.",
+      "weight": "high"
+    },
+    {
+      "id": "kp8",
+      "point": "The speedup from a given acceptance rate depends on hardware's compute-to-bandwidth ratio; CUDA GPUs and Apple Silicon/Metal don't necessarily get the same speedup from the same acceptance rate, so it must be measured directly rather than assumed.",
+      "weight": "high"
+    }
+  ],
+  "notes": "Not all points need verbatim phrasing -- score on whether the summary's claims are substantively equivalent to each key point, not exact wording. Scoring performed offline by Opus (Stage 3), not automated here."
+}

@@ -1,0 +1,96 @@
+{
+  "unit_id": "katdev__iq4__B_review__B2_order_pricing__rep2",
+  "model": "katdev",
+  "quant": "iq4",
+  "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 10,
+    "wall_s": 283.48,
+    "ttft_ms_per_turn": [
+      50203,
+      7882,
+      3253,
+      2694,
+      2748,
+      3335,
+      2811,
+      3446,
+      1079,
+      3058
+    ],
+    "decode_tps_per_turn": [
+      7.8,
+      9.7,
+      10.8,
+      11.0,
+      11.5,
+      10.5,
+      11.3,
+      11.0,
+      10.3,
+      11.0
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 2178,
+      "prompt_total": 149377
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 9,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_091fc03aaffeBIO691VHH0mWzh",
+    "repo_dir": "./eval/runs/katdev__iq4__B_review__B2_order_pricing__rep2/repo",
+    "answer_file": "./eval/runs/katdev__iq4__B_review__B2_order_pricing__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 0,
+    "hallucinated": 0,
+    "recall": 0.0,
+    "precision": null,
+    "matched_ids": [],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "discount qualification logic is backwards - should use >= instead of <",
+        "closest_id": "b1_wrong_comparison_direction"
+      },
+      {
+        "finding": "default shipping value is negative (-5.0) which is unusual for shipping costs",
+        "closest_id": "b2_wrong_default_shipping"
+      },
+      {
+        "finding": "slice index skips first element instead of getting last n elements",
+        "closest_id": "b3_wrong_slice_for_tail"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 27.8,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "katdeviq4",
+    "real_ctx": 81920,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T02:59:42.129406+00:00",
+  "duration_s": 284.4,
+  "schema_version": 1
+}

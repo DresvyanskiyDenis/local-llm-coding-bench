@@ -1,0 +1,13 @@
+{
+  "id": "A1_events_sessionize",
+  "suite": "A_coding",
+  "title": "Sessionize a user-events log by inactivity gap (pandas)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 2200,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": ["pandas"]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "unit_id": "opus__q4__D_text__D2_dedup_approaches__rep1",
+  "model": "opus",
+  "quant": "q4",
+  "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "suite": "D_text",
+  "task": "D2_dedup_approaches",
+  "rep": 1,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 1,
+    "wall_s": 39.91,
+    "ttft_ms_per_turn": [
+      24701
+    ],
+    "decode_tps_per_turn": [
+      70.2
+    ],
+    "tokens": {
+      "think": 286,
+      "answer": 982,
+      "prompt_total": 17452
+    },
+    "think_answer_ratio": 0.291,
+    "tool_calls": {
+      "total": 0,
+      "malformed": 0
+    },
+    "termination": "no_tools",
+    "session_id": "ses_0a2715ff0ffehP33P5YrCJneq6",
+    "repo_dir": "./eval/runs/opus__q4__D_text__D2_dedup_approaches__rep1/repo",
+    "answer_file": "./eval/runs/opus__q4__D_text__D2_dedup_approaches__rep1/answer.txt"
+  },
+  "grade": null,
+  "ram": {
+    "rss_peak_gb": 24.0,
+    "free_gb_min": 1.4,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "opus4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T22:17:35.479445+00:00",
+  "duration_s": 40.5,
+  "schema_version": 1
+}

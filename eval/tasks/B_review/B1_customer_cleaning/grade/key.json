@@ -1,0 +1,62 @@
+{
+  "bugs": [
+    {
+      "id": "b1_missing_none_check",
+      "location": {"file": "src/pipeline.py", "line_start": 6, "line_end": 8},
+      "function": "normalize_email",
+      "description": "normalize_email calls email.strip() without checking for None first; a None email raises AttributeError instead of being handled.",
+      "synonyms": [
+        "missing none check",
+        "no null check",
+        "will crash on none",
+        "attributeerror if email is none",
+        "doesn't handle none/null email",
+        "no guard for missing email",
+        "none email",
+        "null email",
+        "email could be none",
+        "raises attributeerror",
+        "strip on none"
+      ],
+      "severity": "medium"
+    },
+    {
+      "id": "b2_mutable_default_arg",
+      "location": {"file": "src/pipeline.py", "line_start": 24, "line_end": 29},
+      "function": "tag_high_value",
+      "description": "tags: list[str] = [] is a mutable default argument; the same list object is reused and accumulates tags across calls.",
+      "synonyms": [
+        "mutable default argument",
+        "mutable default",
+        "shared mutable default",
+        "default list is shared between calls",
+        "classic python gotcha with default list",
+        "tags list persists across calls",
+        "default argument is a mutable list",
+        "list default accumulates",
+        "same list reused",
+        "default parameter mutable"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "b3_off_by_one_loop",
+      "location": {"file": "src/pipeline.py", "line_start": 41, "line_end": 41},
+      "function": "average_spend_excluding_first",
+      "description": "range(2, len(values)) skips the first TWO records instead of just the first one, per the docstring which says only the very first (header) record should be excluded.",
+      "synonyms": [
+        "off by one in range",
+        "off-by-one",
+        "loop starts one index too late",
+        "excludes two records instead of one",
+        "skips the first two",
+        "skips two records",
+        "should be range(1, len(values))",
+        "range should start at 1",
+        "wrong start index",
+        "starts at index 2"
+      ],
+      "severity": "medium"
+    }
+  ]
+}

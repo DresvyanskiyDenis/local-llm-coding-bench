@@ -1,0 +1,66 @@
+{
+  "bugs": [
+    {
+      "id": "b1_wrong_comparison_direction",
+      "location": {"file": "src/pricing.py", "line_start": 20, "line_end": 20},
+      "function": "discount_rate_for_subtotal",
+      "description": "The comparison `subtotal < threshold` is backwards: it assigns a tier's rate when the subtotal is BELOW the threshold, so small subtotals end up overwritten by the highest tier's rate last. Per the docstring (inclusive of threshold, highest qualifying tier wins), it should be `subtotal >= threshold`.",
+      "synonyms": [
+        "comparison operator is backwards",
+        "comparison is backwards",
+        "should be >= not <",
+        "should be >=",
+        "wrong comparison direction",
+        "comparison direction is wrong",
+        "logic is inverted",
+        "condition is inverted",
+        "small orders get the biggest discount",
+        "small subtotals get the highest discount",
+        "tier discount is reversed",
+        "discount logic reversed",
+        "less than should be greater than"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "b2_wrong_default_shipping",
+      "location": {"file": "src/pricing.py", "line_start": 30, "line_end": 30},
+      "function": "compute_order_total",
+      "description": "The default `shipping=-5.0` is a negative value; a real shipping cost default should be positive (e.g. +5.0). As written, every order silently gets a $5 discount instead of a $5 shipping charge when the caller omits shipping.",
+      "synonyms": [
+        "wrong default value",
+        "wrong default",
+        "shipping default should be positive",
+        "default shipping is negative",
+        "negative default shipping",
+        "sign is flipped on default shipping",
+        "negative shipping cost doesn't make sense",
+        "default shipping subtracts instead of adds",
+        "shipping default is -5",
+        "shipping should not be negative"
+      ],
+      "severity": "medium"
+    },
+    {
+      "id": "b3_wrong_slice_for_tail",
+      "location": {"file": "src/pricing.py", "line_start": 42, "line_end": 42},
+      "function": "last_n_orders_average",
+      "description": "`order_totals[1:n]` does not select the last n elements of the list; it skips the first element and takes indices 1..n-1 from the front. The correct tail slice is `order_totals[-n:]`.",
+      "synonyms": [
+        "wrong slice indices",
+        "wrong slice",
+        "incorrect slice",
+        "should use order_totals[-n:]",
+        "should be [-n:]",
+        "doesn't take the last n elements",
+        "does not take the last n",
+        "not the last n",
+        "off by one / wrong slice",
+        "slices from the front instead of the back",
+        "takes from the front",
+        "slices the wrong end"
+      ],
+      "severity": "medium"
+    }
+  ]
+}

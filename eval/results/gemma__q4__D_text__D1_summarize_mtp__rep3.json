@@ -1,0 +1,61 @@
+{
+  "unit_id": "gemma__q4__D_text__D1_summarize_mtp__rep3",
+  "model": "gemma",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/gemma-4-26B-A4B-it-GGUF",
+  "suite": "D_text",
+  "task": "D1_summarize_mtp",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/gemma-4-26B-A4B-it-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 4,
+    "wall_s": 50.0,
+    "ttft_ms_per_turn": [
+      33514,
+      466,
+      null,
+      3656
+    ],
+    "decode_tps_per_turn": [
+      54.9,
+      43.6,
+      null,
+      42.1
+    ],
+    "tokens": {
+      "think": 122,
+      "answer": 488,
+      "prompt_total": 67802
+    },
+    "think_answer_ratio": 0.25,
+    "tool_calls": {
+      "total": 3,
+      "malformed": 1
+    },
+    "termination": "clean",
+    "session_id": "ses_09d8afe06ffeE8Zy2sYGwW4rGJ",
+    "repo_dir": "./eval/runs/gemma__q4__D_text__D1_summarize_mtp__rep3/repo",
+    "answer_file": "./eval/runs/gemma__q4__D_text__D1_summarize_mtp__rep3/answer.txt"
+  },
+  "grade": null,
+  "ram": {
+    "rss_peak_gb": 19.8,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 1800
+  },
+  "served": {
+    "serve_name": "gemma4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T21:07:42.613165+00:00",
+  "duration_s": 50.7,
+  "schema_version": 1
+}

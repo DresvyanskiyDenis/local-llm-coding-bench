@@ -1,0 +1,85 @@
+{
+  "unit_id": "glm__q5__A_coding__A1_events_sessionize__rep3",
+  "model": "glm",
+  "quant": "q5",
+  "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+  "suite": "A_coding",
+  "task": "A1_events_sessionize",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/GLM-4.7-Flash-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 11,
+    "wall_s": 151.5,
+    "ttft_ms_per_turn": [
+      40129,
+      2573,
+      2256,
+      1183,
+      1185,
+      2097,
+      1906,
+      1453,
+      857,
+      2160,
+      4577
+    ],
+    "decode_tps_per_turn": [
+      37.0,
+      32.5,
+      31.3,
+      29.9,
+      28.6,
+      29.1,
+      28.0,
+      33.2,
+      28.6,
+      27.5,
+      29.6
+    ],
+    "tokens": {
+      "think": 1593,
+      "answer": 2783,
+      "prompt_total": 200359
+    },
+    "think_answer_ratio": 0.572,
+    "tool_calls": {
+      "total": 10,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0a2562ae2ffeoTSUhCwfIdUhpq",
+    "repo_dir": "./eval/runs/glm__q5__A_coding__A1_events_sessionize__rep3/repo",
+    "answer_file": "./eval/runs/glm__q5__A_coding__A1_events_sessionize__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 9,
+    "failed": 2,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 0.818,
+    "failure_class": "assertion",
+    "duration_s": 0.393,
+    "detail": "2 failed: test_session_boundaries"
+  },
+  "ram": {
+    "rss_peak_gb": 26.8,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "glm",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T22:47:18.523239+00:00",
+  "duration_s": 153.3,
+  "schema_version": 1
+}

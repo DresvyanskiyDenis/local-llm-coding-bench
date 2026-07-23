@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Eval scratch — per-run working copies are regenerable and huge; only eval/results/ is tracked
+eval/runs/
+eval/runs_corrupted_night3/
+eval/results_corrupted_night3/
+
+# Operational logs (may contain endpoint keys) — never track
+eval/results/logs/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local model weights / caches — never commit multi-GB GGUFs
+*.gguf

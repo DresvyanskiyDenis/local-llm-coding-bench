@@ -1,0 +1,86 @@
+{
+  "unit_id": "qwopus__q5__B_review__B2_order_pricing__rep3",
+  "model": "qwopus",
+  "quant": "q5",
+  "opencode_model_id": "Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 5,
+    "wall_s": 63.52,
+    "ttft_ms_per_turn": [
+      17736,
+      8393,
+      313,
+      null,
+      415
+    ],
+    "decode_tps_per_turn": [
+      61.6,
+      55.8,
+      50.5,
+      null,
+      51.3
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 1806,
+      "prompt_total": 70890
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 4,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_091d3fb44ffeAiQJC9uBwy9NE4",
+    "repo_dir": "./eval/runs/qwopus__q5__B_review__B2_order_pricing__rep3/repo",
+    "answer_file": "./eval/runs/qwopus__q5__B_review__B2_order_pricing__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 0,
+    "hallucinated": 0,
+    "recall": 0.0,
+    "precision": null,
+    "matched_ids": [],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "Comparison operator is inverted: 'subtotal < threshold' should be 'subtotal >= threshold'. This causes the function to assign discount rates when the subtotal does NOT meet a tier's threshold, and skip it when it does \u2014 producing completely wrong discounts (e.g., subtotal=50 gets 15%, subtotal=1000 gets 0%)",
+        "closest_id": "b1_wrong_comparison_direction"
+      },
+      {
+        "finding": "Shipping default is negative (-5.0) instead of positive (+5.0). This reduces the order total by \u20ac5 rather than adding shipping cost, effectively giving customers a credit on top of their discount",
+        "closest_id": "b2_wrong_default_shipping"
+      },
+      {
+        "finding": "Slice 'order_totals[1:n]' skips the first element and takes from index 1 to n, but the docstring says it should return the most recent n orders (the tail). Should be 'order_totals[-n:]'",
+        "closest_id": "b3_wrong_slice_for_tail"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 27.1,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "qwopus",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T03:43:25.720402+00:00",
+  "duration_s": 64.5,
+  "schema_version": 1
+}

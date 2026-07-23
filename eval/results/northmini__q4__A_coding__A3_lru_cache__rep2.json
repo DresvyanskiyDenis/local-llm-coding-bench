@@ -1,0 +1,71 @@
+{
+  "unit_id": "northmini__q4__A_coding__A3_lru_cache__rep2",
+  "model": "northmini",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/North-Mini-Code-1.0-GGUF",
+  "suite": "A_coding",
+  "task": "A3_lru_cache",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/North-Mini-Code-1.0-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 4,
+    "wall_s": 60.44,
+    "ttft_ms_per_turn": [
+      29561,
+      1693,
+      577,
+      2421
+    ],
+    "decode_tps_per_turn": [
+      49.4,
+      53.7,
+      53.0,
+      53.4
+    ],
+    "tokens": {
+      "think": 487,
+      "answer": 1327,
+      "prompt_total": 67803
+    },
+    "think_answer_ratio": 0.367,
+    "tool_calls": {
+      "total": 3,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_09c70a07fffeGTitBYDNG2d7JV",
+    "repo_dir": "./eval/runs/northmini__q4__A_coding__A3_lru_cache__rep2/repo",
+    "answer_file": "./eval/runs/northmini__q4__A_coding__A3_lru_cache__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 1.0,
+    "failure_class": null,
+    "duration_s": 0.025,
+    "detail": "all passed"
+  },
+  "ram": {
+    "rss_peak_gb": 26.1,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "northmini4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-15T02:16:07.781485+00:00",
+  "duration_s": 61.3,
+  "schema_version": 1
+}

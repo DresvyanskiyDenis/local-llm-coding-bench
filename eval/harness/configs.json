@@ -1,0 +1,189 @@
+[
+  {
+    "model": "qwen",
+    "quant": "q5",
+    "serve_name": "qwen",
+    "opencode_model_id": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": true,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "qwen",
+    "quant": "q4",
+    "serve_name": "qwen4",
+    "opencode_model_id": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": true,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "opus",
+    "quant": "q5",
+    "serve_name": "opus",
+    "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "opus",
+    "quant": "q4",
+    "serve_name": "opus4",
+    "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "glm",
+    "quant": "q5",
+    "serve_name": "glm",
+    "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "glm",
+    "quant": "q4",
+    "serve_name": "glm4",
+    "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "northmini",
+    "quant": "q5",
+    "serve_name": "northmini",
+    "opencode_model_id": "unsloth/North-Mini-Code-1.0-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "off",
+    "broken": false
+  },
+  {
+    "model": "northmini",
+    "quant": "q4",
+    "serve_name": "northmini4",
+    "opencode_model_id": "unsloth/North-Mini-Code-1.0-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "off",
+    "broken": false
+  },
+  {
+    "model": "gpt-oss",
+    "quant": "mxfp4",
+    "serve_name": "gpt-oss",
+    "opencode_model_id": "gpt-oss-20b",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "gemma",
+    "quant": "q5",
+    "serve_name": "gemma",
+    "opencode_model_id": "unsloth/gemma-4-26B-A4B-it-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "gemma",
+    "quant": "q4",
+    "serve_name": "gemma4",
+    "opencode_model_id": "unsloth/gemma-4-26B-A4B-it-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "on",
+    "broken": false
+  },
+  {
+    "model": "qwen27",
+    "quant": "q5",
+    "serve_name": "qwen27",
+    "opencode_model_id": "froggeric/Qwen3.6-27B-MTP-GGUF",
+    "real_ctx": 65536,
+    "probe_max_ctx": 65536,
+    "mtp": true,
+    "reasoning": "on",
+    "broken": true
+  },
+  {
+    "model": "qwen27",
+    "quant": "q4",
+    "serve_name": "qwen27q4",
+    "opencode_model_id": "froggeric/Qwen3.6-27B-MTP-GGUF",
+    "real_ctx": 90112,
+    "probe_max_ctx": 80000,
+    "mtp": true,
+    "reasoning": "on",
+    "broken": true
+  },
+  {
+    "model": "katdev",
+    "quant": "q4",
+    "serve_name": "katdev",
+    "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+    "real_ctx": 65536,
+    "probe_max_ctx": 65536,
+    "mtp": false,
+    "reasoning": "off",
+    "broken": false
+  },
+  {
+    "model": "katdev",
+    "quant": "iq4",
+    "serve_name": "katdeviq4",
+    "opencode_model_id": "bartowski/Kwaipilot_KAT-Dev-GGUF",
+    "real_ctx": 81920,
+    "probe_max_ctx": 80000,
+    "mtp": false,
+    "reasoning": "off",
+    "broken": false
+  },
+  {
+    "model": "qwopus",
+    "quant": "q5",
+    "serve_name": "qwopus",
+    "opencode_model_id": "Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": true,
+    "reasoning": "off",
+    "broken": false
+  },
+  {
+    "model": "ornith",
+    "quant": "q4",
+    "serve_name": "ornith",
+    "opencode_model_id": "tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF",
+    "real_ctx": 131072,
+    "probe_max_ctx": 80000,
+    "mtp": true,
+    "reasoning": "off",
+    "broken": false
+  }
+]

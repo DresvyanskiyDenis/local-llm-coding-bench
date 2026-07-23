@@ -1,0 +1,51 @@
+{
+  "model": "unsloth/GLM-4.7-Flash-GGUF",
+  "base_url": "http://127.0.0.1:8888/v1",
+  "rounds": 1,
+  "results": [
+    {
+      "round": 1,
+      "scenario": "1. single tool call",
+      "result": "pass",
+      "reason": "correct tool + arguments",
+      "tokps": 72.1
+    },
+    {
+      "round": 1,
+      "scenario": "2. nested-object args",
+      "result": "pass",
+      "reason": "correct tool + properly nested arguments",
+      "tokps": 70.6
+    },
+    {
+      "round": 1,
+      "scenario": "3. multi-turn chain",
+      "result": "pass",
+      "reason": "used tool result correctly to answer with the line count",
+      "tokps": 70.8
+    },
+    {
+      "round": 1,
+      "scenario": "4. parallel tool calls",
+      "result": "pass",
+      "reason": "both files requested via parallel tool calls",
+      "tokps": 71.5
+    },
+    {
+      "round": 1,
+      "scenario": "5. control (no tool)",
+      "result": "pass",
+      "reason": "answered directly without a spurious tool call",
+      "tokps": 72.2
+    },
+    {
+      "round": 1,
+      "scenario": "6. long context + tool",
+      "result": "pass",
+      "reason": "correct tool + arguments",
+      "tokps": 55.7
+    }
+  ],
+  "overall_tools_verdict": "pass",
+  "median_tokens_per_sec": 71.2
+}

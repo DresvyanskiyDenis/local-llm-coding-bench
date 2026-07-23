@@ -1,0 +1,198 @@
+#!/bin/bash
+# Canonical Unsloth Studio launch on :8888 for VS Code Copilot (BYOK) / OpenCode.
+# Usage: unsloth-serve [ornith|gemma|qwopus|opus|glm|northmini|qwen|gpt-oss]   (default: qwen)
+# One model at a time — 36 GB unified holds exactly one of these. Stop the running
+# one (Ctrl-C) before starting another; :8888 in-use will fail loud.
+# Fleet = the 8 recommendable models from the benchmark leaderboard, ranked
+# ornith #1 → gpt-oss #9. Start with
+# `unsloth-serve ornith` (benchmark #1, no weak axis); `qwen` stays the no-arg
+# default (most-proven high-RAM daily driver). One model at a time on :8888.
+set -euo pipefail
+
+PORT=8888
+STUDIO="$HOME/.local/bin/unsloth"
+LLAMA="$HOME/.unsloth/llama.cpp/llama-server"
+HUB="$HOME/.cache/huggingface/hub"
+LLAMA_LOGDIR="$HOME/.unsloth/studio/logs/llama-server"
+
+# --- inline prefill/gen progress bar for Studio-served models ------------------
+# Studio hides llama-server's native stdout in a logfile and prints only its JSON
+# to this terminal. studio_run() tails the *new* logfile in the background and
+# echoes the incremental "prompt processing ... progress = 0.XX" line (LM Studio-
+# style bar) + gen-speed here, then runs studio in the foreground. On exit it
+# kills the tailer. Direct-served models (gpt-oss/northmini/ornith/qwopus) print
+# this to the terminal already, so they keep plain `exec` and skip this.
+TAILER_PID=""
+_cleanup_tailer() {
+  [ -n "$TAILER_PID" ] || return 0
+  pkill -P "$TAILER_PID" 2>/dev/null || true
+  kill "$TAILER_PID" 2>/dev/null || true
+}
+
+studio_run() {
+  trap _cleanup_tailer EXIT INT TERM
+  local before; before=$(ls "$LLAMA_LOGDIR"/*.log 2>/dev/null || true)
+  {
+    # wait up to ~60s for the *new* log Studio creates on this launch
+    local newlog="" i=0 f
+    while [ "$i" -lt 120 ]; do
+      for f in "$LLAMA_LOGDIR"/*.log; do
+        [ -e "$f" ] || continue
+        printf '%s\n' "$before" | grep -qxF "$f" || { newlog="$f"; break; }
+      done
+      [ -n "$newlog" ] && break
+      sleep 0.5; i=$((i + 1))
+    done
+    [ -n "$newlog" ] && tail -n0 -F "$newlog" 2>/dev/null | grep --line-buffered "print_timing"
+  } &
+  TAILER_PID=$!
+  "$STUDIO" studio run "$@"
+}
+
+case "${1:-qwen}" in
+  ornith)
+    # #1 OVERALL (benchmark 88.3, no weak axis). Ornith-1.0-35B MTP-graft (tashfene) —
+    # qwen35moe (MoE, 3B active), same family as qwopus. An MTP head GRAFTED from
+    # Qwen3.6-35B-A3B-MTP onto the Ornith-1.0 base; author states output is identical to
+    # base Ornith by construction, the graft only adds speculative-decode speed. NON-THINKING
+    # (standard generation) → --reasoning off, same lane as qwopus/northmini. Tool-calls via
+    # the model's own jinja template (--jinja REQUIRED). Third-party GGUF → direct llama-server
+    # driving the MTP head via --spec-type draft-mtp; author's recommended draft depth is
+    # n-max 2. Author's serving flags: -ub 1024 -fa on -ctk/-ctv q8_0 -c 131072. Single quant
+    # Q4_K_M (~21.7 GB) + q8_0 KV @131k (~2 GB) ~= 23.7 GB → comfortably under the 32 GB wall.
+    T=$(ls "$HUB"/models--tashfene--Ornith-1.0-35B-MTP-Q4_K_M-GGUF/snapshots/*/ornith-1.0-35b-MTP-graft-Q4_K_M.gguf | head -1)
+    exec "$LLAMA" \
+      --model "$T" \
+      --alias tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF \
+      --host 127.0.0.1 --port "$PORT" \
+      -c 131072 -ngl 99 -ctk q8_0 -ctv q8_0 -ub 1024 \
+      --flash-attn on \
+      --spec-type draft-mtp --spec-draft-n-max 2 \
+      --jinja --reasoning off \
+      --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --presence-penalty 1.5 \
+      --chat-template-kwargs '{"enable_thinking":false}'
+    ;;
+  gemma)
+    # #2 (benchmark 87.1 — fastest + cleanest tools of the fleet). Gemma-4 26B-A4B (MoE,
+    # 4B active) — Studio-served (unsloth repo, like glm): Studio resolves the variant, applies
+    # the template, and auto-adds MTP *if it can wire the head*. NOTE: unlike Qwen's baked-in
+    # MTP, Gemma-4's MTP ("gemma4-assistant" head) ships as a SEPARATE GGUF
+    # (mtp-gemma-4-26B-A4B-it.gguf) — VERIFY on first load whether Studio engages draft-mtp; if
+    # not it runs non-MTP (fine, like glm). --no-mmproj = text-only (Gemma-4 is multimodal; drop
+    # vision). --reasoning on: the template ships think markers. UD-Q5_K_XL (~21.2 GB) — MoE +
+    # sliding-window attn → KV is cheap, 131072 fits easily. Caveat: can run away on reasoning
+    # (a few timeouts per quant in the bench) — keep an eye on long tasks.
+    studio_run \
+      --model unsloth/gemma-4-26B-A4B-it-GGUF \
+      --gguf-variant UD-Q5_K_XL \
+      --disable-tools --parallel 1 -p "$PORT" \
+      --max-seq-length 131072 -ngl 99 -ctk q8_0 \
+      --no-mmproj --reasoning on
+    ;;
+  qwopus)
+    # #3 (benchmark 87.0 — best pure coder, cleanest tool-calls of the coding lane). Qwopus3.6
+    # Coder + MTP — Jackrong's CODING fine-tune of Qwen3.6-35B-A3B that KEEPS the embedded MTP
+    # head. THINKING-OFF by the author's design (token-efficient agentic-coding lane). Coding-
+    # SFT'd for Codex/OpenHands/Claude-Code/OpenCode harnesses with tool-call stability as a
+    # stated design goal. Third-party repo → direct llama-server driving the MTP head explicitly
+    # via --spec-type draft-mtp. qwen35moe arch (MoE, 3B active) → cheap KV, full -c 131072 fits.
+    # VISION OFF: mmproj NOT loaded → text-only by omission. Q5_K_M (~25.3 GB) + q8_0 KV @131k
+    # (~2 GB) ~= 27.4 GB → under the 32 GB wall (drop to Q4_K_M if RSS pressures).
+    T=$(ls "$HUB"/models--Jackrong--Qwopus3.6-35B-A3B-Coder-MTP-GGUF/snapshots/*/Qwopus3.6-35B-A3B-Coder-MTP-Q5_K_M.gguf | head -1)
+    exec "$LLAMA" \
+      --model "$T" \
+      --alias Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF \
+      --host 127.0.0.1 --port "$PORT" \
+      -c 131072 -ngl 99 -ctk q8_0 -ctv q8_0 \
+      --flash-attn on \
+      --spec-type draft-mtp --spec-draft-n-max 3 \
+      --jinja --reasoning off \
+      --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --presence-penalty 1.5 \
+      --chat-template-kwargs '{"enable_thinking":false}'
+    ;;
+  opus)
+    # #4 (benchmark 86.6 — the safest, most-proven daily driver: top-3 coding, cleanest-tier
+    # tools, thinking-on, boring/reliable). Opus 4.6 reasoning distill — Qwen3.6 arch, same
+    # thinking template as qwen. -ctk q8_0 (K only; Studio mirrors to V and mangles the short
+    # -ctv): the earlier "f16 KV is fine with one model loaded" assumption FAILED — Q5_K_M
+    # (~23 GB) + f16 KV @131072 hit the 36 GB wall and thrashed swap. q8_0 KV is near-lossless
+    # (safe for a reasoning model). Q5_K_M kept for max quality.
+    studio_run \
+      --model hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF \
+      --gguf-variant Q5_K_M \
+      --disable-tools --parallel 1 -p "$PORT" \
+      --max-seq-length 131072 -ngl 99 -ctk q8_0 \
+      --no-mmproj --reasoning on \
+      --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 \
+      --chat-template-kwargs '{"enable_thinking":true,"preserve_thinking":false}'
+    ;;
+  glm)
+    # #5 (benchmark 84.9 — high-quality 2nd coding driver, slower). GLM-4.7-Flash — Studio-
+    # served, NON-MTP. The GLM-MTP quants need the unmerged llama.cpp PR #24868 (MTP head
+    # support for GLM), so this UD-Q5_K_XL is the plain (non-MTP) variant the bundled llama.cpp
+    # serves today. No --spec-type. UD-Q5_K_XL (~21.7 GB). Context narrowed 131072 -> 60000 to
+    # match OpenCode's limit.context=60000 with auto-compact at 55K — GLM was looping/degrading
+    # at the wider window. Native is 202752 if ever needed. -ctk q8_0: for GLM-4, q8_0 is the
+    # SAFE KV quant — q4_0/q4_1/q5_0 break GLM output, q8_0 works and is near-lossless. Studio
+    # mirrors K→V.
+    studio_run \
+      --model unsloth/GLM-4.7-Flash-GGUF \
+      --gguf-variant UD-Q5_K_XL \
+      --disable-tools --parallel 1 -p "$PORT" \
+      --max-seq-length 60000 -ngl 99 -ctk q8_0 \
+      --no-mmproj --reasoning on
+    ;;
+  northmini)
+    # #6 (benchmark 83.7 — agentic, trained for OpenCode). North Mini Code 1.0 (Cohere) —
+    # 30B-A3B MoE, cohere2moe arch. Direct serve, not Studio: honor the model's OWN embedded
+    # cohere2moe chat/tool template via --jinja (the tool-call template needed post-merge fixes
+    # upstream; trust the GGUF's template over Studio's kwargs injection). No MTP head → plain
+    # gen, no --spec-type. cohere2moe merged in llama.cpp b9626 (PR #24260). UD-Q5_K_XL
+    # (~23 GB).
+    T=$(ls "$HUB"/models--unsloth--North-Mini-Code-1.0-GGUF/snapshots/*/North-Mini-Code-1.0-UD-Q5_K_XL.gguf | head -1)
+    exec "$LLAMA" \
+      --model "$T" \
+      --alias unsloth/North-Mini-Code-1.0-GGUF \
+      --host 127.0.0.1 --port "$PORT" \
+      -c 131072 -ngl 99 -ctk q8_0 -ctv q8_0 \
+      --flash-attn on --jinja
+    ;;
+  qwen)
+    # #7 (benchmark 83.0 — highest raw coding & prose, but a 28-32% malformed-tool retry tax).
+    # No-arg DEFAULT and the most-proven high-RAM driver. Studio auto-adds MTP speculative
+    # decoding (ngram-mod,draft-mtp). Only -ctk q8_0 (NO -ctv): Studio mangles the short -ctv ->
+    # -ct, which the updated bundled llama.cpp now rejects fatally; Studio mirrors -ctk to V, so
+    # KV stays q8_0. UD-Q5_K_S (~24 GB) — max quality within the 36 GB wall.
+    studio_run \
+      --model unsloth/Qwen3.6-35B-A3B-MTP-GGUF \
+      --gguf-variant UD-Q5_K_S \
+      --disable-tools --parallel 1 -p "$PORT" \
+      -c 131072 -ngl 99 -ctk q8_0 \
+      --no-mmproj --reasoning on \
+      --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 \
+      --chat-template-kwargs '{"enable_thinking":true,"preserve_thinking":false}'
+    ;;
+  gpt-oss)
+    # #9 (benchmark 77.1 — the tiny-RAM pick; everything else runs 24-28 GB, this runs ~13.6 GB).
+    # gpt-oss-20b (native MXFP4, ~12 GB) — direct llama-server. Uses OpenAI's Harmony response
+    # format, exposed through the model's OWN jinja chat template, so --jinja is REQUIRED: it's
+    # how tool calls and the analysis/final reasoning channels get parsed — without it the
+    # harmony channels leak as raw text and tool calls break. Sampling per OpenAI + Unsloth +
+    # llama.cpp guidance: temp 1.0, top-p 1.0, top-k 0, NO repetition penalty. reasoning_effort=
+    # high via --chat-template-kwargs. Native 128k ctx; -ctk q8_0 for fleet-wide consistency.
+    T=$(ls "$HUB"/models--ggml-org--gpt-oss-20b-GGUF/snapshots/*/gpt-oss-20b-mxfp4.gguf | head -1)
+    exec "$LLAMA" \
+      --model "$T" \
+      --alias gpt-oss-20b \
+      --host 127.0.0.1 --port "$PORT" \
+      -c 131072 -ngl 99 -ctk q8_0 \
+      --jinja \
+      --temp 1.0 --top-p 1.0 --top-k 0 \
+      --chat-template-kwargs '{"reasoning_effort":"high"}'
+    ;;
+  *)
+    echo "usage: unsloth-serve [ornith|gemma|qwopus|opus|glm|northmini|qwen|gpt-oss]   (default qwen, serves on :$PORT)" >&2
+    echo "  Ranked by the benchmark leaderboard — start with 'ornith' (#1)." >&2
+    exit 1
+    ;;
+esac

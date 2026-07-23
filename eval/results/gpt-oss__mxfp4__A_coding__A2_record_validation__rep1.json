@@ -1,0 +1,79 @@
+{
+  "unit_id": "gpt-oss__mxfp4__A_coding__A2_record_validation__rep1",
+  "model": "gpt-oss",
+  "quant": "mxfp4",
+  "opencode_model_id": "gpt-oss-20b",
+  "suite": "A_coding",
+  "task": "A2_record_validation",
+  "rep": 1,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "gpt-oss-20b",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "timeout",
+    "turns": 8,
+    "wall_s": 900.03,
+    "ttft_ms_per_turn": [
+      8749,
+      1046,
+      2707,
+      509,
+      488,
+      528,
+      1787,
+      907
+    ],
+    "decode_tps_per_turn": [
+      9.8,
+      9.5,
+      13.1,
+      29.3,
+      27.0,
+      22.2,
+      21.7,
+      null
+    ],
+    "tokens": {
+      "think": 6555,
+      "answer": 6645,
+      "prompt_total": 74946
+    },
+    "think_answer_ratio": 0.986,
+    "tool_calls": {
+      "total": 7,
+      "malformed": 0
+    },
+    "termination": "hit_timeout",
+    "session_id": "ses_09d2d3004ffe3PA7R7wH2dKlF3",
+    "repo_dir": "./eval/runs/gpt-oss__mxfp4__A_coding__A2_record_validation__rep1/repo",
+    "answer_file": "./eval/runs/gpt-oss__mxfp4__A_coding__A2_record_validation__rep1/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 0,
+    "failed": 19,
+    "errors": 0,
+    "total": 19,
+    "pass_rate": 0.0,
+    "failure_class": "assertion",
+    "duration_s": 0.076,
+    "detail": "19 failed: test_valid_record_has_no_errors"
+  },
+  "ram": {
+    "rss_peak_gb": 13.6,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "gpt-oss",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T22:50:10.231768+00:00",
+  "duration_s": 902.0,
+  "schema_version": 1
+}

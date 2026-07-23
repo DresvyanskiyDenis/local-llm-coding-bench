@@ -1,0 +1,13 @@
+{
+  "id": "A4_int_to_roman",
+  "suite": "A_coding",
+  "title": "Integer to Roman numeral (HumanEval+-style, strong hidden test set)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1200,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": []
+  }
+}

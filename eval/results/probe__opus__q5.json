@@ -1,0 +1,175 @@
+{
+  "model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "base_url": "http://127.0.0.1:8888/v1",
+  "rounds": 3,
+  "points": [
+    {
+      "target_tokens": 2000,
+      "actual_prompt_tokens": 1513,
+      "cold_samples": [
+        {
+          "prompt_tokens": 1513,
+          "predicted_tokens": 200,
+          "prefill_tps": 991.4,
+          "decode_tps": 64.9,
+          "ttft_ms": 1526.1,
+          "wall_s": 4.59,
+          "mtp": null,
+          "round": 1
+        },
+        {
+          "prompt_tokens": 1513,
+          "predicted_tokens": 175,
+          "prefill_tps": 1028.9,
+          "decode_tps": 77.2,
+          "ttft_ms": 1470.5,
+          "wall_s": 3.72,
+          "mtp": null,
+          "round": 2
+        },
+        {
+          "prompt_tokens": 1514,
+          "predicted_tokens": 195,
+          "prefill_tps": 995.6,
+          "decode_tps": 68.2,
+          "ttft_ms": 1520.6,
+          "wall_s": 4.36,
+          "mtp": null,
+          "round": 3
+        }
+      ],
+      "prefill_tps_median": 995.6,
+      "decode_tps_median": 68.2,
+      "ttft_ms_median": 1520.6,
+      "errors": [],
+      "mtp_accept_rate_median": null
+    },
+    {
+      "target_tokens": 8000,
+      "actual_prompt_tokens": 5965,
+      "cold_samples": [
+        {
+          "prompt_tokens": 5965,
+          "predicted_tokens": 200,
+          "prefill_tps": 1011.0,
+          "decode_tps": 68.6,
+          "ttft_ms": 5900.3,
+          "wall_s": 8.8,
+          "mtp": null,
+          "round": 1
+        },
+        {
+          "prompt_tokens": 5967,
+          "predicted_tokens": 200,
+          "prefill_tps": 1017.7,
+          "decode_tps": 76.7,
+          "ttft_ms": 5863.1,
+          "wall_s": 8.46,
+          "mtp": null,
+          "round": 2
+        },
+        {
+          "prompt_tokens": 5966,
+          "predicted_tokens": 200,
+          "prefill_tps": 968.2,
+          "decode_tps": 79.0,
+          "ttft_ms": 6161.7,
+          "wall_s": 8.68,
+          "mtp": null,
+          "round": 3
+        }
+      ],
+      "prefill_tps_median": 1011.0,
+      "decode_tps_median": 76.7,
+      "ttft_ms_median": 5900.3,
+      "errors": [],
+      "mtp_accept_rate_median": null
+    },
+    {
+      "target_tokens": 24000,
+      "actual_prompt_tokens": 17923,
+      "cold_samples": [
+        {
+          "prompt_tokens": 17923,
+          "predicted_tokens": 176,
+          "prefill_tps": 846.0,
+          "decode_tps": 67.4,
+          "ttft_ms": 21186.0,
+          "wall_s": 23.78,
+          "mtp": null,
+          "round": 1
+        },
+        {
+          "prompt_tokens": 17921,
+          "predicted_tokens": 200,
+          "prefill_tps": 841.8,
+          "decode_tps": 98.5,
+          "ttft_ms": 21287.8,
+          "wall_s": 23.31,
+          "mtp": null,
+          "round": 2
+        },
+        {
+          "prompt_tokens": 17922,
+          "predicted_tokens": 200,
+          "prefill_tps": 869.7,
+          "decode_tps": 143.6,
+          "ttft_ms": 20606.4,
+          "wall_s": 21.99,
+          "mtp": null,
+          "round": 3
+        }
+      ],
+      "prefill_tps_median": 846.0,
+      "decode_tps_median": 98.5,
+      "ttft_ms_median": 21186.0,
+      "errors": [],
+      "mtp_accept_rate_median": null
+    },
+    {
+      "target_tokens": 48000,
+      "actual_prompt_tokens": 35855,
+      "cold_samples": [
+        {
+          "prompt_tokens": 35855,
+          "predicted_tokens": 200,
+          "prefill_tps": 717.6,
+          "decode_tps": 52.1,
+          "ttft_ms": 49967.3,
+          "wall_s": 53.79,
+          "mtp": null,
+          "round": 1
+        },
+        {
+          "prompt_tokens": 35857,
+          "predicted_tokens": 187,
+          "prefill_tps": 623.3,
+          "decode_tps": 48.5,
+          "ttft_ms": 57525.2,
+          "wall_s": 61.36,
+          "mtp": null,
+          "round": 2
+        },
+        {
+          "prompt_tokens": 35856,
+          "predicted_tokens": 200,
+          "prefill_tps": 640.0,
+          "decode_tps": 53.1,
+          "ttft_ms": 56027.5,
+          "wall_s": 59.77,
+          "mtp": null,
+          "round": 3
+        }
+      ],
+      "prefill_tps_median": 640.0,
+      "decode_tps_median": 52.1,
+      "ttft_ms_median": 56027.5,
+      "errors": [],
+      "mtp_accept_rate_median": null
+    }
+  ],
+  "skipped_points": [
+    80000
+  ],
+  "max_ctx": 80000
+}

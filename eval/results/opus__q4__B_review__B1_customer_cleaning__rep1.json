@@ -1,0 +1,72 @@
+{
+  "unit_id": "opus__q4__B_review__B1_customer_cleaning__rep1",
+  "model": "opus",
+  "quant": "q4",
+  "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "suite": "B_review",
+  "task": "B1_customer_cleaning",
+  "rep": 1,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 2,
+    "wall_s": 51.79,
+    "ttft_ms_per_turn": [
+      28967,
+      1651
+    ],
+    "decode_tps_per_turn": [
+      72.6,
+      65.4
+    ],
+    "tokens": {
+      "think": 611,
+      "answer": 1290,
+      "prompt_total": 35623
+    },
+    "think_answer_ratio": 0.474,
+    "tool_calls": {
+      "total": 1,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0a27a6f21ffeXJd9I533hocjUw",
+    "repo_dir": "./eval/runs/opus__q4__B_review__B1_customer_cleaning__rep1/repo",
+    "answer_file": "./eval/runs/opus__q4__B_review__B1_customer_cleaning__rep1/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 2,
+    "hallucinated": 1,
+    "recall": 0.667,
+    "precision": 0.667,
+    "matched_ids": [
+      "b2_mutable_default_arg",
+      "b3_off_by_one_loop"
+    ],
+    "missed_ids": [
+      "b1_missing_none_check"
+    ],
+    "ambiguous": []
+  },
+  "ram": {
+    "rss_peak_gb": 24.0,
+    "free_gb_min": 1.4,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "opus4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T22:07:41.755004+00:00",
+  "duration_s": 52.5,
+  "schema_version": 1
+}

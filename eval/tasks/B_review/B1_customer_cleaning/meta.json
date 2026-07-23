@@ -1,0 +1,13 @@
+{
+  "id": "B1_customer_cleaning",
+  "suite": "B_review",
+  "title": "Planted-bug review: customer-record cleaning pipeline",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1500,
+  "entrypoint": "src/pipeline.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}"
+  }
+}

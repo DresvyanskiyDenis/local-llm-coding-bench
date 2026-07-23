@@ -1,0 +1,63 @@
+{
+  "unit_id": "gpt-oss__mxfp4__D_text__D1_summarize_mtp__rep2",
+  "model": "gpt-oss",
+  "quant": "mxfp4",
+  "opencode_model_id": "gpt-oss-20b",
+  "suite": "D_text",
+  "task": "D1_summarize_mtp",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "gpt-oss-20b",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 5,
+    "wall_s": 84.61,
+    "ttft_ms_per_turn": [
+      3071,
+      649,
+      697,
+      695,
+      3835
+    ],
+    "decode_tps_per_turn": [
+      16.3,
+      16.9,
+      17.1,
+      16.2,
+      17.7
+    ],
+    "tokens": {
+      "think": 785,
+      "answer": 1284,
+      "prompt_total": 45746
+    },
+    "think_answer_ratio": 0.611,
+    "tool_calls": {
+      "total": 4,
+      "malformed": 2
+    },
+    "termination": "clean",
+    "session_id": "ses_09cfbffabffeiK6H01CC6dJ2QK",
+    "repo_dir": "./eval/runs/gpt-oss__mxfp4__D_text__D1_summarize_mtp__rep2/repo",
+    "answer_file": "./eval/runs/gpt-oss__mxfp4__D_text__D1_summarize_mtp__rep2/answer.txt"
+  },
+  "grade": null,
+  "ram": {
+    "rss_peak_gb": 13.6,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "gpt-oss",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T23:43:53.816618+00:00",
+  "duration_s": 85.5,
+  "schema_version": 1
+}

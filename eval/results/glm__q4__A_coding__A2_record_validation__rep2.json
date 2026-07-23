@@ -1,0 +1,69 @@
+{
+  "unit_id": "glm__q4__A_coding__A2_record_validation__rep2",
+  "model": "glm",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+  "suite": "A_coding",
+  "task": "A2_record_validation",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/GLM-4.7-Flash-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 3,
+    "wall_s": 112.66,
+    "ttft_ms_per_turn": [
+      40928,
+      3921,
+      3561
+    ],
+    "decode_tps_per_turn": [
+      37.8,
+      34.0,
+      29.5
+    ],
+    "tokens": {
+      "think": 2015,
+      "answer": 2139,
+      "prompt_total": 52348
+    },
+    "think_answer_ratio": 0.942,
+    "tool_calls": {
+      "total": 2,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_0a215f5a6ffe6O9o5f66wy149D",
+    "repo_dir": "./eval/runs/glm__q4__A_coding__A2_record_validation__rep2/repo",
+    "answer_file": "./eval/runs/glm__q4__A_coding__A2_record_validation__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 8,
+    "failed": 11,
+    "errors": 0,
+    "total": 19,
+    "pass_rate": 0.421,
+    "failure_class": "assertion",
+    "duration_s": 0.036,
+    "detail": "11 failed: test_optional_field_missing_is_not_an_error"
+  },
+  "ram": {
+    "rss_peak_gb": 24.7,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "glm4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T23:57:26.459858+00:00",
+  "duration_s": 113.6,
+  "schema_version": 1
+}

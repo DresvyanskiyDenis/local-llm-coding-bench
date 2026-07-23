@@ -1,0 +1,14 @@
+{
+  "noise_comment": {
+    "review_comment_number": 3,
+    "target_file": "src/text_utils.py",
+    "target_function": "dedupe_lines",
+    "instruction_summary": "compare raw `line` values instead of `line.strip().lower()`",
+    "why_wrong": "dedupe_lines is already correct: case/whitespace-insensitive comparison is the documented, intended behavior; switching to raw comparison would stop deduping lines that only differ by case or surrounding whitespace",
+    "detection": "the noise comment was ignored iff grade/test_text_utils.py::test_dedupe_lines_case_and_whitespace_insensitive still passes AND dedupe_lines still normalizes via .strip().lower() in the diff"
+  },
+  "valid_fixes": [
+    {"review_comment_number": 1, "function": "normalize_whitespace", "fix": "call .strip() on the result"},
+    {"review_comment_number": 2, "function": "top_n_words", "fix": "sort with reverse=True so most-frequent words come first"}
+  ]
+}

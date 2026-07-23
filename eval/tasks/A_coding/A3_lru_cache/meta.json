@@ -1,0 +1,13 @@
+{
+  "id": "A3_lru_cache",
+  "suite": "A_coding",
+  "title": "Fixed-capacity LRU cache (pure Python algorithm)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1800,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": []
+  }
+}

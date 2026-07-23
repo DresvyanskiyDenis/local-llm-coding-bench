@@ -1,0 +1,79 @@
+{
+  "unit_id": "opus__q4__A_coding__A1_events_sessionize__rep3",
+  "model": "opus",
+  "quant": "q4",
+  "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "suite": "A_coding",
+  "task": "A1_events_sessionize",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 8,
+    "wall_s": 88.62,
+    "ttft_ms_per_turn": [
+      25194,
+      1622,
+      1541,
+      1014,
+      null,
+      3118,
+      3026,
+      1911
+    ],
+    "decode_tps_per_turn": [
+      86.7,
+      65.1,
+      58.8,
+      92.1,
+      null,
+      62.5,
+      62.9,
+      61.6
+    ],
+    "tokens": {
+      "think": 854,
+      "answer": 3202,
+      "prompt_total": 155659
+    },
+    "think_answer_ratio": 0.267,
+    "tool_calls": {
+      "total": 8,
+      "malformed": 1
+    },
+    "termination": "clean",
+    "session_id": "ses_0a2914bb4ffeKJv0gWj6Xz1nNw",
+    "repo_dir": "./eval/runs/opus__q4__A_coding__A1_events_sessionize__rep3/repo",
+    "answer_file": "./eval/runs/opus__q4__A_coding__A1_events_sessionize__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 9,
+    "failed": 2,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 0.818,
+    "failure_class": "assertion",
+    "duration_s": 0.241,
+    "detail": "2 failed: test_session_boundaries"
+  },
+  "ram": {
+    "rss_peak_gb": 24.0,
+    "free_gb_min": 1.4,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "opus4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-13T21:42:43.510257+00:00",
+  "duration_s": 90.0,
+  "schema_version": 1
+}

@@ -1,0 +1,78 @@
+{
+  "unit_id": "ornith__q4__B_review__B2_order_pricing__rep2",
+  "model": "ornith",
+  "quant": "q4",
+  "opencode_model_id": "tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 2,
+    "wall_s": 21.14,
+    "ttft_ms_per_turn": [
+      null,
+      1323
+    ],
+    "decode_tps_per_turn": [
+      null,
+      57.7
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 263,
+      "prompt_total": 26634
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 1,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_091c34b98ffekmnm9FzrgUwgak",
+    "repo_dir": "./eval/runs/ornith__q4__B_review__B2_order_pricing__rep2/repo",
+    "answer_file": "./eval/runs/ornith__q4__B_review__B2_order_pricing__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 1,
+    "hallucinated": 0,
+    "recall": 0.333,
+    "precision": 1.0,
+    "matched_ids": [
+      "b1_wrong_comparison_direction"
+    ],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "Default shipping is -5.0 (negative) \u2014 shipping should be +5.0; with -5.0 every order total is reduced by 5",
+        "closest_id": "b2_wrong_default_shipping"
+      },
+      {
+        "finding": "Slicing `order_totals[1:n]` skips the first element and picks from the wrong end \u2014 should be `order_totals[-n:]` to get the most recent n orders",
+        "closest_id": "b3_wrong_slice_for_tail"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 25.3,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "ornith",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T04:01:39.284856+00:00",
+  "duration_s": 22.0,
+  "schema_version": 1
+}

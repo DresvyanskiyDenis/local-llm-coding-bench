@@ -1,0 +1,51 @@
+{
+  "model": "froggeric/Qwen3.6-27B-MTP-GGUF",
+  "base_url": "http://127.0.0.1:8888/v1",
+  "rounds": 1,
+  "results": [
+    {
+      "round": 1,
+      "scenario": "1. single tool call",
+      "result": "fail",
+      "reason": "emitted tool-call XML as plain text instead of a real tool_calls entry",
+      "tokps": 17.1
+    },
+    {
+      "round": 1,
+      "scenario": "2. nested-object args",
+      "result": "pass",
+      "reason": "correct tool + properly nested arguments",
+      "tokps": 18.2
+    },
+    {
+      "round": 1,
+      "scenario": "3. multi-turn chain",
+      "result": "fail",
+      "reason": "turn 1: emitted tool-call XML as plain text",
+      "tokps": 16.8
+    },
+    {
+      "round": 1,
+      "scenario": "4. parallel tool calls",
+      "result": "fail",
+      "reason": "emitted tool-call XML as plain text instead of a real tool_calls entry",
+      "tokps": 18.3
+    },
+    {
+      "round": 1,
+      "scenario": "5. control (no tool)",
+      "result": "pass",
+      "reason": "answered directly without a spurious tool call",
+      "tokps": 18.3
+    },
+    {
+      "round": 1,
+      "scenario": "6. long context + tool",
+      "result": "fail",
+      "reason": "emitted tool-call XML as plain text instead of a real tool_calls entry",
+      "tokps": 17.2
+    }
+  ],
+  "overall_tools_verdict": "fail",
+  "median_tokens_per_sec": 17.7
+}

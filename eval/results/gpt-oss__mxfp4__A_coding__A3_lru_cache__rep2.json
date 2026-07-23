@@ -1,0 +1,73 @@
+{
+  "unit_id": "gpt-oss__mxfp4__A_coding__A3_lru_cache__rep2",
+  "model": "gpt-oss",
+  "quant": "mxfp4",
+  "opencode_model_id": "gpt-oss-20b",
+  "suite": "A_coding",
+  "task": "A3_lru_cache",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "gpt-oss-20b",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 5,
+    "wall_s": 115.08,
+    "ttft_ms_per_turn": [
+      3044,
+      774,
+      722,
+      1560,
+      3990
+    ],
+    "decode_tps_per_turn": [
+      16.9,
+      17.7,
+      16.5,
+      22.1,
+      27.0
+    ],
+    "tokens": {
+      "think": 1227,
+      "answer": 2347,
+      "prompt_total": 45718
+    },
+    "think_answer_ratio": 0.523,
+    "tool_calls": {
+      "total": 4,
+      "malformed": 1
+    },
+    "termination": "clean",
+    "session_id": "ses_09d00aa1bffezIk21qBTDGM8TL",
+    "repo_dir": "./eval/runs/gpt-oss__mxfp4__A_coding__A3_lru_cache__rep2/repo",
+    "answer_file": "./eval/runs/gpt-oss__mxfp4__A_coding__A3_lru_cache__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "total": 11,
+    "pass_rate": 1.0,
+    "failure_class": null,
+    "duration_s": 0.018,
+    "detail": "all passed"
+  },
+  "ram": {
+    "rss_peak_gb": 13.6,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "gpt-oss",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T23:38:48.140002+00:00",
+  "duration_s": 116.1,
+  "schema_version": 1
+}

@@ -1,0 +1,69 @@
+{
+  "unit_id": "qwopus__q5__A_coding__A4_int_to_roman__rep2",
+  "model": "qwopus",
+  "quant": "q5",
+  "opencode_model_id": "Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF",
+  "suite": "A_coding",
+  "task": "A4_int_to_roman",
+  "rep": 2,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant omitted (model has no reasoning:true capability declared in opencode.json -- e.g. KAT-Dev's deliberate --reasoning off, or North Mini's unverified thinking status; effort is governed by the unsloth-serve launch flags only for this model)",
+    "status": "completed",
+    "turns": 3,
+    "wall_s": 33.35,
+    "ttft_ms_per_turn": [
+      null,
+      7885,
+      287
+    ],
+    "decode_tps_per_turn": [
+      null,
+      53.0,
+      50.0
+    ],
+    "tokens": {
+      "think": 0,
+      "answer": 318,
+      "prompt_total": 39992
+    },
+    "think_answer_ratio": 0.0,
+    "tool_calls": {
+      "total": 2,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_091d291a5ffeHhcUBJp2ZTLwzV",
+    "repo_dir": "./eval/runs/qwopus__q5__A_coding__A4_int_to_roman__rep2/repo",
+    "answer_file": "./eval/runs/qwopus__q5__A_coding__A4_int_to_roman__rep2/answer.txt"
+  },
+  "grade": {
+    "grader": "pytest",
+    "passed": 44,
+    "failed": 1,
+    "errors": 0,
+    "total": 45,
+    "pass_rate": 0.978,
+    "failure_class": "assertion",
+    "duration_s": 0.03,
+    "detail": "1 failed: test_wrong_type_raises[True]"
+  },
+  "ram": {
+    "rss_peak_gb": 27.1,
+    "free_gb_min": 0.1,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "qwopus",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-17T03:44:58.313080+00:00",
+  "duration_s": 34.3,
+  "schema_version": 1
+}

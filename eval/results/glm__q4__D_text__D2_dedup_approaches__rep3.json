@@ -1,0 +1,55 @@
+{
+  "unit_id": "glm__q4__D_text__D2_dedup_approaches__rep3",
+  "model": "glm",
+  "quant": "q4",
+  "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
+  "suite": "D_text",
+  "task": "D2_dedup_approaches",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "unsloth/GLM-4.7-Flash-GGUF",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 1,
+    "wall_s": 51.69,
+    "ttft_ms_per_turn": [
+      33485
+    ],
+    "decode_tps_per_turn": [
+      32.5
+    ],
+    "tokens": {
+      "think": 273,
+      "answer": 554,
+      "prompt_total": 16938
+    },
+    "think_answer_ratio": 0.493,
+    "tool_calls": {
+      "total": 0,
+      "malformed": 0
+    },
+    "termination": "no_tools",
+    "session_id": "ses_0a1f716b5ffeejZo4qNk6mikYG",
+    "repo_dir": "./eval/runs/glm__q4__D_text__D2_dedup_approaches__rep3/repo",
+    "answer_file": "./eval/runs/glm__q4__D_text__D2_dedup_approaches__rep3/answer.txt"
+  },
+  "grade": null,
+  "ram": {
+    "rss_peak_gb": 24.7,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "glm4",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-14T00:31:09.596989+00:00",
+  "duration_s": 52.3,
+  "schema_version": 1
+}

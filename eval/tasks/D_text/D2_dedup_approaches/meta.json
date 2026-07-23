@@ -1,0 +1,12 @@
+{
+  "id": "D2_dedup_approaches",
+  "suite": "D_text",
+  "title": "3 approaches to cross-schema customer record linkage, with tradeoffs",
+  "grader": "judge",
+  "timeout_s": 600,
+  "est_ctx_tokens": 700,
+  "entrypoint": null,
+  "grade": {
+    "rubric_file": "grade/rubric.md"
+  }
+}

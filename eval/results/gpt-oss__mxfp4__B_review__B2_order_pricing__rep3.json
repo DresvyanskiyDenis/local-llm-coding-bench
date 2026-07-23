@@ -1,0 +1,86 @@
+{
+  "unit_id": "gpt-oss__mxfp4__B_review__B2_order_pricing__rep3",
+  "model": "gpt-oss",
+  "quant": "mxfp4",
+  "opencode_model_id": "gpt-oss-20b",
+  "suite": "B_review",
+  "task": "B2_order_pricing",
+  "rep": 3,
+  "effort": "high",
+  "driver": {
+    "unit_partial": {
+      "model": "gpt-oss-20b",
+      "agent": "build",
+      "effort": "high"
+    },
+    "effort_knob": "opencode run --variant <effort> -- verified 2026-07-12: `opencode run --help` documents --variant as 'model variant (provider-specific reasoning effort, e.g. high, max, minimal)'; a live sanity run (qwen, --variant high) confirmed via `opencode export` that the session's info.model.variant == 'high'. OpenCode auto-generates a default variant for any model with reasoning:true in opencode.json, mapped to reasoningEffort=high on the openai-compatible provider; binary-reasoning GGUFs (Qwen3.6/GLM/Gemma-4/qwen27) already have thinking forced ON at the unsloth-serve launch flags (--reasoning on) since llama.cpp has no graduated level for them, gpt-oss gets a real graduated Harmony reasoning_effort. This run: --variant high passed (model declares reasoning:true in opencode.json)",
+    "status": "completed",
+    "turns": 5,
+    "wall_s": 109.05,
+    "ttft_ms_per_turn": [
+      3052,
+      794,
+      1848,
+      509,
+      473
+    ],
+    "decode_tps_per_turn": [
+      15.9,
+      15.9,
+      18.7,
+      31.7,
+      27.2
+    ],
+    "tokens": {
+      "think": 2019,
+      "answer": 2384,
+      "prompt_total": 46804
+    },
+    "think_answer_ratio": 0.847,
+    "tool_calls": {
+      "total": 4,
+      "malformed": 0
+    },
+    "termination": "clean",
+    "session_id": "ses_09cca93bcffeSIasQnoyyyLiuk",
+    "repo_dir": "./eval/runs/gpt-oss__mxfp4__B_review__B2_order_pricing__rep3/repo",
+    "answer_file": "./eval/runs/gpt-oss__mxfp4__B_review__B2_order_pricing__rep3/answer.txt"
+  },
+  "grade": {
+    "grader": "review",
+    "planted": 3,
+    "found": 0,
+    "hallucinated": 0,
+    "recall": 0.0,
+    "precision": null,
+    "matched_ids": [],
+    "missed_ids": [],
+    "ambiguous": [
+      {
+        "finding": "Discount comparison incorrectly uses '<' instead of '>=' leading to wrong tier assignment.",
+        "closest_id": "b1_wrong_comparison_direction"
+      },
+      {
+        "finding": "Shipping default is set to -5.0, incorrectly making shipping a discount instead of a cost.",
+        "closest_id": "b2_wrong_default_shipping"
+      },
+      {
+        "finding": "Slicing `order_totals[1:n]` incorrectly skips the first element and may exclude the most recent orders; should use `order_totals[-n:]`.",
+        "closest_id": "b3_wrong_slice_for_tail"
+      }
+    ]
+  },
+  "ram": {
+    "rss_peak_gb": 13.6,
+    "free_gb_min": 0.0,
+    "sampled_at_ctx_tokens": 2200
+  },
+  "served": {
+    "serve_name": "gpt-oss",
+    "real_ctx": 131072,
+    "port": 8888
+  },
+  "started_ts": "2026-07-15T00:37:52.814597+00:00",
+  "duration_s": 110.0,
+  "schema_version": 1
+}

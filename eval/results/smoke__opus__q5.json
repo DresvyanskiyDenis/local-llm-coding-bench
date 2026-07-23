@@ -1,0 +1,51 @@
+{
+  "model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "base_url": "http://127.0.0.1:8888/v1",
+  "rounds": 1,
+  "results": [
+    {
+      "round": 1,
+      "scenario": "1. single tool call",
+      "result": "pass",
+      "reason": "correct tool + arguments",
+      "tokps": 73.8
+    },
+    {
+      "round": 1,
+      "scenario": "2. nested-object args",
+      "result": "pass",
+      "reason": "correct tool + properly nested arguments",
+      "tokps": 68.2
+    },
+    {
+      "round": 1,
+      "scenario": "3. multi-turn chain",
+      "result": "pass",
+      "reason": "used tool result correctly to answer with the line count",
+      "tokps": 72.5
+    },
+    {
+      "round": 1,
+      "scenario": "4. parallel tool calls",
+      "result": "pass",
+      "reason": "both files requested via parallel tool calls",
+      "tokps": 73.3
+    },
+    {
+      "round": 1,
+      "scenario": "5. control (no tool)",
+      "result": "pass",
+      "reason": "answered directly without a spurious tool call",
+      "tokps": 73.8
+    },
+    {
+      "round": 1,
+      "scenario": "6. long context + tool",
+      "result": "pass",
+      "reason": "correct tool + arguments",
+      "tokps": 65.9
+    }
+  ],
+  "overall_tools_verdict": "pass",
+  "median_tokens_per_sec": 72.9
+}

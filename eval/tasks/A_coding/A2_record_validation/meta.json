@@ -1,0 +1,13 @@
+{
+  "id": "A2_record_validation",
+  "suite": "A_coding",
+  "title": "Declarative record validator against a small schema (pure Python)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 2200,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": []
+  }
+}

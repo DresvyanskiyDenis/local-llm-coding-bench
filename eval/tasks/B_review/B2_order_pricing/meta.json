@@ -1,0 +1,13 @@
+{
+  "id": "B2_order_pricing",
+  "suite": "B_review",
+  "title": "Planted-bug review: tiered order-pricing calculator",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1400,
+  "entrypoint": "src/pricing.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}"
+  }
+}
