@@ -4,7 +4,7 @@ Which local model + quant should you actually run as an **agentic coding driver*
 
 > An offline, sortable HTML view of this leaderboard (verdict cards + metric glossary + methodology timeline) ships alongside this file: open [`leaderboard.html`](leaderboard.html) in a browser.
 >
-> Full method, task set, and honest gaps: **[METHODOLOGY.md](METHODOLOGY.md)**. Authoritative computed sources: [`eval/results/LEADERBOARD.md`](eval/results/LEADERBOARD.md) and [`eval/results/METRICS_ROLLUP.md`](eval/results/METRICS_ROLLUP.md).
+> Full method, task set, and honest gaps: **[METHODOLOGY.md](methodology.md)**. Authoritative computed sources: [`eval/results/LEADERBOARD.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/LEADERBOARD.md) and [`eval/results/METRICS_ROLLUP.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/METRICS_ROLLUP.md).
 
 ## Composite ranking
 
@@ -70,6 +70,6 @@ Numbers are `q4 / q5` unless noted (`katdev` shown `q4 / iq4`; single-quant mode
 
 - **`qwen27`** was excluded (smoke-failed both quants, 0 units — a serve/template issue).
 - Reasoning-off is not a handicap here: four of the top coders (`qwopus`, `ornith`, `northmini`, `katdev`) run non-thinking, and two of them top the coding and prose axes.
-- Known measurement gaps (MTP acceptance rate, 80 K context probe point, long-context quality decay, auto-compaction survival) are documented in [METHODOLOGY.md](METHODOLOGY.md) and [`eval/results/METRICS_ROLLUP.md`](eval/results/METRICS_ROLLUP.md).
+- Known measurement gaps (MTP acceptance rate, 80 K context probe point, long-context quality decay, auto-compaction survival) are documented in [METHODOLOGY.md](methodology.md) and [`eval/results/METRICS_ROLLUP.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/METRICS_ROLLUP.md).
 
 *Benchmark hardware: MacBook Pro M4 Max, 36 GB unified memory. Composite computed on the q4 (or single) quant of each model.*

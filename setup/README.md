@@ -50,7 +50,7 @@ Then, in order:
 
 ## The model fleet
 
-Ranked by **the benchmark** — see the benchmark leaderboard ([LEADERBOARD.md](../LEADERBOARD.md))
+Ranked by **the benchmark** — see the benchmark leaderboard ([LEADERBOARD.md](../docs/leaderboard.md))
 (450 test units, one M4 Max / 36 GB, fully local). The top 3:
 
 | Rank | `unsloth-serve` | Model | Score | Role |
@@ -62,7 +62,7 @@ Ranked by **the benchmark** — see the benchmark leaderboard ([LEADERBOARD.md](
 **Start with `unsloth-serve ornith`.** The zip ships **8 curated models** — these three plus `opus`
 (#4, safest daily driver), `glm` (#5), `northmini` (#6), `qwen` (#7, the launcher default), and
 `gpt-oss` (#9, the ~13 GB tiny-RAM pick). **Full ranking, scores and methodology for all 9 →
-see the benchmark leaderboard ([LEADERBOARD.md](../LEADERBOARD.md)).**
+see the benchmark leaderboard ([LEADERBOARD.md](../docs/leaderboard.md)).**
 Want something outside this set? Any GGUF in Unsloth's
 [model catalog](https://unsloth.ai/docs/get-started/unsloth-model-catalog) can be added to
 `unsloth-serve` the same way.
@@ -197,4 +197,4 @@ that's a real trade-off, not free.
 
 ---
 
-Questions → open a GitHub issue. Background & field notes: `../docs/`, `../METHODOLOGY.md`, `../REPLICATION.md`.
+Questions → open a GitHub issue. Background & field notes: `../docs/`, `../docs/methodology.md`, `../docs/replication.md`.

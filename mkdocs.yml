@@ -1,0 +1,69 @@
+site_name: local-llm-coding-bench
+site_description: An open, reproducible benchmark of local open-weight coding models on Apple Silicon Macs.
+site_url: https://dresvyanskiydenis.github.io/local-llm-coding-bench/
+repo_url: https://github.com/DresvyanskiyDenis/local-llm-coding-bench
+repo_name: DresvyanskiyDenis/local-llm-coding-bench
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Denis Dresvyanskiy — MIT License
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Leaderboard: leaderboard.md
+  - Methodology: methodology.md
+  - Reproduce it: replication.md
+  - Setup:
+      - Local server: setup.md
+      - Setup guide (deep dive): local-llm-setup-guide.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+plugins:
+  - search

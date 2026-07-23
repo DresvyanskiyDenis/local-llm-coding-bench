@@ -4,6 +4,8 @@
 
 > This benchmark grew out of internal work at Liebherr evaluating local open-weight coding models on Apple Silicon Macs. It has been generalized and stripped of internal details for public replication.
 
+📖 **[Read the documentation site →](https://dresvyanskiydenis.github.io/local-llm-coding-bench/)**
+
 ---
 
 ## Results teaser
@@ -16,7 +18,7 @@ Top 3 for **"a local agentic-coding driver in OpenCode"** (composite of correctn
 | 🥈 2 | Gemma-4 26B-A4B-it (MoE 26B-A4B) | Q4 / Q5 | **87.1** | Fastest decode + cleanest tool-calls. |
 | 🥉 3 | Qwopus3.6 Coder MTP (MoE 35B-A3B) | Q5_K_M | **87.0** | Best pure coder; clean tools, MTP-fast. |
 
-**Full 9-model ranking, per-suite breakdown, and the exact composite weighting → [LEADERBOARD.md](LEADERBOARD.md).** Method and honest gaps → [METHODOLOGY.md](METHODOLOGY.md).
+**Full 9-model ranking, per-suite breakdown, and the exact composite weighting → [LEADERBOARD.md](docs/leaderboard.md).** Method and honest gaps → [METHODOLOGY.md](docs/methodology.md).
 
 ---
 
@@ -62,7 +64,7 @@ local-llm-coding-bench/
 
 1. **Stand up a local server.** Follow **[setup/](setup/README.md)** to install a patched
    `llama.cpp`-based Studio + launcher and serve an open-weight GGUF on `localhost:8888`.
-2. **Reproduce the benchmark.** See **[REPLICATION.md](REPLICATION.md)** for the full path —
+2. **Reproduce the benchmark.** See **[REPLICATION.md](docs/replication.md)** for the full path —
    configs, task dirs, and the resumable `eval/harness/orchestrate.py` engine (`uv run … --resume`).
 3. **Sanity-check the endpoint** any time with `uv run bench/smoke_test.py`.
 

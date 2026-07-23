@@ -24,3 +24,7 @@ eval/results/logs/
 
 # Local model weights / caches — never commit multi-GB GGUFs
 *.gguf
+
+# MkDocs build output
+site/
+.cache/

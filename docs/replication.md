@@ -5,10 +5,10 @@ local OpenAI-compatible server, smoke-test it, run the full resumable eval, aggr
 and compare against the published leaderboard.
 
 Authoritative design docs, read alongside this guide:
-- [`eval/PLAN.md`](eval/PLAN.md) — the master contract (why, config matrix, 13 metrics, resumability).
-- [`eval/harness/CONTRACT.md`](eval/harness/CONTRACT.md) — the hard interfaces (task/grader/driver/result schemas).
-- [`METHODOLOGY.md`](METHODOLOGY.md) — the scoring method + honest gaps.
-- [`LEADERBOARD.md`](LEADERBOARD.md) — the published numbers you are reproducing.
+- [`eval/PLAN.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/PLAN.md) — the master contract (why, config matrix, 13 metrics, resumability).
+- [`eval/harness/CONTRACT.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/harness/CONTRACT.md) — the hard interfaces (task/grader/driver/result schemas).
+- [`METHODOLOGY.md`](methodology.md) — the scoring method + honest gaps.
+- [`LEADERBOARD.md`](leaderboard.md) — the published numbers you are reproducing.
 
 Everything runs as PEP-723 inline-script style: `uv run <script>`. There is **no project venv** —
 `uv` resolves each script's declared deps on the fly. Never use `pip`.
@@ -283,9 +283,9 @@ re-derivable from `eval/results/`.
 
 ## 6. Compare to the published results
 
-The published answer is [`LEADERBOARD.md`](LEADERBOARD.md) (top-level narrative) backed by the
-computed [`eval/results/LEADERBOARD.md`](eval/results/LEADERBOARD.md) and
-[`eval/results/METRICS_ROLLUP.md`](eval/results/METRICS_ROLLUP.md). Compare your regenerated
+The published answer is [`LEADERBOARD.md`](leaderboard.md) (top-level narrative) backed by the
+computed [`eval/results/LEADERBOARD.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/LEADERBOARD.md) and
+[`eval/results/METRICS_ROLLUP.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/METRICS_ROLLUP.md). Compare your regenerated
 `DIGEST__*.md` + composite against those tables.
 
 **Non-determinism caveat.** Local LLM inference on Metal is **not bit-reproducible** — sampling,

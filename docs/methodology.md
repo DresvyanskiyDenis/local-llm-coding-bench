@@ -1,11 +1,11 @@
 # Benchmark Methodology — Local-LLM Coding Bench
 
 How this benchmark is designed, run, and scored. Grounded in the harness contract
-([`eval/harness/CONTRACT.md`](eval/harness/CONTRACT.md)), the master plan
-([`eval/PLAN.md`](eval/PLAN.md)), the actual task tree under `eval/tasks/`, the graders under
+([`eval/harness/CONTRACT.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/harness/CONTRACT.md)), the master plan
+([`eval/PLAN.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/PLAN.md)), the actual task tree under `eval/tasks/`, the graders under
 `eval/harness/graders/`, and the produced results
-([`eval/results/METRICS_ROLLUP.md`](eval/results/METRICS_ROLLUP.md),
-[`eval/results/LEADERBOARD.md`](eval/results/LEADERBOARD.md)).
+([`eval/results/METRICS_ROLLUP.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/METRICS_ROLLUP.md),
+[`eval/results/LEADERBOARD.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/LEADERBOARD.md)).
 
 ## Purpose
 

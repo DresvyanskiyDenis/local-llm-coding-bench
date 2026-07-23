@@ -143,7 +143,7 @@ unsloth-serve            # qwen — #7, launcher's no-arg default (best raw codi
 unsloth-serve gpt-oss    # #9 — smallest/fastest, ~13 GB tiny-RAM pick
 ```
 
-Ranked by **the benchmark** — see the benchmark leaderboard ([LEADERBOARD.md](../LEADERBOARD.md)). **One model at a time** —
+Ranked by **the benchmark** — see the benchmark leaderboard ([LEADERBOARD.md](../docs/leaderboard.md)). **One model at a time** —
 36 GB holds exactly one. Stop the running one (**Ctrl-C**) before switching, or Studio silently
 binds `:8889` and clients (still on `:8888`) get nothing.
 
