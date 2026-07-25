@@ -269,10 +269,48 @@ def kill_pid(pid, sig=signal.SIGTERM):
         pass
 
 
+def pid_command(pid):
+    """Full command line of `pid` ('' if it is gone). Identity by command name, never
+    by a remembered pid — pids are recycled and llama-swap restarts on its own."""
+    try:
+        out = subprocess.run(["ps", "-p", str(pid), "-o", "command="],
+                             capture_output=True, text=True, timeout=10)
+        return out.stdout.strip()
+    except Exception:
+        return ""
+
+
+def llama_swap_listeners(port=PORT):
+    """[(pid, command), ...] for listeners on `port` that are llama-swap."""
+    out = []
+    for pid in lsof_listen_pids(port):
+        cmd = pid_command(pid)
+        if "llama-swap" in cmd.split("/")[-1] or "/llama-swap" in cmd:
+            out.append((pid, cmd))
+    return out
+
+
 def clear_port(port=PORT, wait_s=15):
     """Kill whatever holds `port` — a live server from a prior config, or a zombie
     Studio parent (see setup/UNSLOTH-CHEATSHEET.md). We own the port exclusively
-    while this engine runs, so anything there is stale by definition."""
+    while this engine runs, so anything there is stale by definition.
+
+    Except since 2026-07-21 that premise is false in daily mode: :8888 belongs to
+    llama-swap (LaunchAgent com.user.llama-swap), and killing it silently would take
+    OpenCode's whole fleet down and remove exactly the visible conflict it exists to
+    raise. Fail loud instead — flipping the machine into eval mode is the operator's
+    call, not this function's (IMPLEMENTATION_PLAN.md §3.5 bite 1)."""
+    swap = llama_swap_listeners(port)
+    if swap:
+        raise SystemExit(
+            f"REFUSING to clear :{port}: it is held by llama-swap "
+            f"(pid {swap[0][0]}: {swap[0][1]}), not by an eval server.\n"
+            "Killing it would take OpenCode's daily fleet down. Put the machine in\n"
+            "eval mode first, then re-run:\n"
+            "    eval/harness/ops/serving_mode.sh eval\n"
+            "and restore it afterwards with:\n"
+            "    eval/harness/ops/serving_mode.sh daily"
+        )
     pids = lsof_listen_pids(port)
     for pid in pids:
         kill_pid(pid, signal.SIGTERM)
@@ -612,11 +650,29 @@ def run_unit(config, suite, task_id, meta, task_dir, rep, agent, sample_ram, sha
 # per-config orchestration
 # ---------------------------------------------------------------------------
 
+def task_applies_to_config(meta, config):
+    """Optional per-task `configs` in meta.json restricts which configs run that task
+    (IMPLEMENTATION_PLAN.md §7 Phase 3 / §8: e.g. D5_longctx_100k at one quant per
+    model instead of all 15). Entries match either a config's `model` ("opus" → both
+    quants) or its `serve_name` ("opus4" → the q4 lane only). Key absent = all configs,
+    which is every meta.json that exists today."""
+    allowed = meta.get("configs")
+    if not allowed:
+        return True
+    return config["model"] in allowed or config["serve_name"] in allowed
+
+
 def planned_units(config, stages):
     tasks = list(discover_tasks())
-    reps = sorted({r for s in stages for r in REPS_BY_STAGE[s]})
+    default_reps = sorted({r for s in stages for r in REPS_BY_STAGE[s]})
     units = []
     for suite, task_id, meta, task_dir in tasks:
+        if not task_applies_to_config(meta, config):
+            continue
+        # Optional per-task `reps` overrides the stage schedule outright (a slow
+        # 100K-context task is worth 1 rep, not 3). Absent = the stage default,
+        # i.e. identical planning to every round-1 task.
+        reps = meta.get("reps") or default_reps
         for rep in reps:
             units.append((suite, task_id, meta, task_dir, rep))
     return units

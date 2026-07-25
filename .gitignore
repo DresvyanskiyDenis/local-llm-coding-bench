@@ -28,3 +28,19 @@ eval/results/logs/
 # MkDocs build output
 site/
 .cache/
+
+# Round 2 — external benchmark scratch (venvs, generations, downloaded corpora)
+eval/external/*/.venv/
+eval/external/*/_work/
+eval/external/*/nltk_data/
+eval/external/bigcodebench/_gen/
+
+# Which serving stack owns :8888 right now (ops/serving_mode.sh) — machine state, not repo state
+eval/harness/ops/.serving_mode
+
+# eval_proxy.py's per-request override ledger (append-only, regenerated every run)
+eval/harness/eval_proxy.jsonl
+
+# reasoning_leak_probe.py scratch (serve log + proxy ledger); the probe RESULT
+# eval/external/reasoning_leak_probe.json is evidence and IS tracked
+eval/harness/ops/.probe_*
