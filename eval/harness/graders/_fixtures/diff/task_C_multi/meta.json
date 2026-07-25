@@ -1,0 +1,14 @@
+{
+  "id": "C_multi_noise",
+  "suite": "C_edit",
+  "title": "Fixture: 2 noise comments out of 5 in one REVIEW.md",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1200,
+  "entrypoint": "src/widget.py",
+  "grade": {
+    "test_file": "grade/test_widget.py",
+    "noise_comment_meta": "grade/noise.json",
+    "requires": []
+  }
+}

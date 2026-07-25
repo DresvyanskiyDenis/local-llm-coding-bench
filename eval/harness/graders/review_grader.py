@@ -18,6 +18,15 @@ its description matches one of the bug's synonyms, its id, or its own canonical
 description; a finding matching on only one signal is "ambiguous" (saved for Opus
 adjudication, never guessed); everything else counts toward hallucinated/missed.
 
+Control tasks (round 2, e.g. B6): grade/key.json plants nothing. Recognised as a control
+via EITHER an explicit `"control": true` flag OR a bare empty `"bugs": []` list -- both
+forms are honoured. `planted` is then 0, so `recall` is reported as `null` (never `0.0`;
+recall is undefined when nothing was planted, not zero). `precision` collapses to the
+control-specific rule ANY finding on a no-bug file is a false positive, so
+`precision = 1.0` if the model reported nothing, else `0.0` -- and the verdict gains a
+`false_positive_rate` field (findings / 1) that is present ONLY for control tasks, so
+non-control verdicts keep exactly today's key set.
+
 Usage:
     uv run review_grader.py --task tasks/B_review/B1_customer_cleaning \\
         --run runs/qwen__q5__B_review__B1__rep1 --out runs/.../grade_review.json
@@ -83,7 +92,9 @@ def main():
     run_dir = Path(args.run)
 
     answer_text = (run_dir / "answer.txt").read_text() if (run_dir / "answer.txt").exists() else ""
-    key = json.loads((task_dir / "grade" / "key.json").read_text())["bugs"]
+    key_doc = json.loads((task_dir / "grade" / "key.json").read_text())
+    key = key_doc.get("bugs", [])
+    is_control = bool(key_doc.get("control")) or not key
     findings = parse_findings(answer_text)
 
     matched_ids, missed_ids, ambiguous = [], [], []
@@ -126,6 +137,13 @@ def main():
         "matched_ids": matched_ids, "missed_ids": missed_ids,
         "ambiguous": ambiguous,
     }
+    if is_control:
+        # No bugs were planted: recall stays null (already true above, planted == 0).
+        # Precision is redefined -- any reported finding on a no-bug file is a false
+        # positive, so a clean (empty) report is perfect precision, and any finding at
+        # all is zero precision, regardless of the found/hallucinated denominator.
+        verdict["precision"] = 1.0 if not findings else 0.0
+        verdict["false_positive_rate"] = len(findings) / 1
     Path(args.out).write_text(json.dumps(verdict, indent=2))
     print(json.dumps(verdict, indent=2))
 

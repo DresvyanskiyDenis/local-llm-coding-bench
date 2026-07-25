@@ -1,0 +1,8 @@
+{
+  "kind": "contradiction",
+  "file": "src/thing.py",
+  "conflict_signal": {
+    "answer_must_mention": ["conflict", "contradic", "both comments"]
+  },
+  "note": "REVIEW.md comment #2 asks to round DOWN, comment #4 asks to round UP for the same value -- diff can't tell which one the model 'obeyed', only whether it flagged the conflict in prose."
+}

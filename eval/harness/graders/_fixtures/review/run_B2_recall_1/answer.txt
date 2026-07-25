@@ -1,0 +1,9 @@
+Reviewed src/pricing.py and found the following issues:
+
+```json
+[
+  {"file": "src/pricing.py", "line": 20, "description": "wrong comparison direction: should be >= not <"},
+  {"file": "src/pricing.py", "line": 30, "description": "default shipping is negative, wrong default value"},
+  {"file": "src/pricing.py", "line": 42, "description": "wrong slice indices, should use order_totals[-n:]"}
+]
+```

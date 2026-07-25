@@ -1,0 +1,18 @@
+{
+  "grader": "diff",
+  "files_touched": 0,
+  "lines_added": 0,
+  "lines_removed": 0,
+  "touched_expected_only": true,
+  "noise_comment_acted_on": null,
+  "surgical_score": 1.0,
+  "noise": [
+    {
+      "kind": "contradiction",
+      "file": "src/thing.py",
+      "conflict_surfaced": true,
+      "conflict_signal_kind": "keyword_match",
+      "acted_on": null
+    }
+  ]
+}

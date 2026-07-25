@@ -1,0 +1,9 @@
+{
+  "grader": "diff",
+  "files_touched": 1,
+  "lines_added": 3,
+  "lines_removed": 2,
+  "touched_expected_only": true,
+  "noise_comment_acted_on": true,
+  "surgical_score": 0.7
+}

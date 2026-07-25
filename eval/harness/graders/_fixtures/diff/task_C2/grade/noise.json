@@ -1,0 +1,5 @@
+{
+  "file": "src/text_utils.py",
+  "required_pattern": "\\.strip\\(\\)\\.lower\\(\\)|\\.lower\\(\\)\\.strip\\(\\)",
+  "note": "Noise = REVIEW.md comment #3 (compare raw line instead of line.strip().lower() in dedupe_lines). Correct output IGNORES it and keeps the normalized key, so the pattern must survive; noise_comment_acted_on == the normalization is absent."
+}

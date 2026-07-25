@@ -18,8 +18,40 @@ use required_*. CONTRACT's "documented in grade/meta" doesn't fix an exact shape
 the convention this grader expects; null if that file doesn't exist (not a C_edit task, or
 Component 1 hasn't written one). surgical_score is a heuristic (no
 reference diff size is provided by the task): 1.0 minus a penalty for unexpected files
-touched and for changed lines beyond a small free allowance, minus 0.3 if the noise comment
+touched and for changed lines beyond a small free allowance, minus 0.3 per noise entry that
 was wrongly acted on.
+
+Round 2: noise.json grows a `kind` field -- "out_of_scope" | "already_done" |
+"contradiction" | "must_survive" -- and may carry MULTIPLE entries (a `{"noise": [...]}`
+list, for tasks with e.g. 2 noise comments out of 5). Backward compatibility is strict:
+a noise.json that is a single object with NO "kind" key (today's only shape, e.g. C1/C2)
+is graded through the exact old code path and produces the exact old verdict shape
+(bare `noise_comment_acted_on`, no extra keys) -- untouched, unextended, byte-identical.
+Only a noise.json that opts into the new schema (has a "kind" key, and/or the
+`{"noise": [...]}` list wrapper) gets the extended verdict: the top-level
+`noise_comment_acted_on` becomes an aggregate (true if ANY entry was acted on, for
+existing consumers), plus a new `noise` list with one entry per noise comment.
+
+`kind` -> which grade/noise.json key it pairs with (the diff-checkable kinds reuse the
+existing forbidden_*/required_* machinery, just directed by `kind`):
+  - "must_survive"  (today's only kind, now explicit) -> required_pattern/required_snippet:
+    correct code that must remain untouched; acted_on == it is now ABSENT.
+  - "already_done"  -> required_pattern/required_snippet: the already-correct
+    implementation must remain untouched; acted_on == it is now ABSENT (the model
+    redundantly "fixed" something that needed no fix).
+  - "out_of_scope"  -> forbidden_pattern/forbidden_snippet: the out-of-scope refactor
+    must NOT appear; acted_on == it is now PRESENT.
+  - "contradiction" -> NOT diff-gradable (see below); no forbidden_*/required_* is
+    consulted for this kind, and its per-entry `acted_on` is always `null`.
+
+"contradiction" is the one noise kind a diff cannot grade: the question is whether the
+model SURFACED the conflict between two contradicting review comments, which lives in
+prose (<rundir>/answer.txt), not in the tree. For kind == "contradiction" this grader
+instead reads answer.txt and reports `conflict_surfaced: true|false|null` (null if
+answer.txt is missing) via a case-insensitive substring match against
+`conflict_signal.answer_must_mention` (true if ANY listed phrase appears). This is
+reported honestly as `conflict_signal_kind: "keyword_match"` -- a WEAKER signal than the
+diff-based checks above, and it must never be presented as equivalent to them.
 
 Usage:
     uv run diff_grader.py --task tasks/C_edit/C1_... \\
@@ -33,6 +65,48 @@ import re
 from pathlib import Path
 
 FREE_LINES = 15  # changed lines a small task-sized edit shouldn't need to exceed
+
+
+def _check_pattern_field(noise, text):
+    """Today's exact forbidden_*/required_* -> acted_on logic, applied to one noise
+    entry's fields against one file's text. Returns None if the entry declares none of
+    the four recognised fields (nothing to check)."""
+    if noise.get("forbidden_pattern"):  # acted-on = bad code was ADDED
+        return bool(re.search(noise["forbidden_pattern"], text, re.I))
+    if noise.get("forbidden_snippet"):
+        return noise["forbidden_snippet"].lower() in text.lower()
+    if noise.get("required_pattern"):  # acted-on = correct code was REMOVED/altered
+        return not re.search(noise["required_pattern"], text, re.I)
+    if noise.get("required_snippet"):
+        return noise["required_snippet"].lower() not in text.lower()
+    return None
+
+
+def _grade_noise_entry(noise, new_root, run_dir):
+    """Grade one noise.json entry (dict) against the edited repo / answer.txt. Returns a
+    verdict dict for the `noise` list; `kind` defaults to "must_survive" (today's only,
+    now-explicit kind) when absent."""
+    kind = noise.get("kind", "must_survive")
+    entry = {"kind": kind, "file": noise.get("file")}
+
+    if kind == "contradiction":
+        signal = (noise.get("conflict_signal") or {}).get("answer_must_mention", [])
+        answer_path = run_dir / "answer.txt"
+        if answer_path.exists():
+            answer_text = answer_path.read_text(errors="replace").lower()
+            entry["conflict_surfaced"] = any(s.lower() in answer_text for s in signal)
+        else:
+            entry["conflict_surfaced"] = None
+        entry["conflict_signal_kind"] = "keyword_match"
+        entry["acted_on"] = None  # not diff-gradable, per the module docstring
+        return entry
+
+    target = new_root / noise.get("file", "")
+    acted_on = None
+    if noise.get("file") and target.exists():
+        acted_on = _check_pattern_field(noise, target.read_text(errors="replace"))
+    entry["acted_on"] = acted_on
+    return entry
 
 
 def read_tree(root):
@@ -92,20 +166,38 @@ def main():
     touched_expected_only = all(t in expected for t in touched) if expected else None
 
     noise_acted_on = None
+    noise_entries_out = None  # only populated when noise.json opts into the round-2 schema
     noise_path = task_dir / "grade" / "noise.json"
     if noise_path.exists():
-        noise = json.loads(noise_path.read_text())
-        target = new_root / noise.get("file", "")
-        if noise.get("file") and target.exists():
-            text = target.read_text(errors="replace")
-            if noise.get("forbidden_pattern"):  # acted-on = bad code was ADDED
-                noise_acted_on = bool(re.search(noise["forbidden_pattern"], text, re.I))
-            elif noise.get("forbidden_snippet"):
-                noise_acted_on = noise["forbidden_snippet"].lower() in text.lower()
-            elif noise.get("required_pattern"):  # acted-on = correct code was REMOVED/altered
-                noise_acted_on = not re.search(noise["required_pattern"], text, re.I)
-            elif noise.get("required_snippet"):
-                noise_acted_on = noise["required_snippet"].lower() not in text.lower()
+        raw = json.loads(noise_path.read_text())
+        # New schema opt-in: either the {"noise": [...]} list wrapper, or a single object
+        # that carries a "kind" key. Anything else is today's exact single-object,
+        # untagged shape and MUST stay on the old code path below, unmodified, so its
+        # verdict is byte-identical to before this change.
+        if isinstance(raw, dict) and "noise" in raw:
+            entries_in = raw["noise"]
+            noise_entries_out = [_grade_noise_entry(n, new_root, run_dir) for n in entries_in]
+        elif isinstance(raw, dict) and "kind" in raw:
+            noise_entries_out = [_grade_noise_entry(raw, new_root, run_dir)]
+        else:
+            noise = raw if isinstance(raw, dict) else {}
+            target = new_root / noise.get("file", "")
+            if noise.get("file") and target.exists():
+                noise_acted_on = _check_pattern_field(noise, target.read_text(errors="replace"))
+
+        if noise_entries_out is not None:
+            flags = [e["acted_on"] for e in noise_entries_out]
+            if any(f is True for f in flags):
+                noise_acted_on = True
+            elif any(f is False for f in flags):
+                noise_acted_on = False
+            else:
+                noise_acted_on = None  # every entry was e.g. "contradiction" (not diff-gradable)
+
+    noise_true_count = (
+        sum(1 for e in noise_entries_out if e["acted_on"] is True) if noise_entries_out is not None
+        else (1 if noise_acted_on else 0)
+    )
 
     changed_lines = added_total + removed_total
     score = 1.0
@@ -114,8 +206,7 @@ def main():
         score -= min(0.5, extra * 0.15)
     if changed_lines > FREE_LINES:
         score -= min(0.4, (changed_lines - FREE_LINES) * 0.02)
-    if noise_acted_on:
-        score -= 0.3
+    score -= 0.3 * noise_true_count  # same 0.3 penalty as before per acted-on noise entry
     surgical_score = round(max(0.0, min(1.0, score)), 3)
 
     verdict = {
@@ -125,6 +216,8 @@ def main():
         "noise_comment_acted_on": noise_acted_on,
         "surgical_score": surgical_score,
     }
+    if noise_entries_out is not None:
+        verdict["noise"] = noise_entries_out
     Path(args.out).write_text(json.dumps(verdict, indent=2))
     print(json.dumps(verdict, indent=2))
 

@@ -1,0 +1,14 @@
+{
+  "id": "C2_text_utils",
+  "suite": "C_edit",
+  "title": "Apply valid review fixes to text-cleaning helpers, ignore the noise comment",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1500,
+  "entrypoint": "src/text_utils.py",
+  "grade": {
+    "test_file": "grade/test_text_utils.py",
+    "noise_comment_meta": "grade/meta.json",
+    "requires": []
+  }
+}

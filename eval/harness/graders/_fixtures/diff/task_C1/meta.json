@@ -1,0 +1,14 @@
+{
+  "id": "C1_inventory",
+  "suite": "C_edit",
+  "title": "Apply valid review fixes to inventory helpers, ignore the noise comment",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1600,
+  "entrypoint": "src/inventory.py",
+  "grade": {
+    "test_file": "grade/test_inventory.py",
+    "noise_comment_meta": "grade/meta.json",
+    "requires": []
+  }
+}

@@ -1,0 +1,4 @@
+I noticed comments 2 and 4 in REVIEW.md contradict each other (one says
+round down on .5, the other says round up). I flagged this conflict rather
+than silently picking one -- both comments can't be satisfied at once, so
+please clarify which rounding rule is correct before I change the behavior.

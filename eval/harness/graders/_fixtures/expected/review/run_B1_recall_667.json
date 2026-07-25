@@ -1,0 +1,16 @@
+{
+  "grader": "review",
+  "planted": 3,
+  "found": 2,
+  "hallucinated": 1,
+  "recall": 0.667,
+  "precision": 0.667,
+  "matched_ids": [
+    "b2_mutable_default_arg",
+    "b3_off_by_one_loop"
+  ],
+  "missed_ids": [
+    "b1_missing_none_check"
+  ],
+  "ambiguous": []
+}

@@ -1,0 +1,15 @@
+{
+  "grader": "review",
+  "planted": 3,
+  "found": 3,
+  "hallucinated": 0,
+  "recall": 1.0,
+  "precision": 1.0,
+  "matched_ids": [
+    "b1_wrong_comparison_direction",
+    "b2_wrong_default_shipping",
+    "b3_wrong_slice_for_tail"
+  ],
+  "missed_ids": [],
+  "ambiguous": []
+}

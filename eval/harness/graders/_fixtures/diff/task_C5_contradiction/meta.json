@@ -1,0 +1,14 @@
+{
+  "id": "C5_contradiction",
+  "suite": "C_edit",
+  "title": "Fixture: two REVIEW.md comments contradict each other",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1200,
+  "entrypoint": "src/thing.py",
+  "grade": {
+    "test_file": "grade/test_thing.py",
+    "noise_comment_meta": "grade/noise.json",
+    "requires": []
+  }
+}

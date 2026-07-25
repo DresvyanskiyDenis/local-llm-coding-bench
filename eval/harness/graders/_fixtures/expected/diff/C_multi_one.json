@@ -1,0 +1,21 @@
+{
+  "grader": "diff",
+  "files_touched": 1,
+  "lines_added": 1,
+  "lines_removed": 3,
+  "touched_expected_only": true,
+  "noise_comment_acted_on": true,
+  "surgical_score": 0.7,
+  "noise": [
+    {
+      "kind": "must_survive",
+      "file": "src/widget.py",
+      "acted_on": true
+    },
+    {
+      "kind": "out_of_scope",
+      "file": "src/widget.py",
+      "acted_on": false
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Reviewed the file and found the following issues:
+
+```json
+[
+  {"file": "src/nothing.py", "line": 5, "description": "hallucinated finding on a clean control file"},
+  {"file": "src/nothing.py", "line": 12, "description": "another hallucinated finding, no bug was planted here"}
+]
+```

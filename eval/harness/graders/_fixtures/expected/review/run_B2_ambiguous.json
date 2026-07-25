@@ -1,0 +1,22 @@
+{
+  "grader": "review",
+  "planted": 3,
+  "found": 1,
+  "hallucinated": 0,
+  "recall": 0.333,
+  "precision": 1.0,
+  "matched_ids": [
+    "b1_wrong_comparison_direction"
+  ],
+  "missed_ids": [],
+  "ambiguous": [
+    {
+      "finding": "default shipping is negative",
+      "closest_id": "b2_wrong_default_shipping"
+    },
+    {
+      "finding": "wrong slice indices",
+      "closest_id": "b3_wrong_slice_for_tail"
+    }
+  ]
+}

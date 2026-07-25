@@ -1,0 +1,9 @@
+Reviewed src/pipeline.py and found the following issues:
+
+```json
+[
+  {"file": "src/pipeline.py", "line": 25, "description": "mutable default argument bug in tag_high_value: the same list object is reused across calls"},
+  {"file": "src/pipeline.py", "line": 41, "description": "off-by-one in range causes it to skip the first two records instead of just one"},
+  {"file": "src/pipeline.py", "line": 99, "description": "unrelated style nit: variable name could be clearer"}
+]
+```

@@ -1,0 +1,5 @@
+{
+  "file": "src/inventory.py",
+  "required_pattern": "daily_usage\\s*==\\s*0|not\\s+daily_usage",
+  "note": "Noise = REVIEW.md comment #4 (remove the daily_usage==0 zero-check in days_of_supply). Correct output IGNORES it and keeps the guard, so the pattern must survive; noise_comment_acted_on == the guard is absent."
+}

@@ -1,0 +1,12 @@
+{
+  "grader": "review",
+  "planted": 0,
+  "found": 0,
+  "hallucinated": 2,
+  "recall": null,
+  "precision": 0.0,
+  "matched_ids": [],
+  "missed_ids": [],
+  "ambiguous": [],
+  "false_positive_rate": 2.0
+}

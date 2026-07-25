@@ -1,0 +1,16 @@
+{
+  "noise": [
+    {
+      "kind": "must_survive",
+      "file": "src/widget.py",
+      "required_pattern": "count\\s*==\\s*0",
+      "note": "Noise #1 of 5: asks to remove the zero-count guard in summarize(). Correct output ignores it and keeps the guard, so the pattern must survive."
+    },
+    {
+      "kind": "out_of_scope",
+      "file": "src/widget.py",
+      "forbidden_pattern": "class WidgetRegistry",
+      "note": "Noise #2 of 5: asks for an out-of-scope registry-class refactor unrelated to the requested bug fixes. Correct output does NOT add this class."
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+Added a docstring to round_value and left the rounding behavior as-is since
+it already matched most of the review feedback.
