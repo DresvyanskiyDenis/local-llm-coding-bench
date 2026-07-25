@@ -1,0 +1,11 @@
+Based on the technical document, here's a 150-250 word summary:
+
+This document explains the fundamental performance characteristics of LLM inference on local hardware, focusing on the distinction between prefill and decode phases and how speculative decoding optimizes the latter. 
+
+Prefill processes the entire input prompt in a single parallel computation, making it compute-bound and determining "time to first token" latency. Decode generates output sequentially, requiring memory bandwidth to stream cached key/value projections and model weights for each new token. This makes decode throughput dependent on memory speed rather than raw compute power.
+
+The key innovation discussed is speculative decoding, which decouples token prediction from verification. Instead of generating one token at a time, the system proposes multiple candidate tokens (using either a separate draft model or Multi-Token Prediction heads) and verifies them all in a single forward pass. This reduces redundant memory traffic while maintaining output quality.
+
+Success depends critically on acceptance rate—the fraction of predicted tokens that are accepted. Structured workloads like code generation achieve higher acceptance rates than free-form text. Hardware characteristics matter significantly: data-center GPUs with high compute-to-bandwidth ratios can achieve dramatic speedups, while Apple Silicon's unified memory architecture yields different performance profiles.
+
+The practical takeaway is that model selection should consider both hardware capabilities and workload patterns, with speculative decoding techniques offering meaningful acceleration when acceptance rates are sufficiently high to offset the computational overhead of additional prediction heads.

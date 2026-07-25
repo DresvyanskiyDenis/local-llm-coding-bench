@@ -1,0 +1,9 @@
+## Summary
+
+This technical document explains the performance characteristics of LLM inference on local hardware, focusing on prefill/decode phases and speculative decoding optimizations.
+
+The document describes how LLM inference splits into two distinct phases with different bottlenecks. Prefill processes the entire input prompt in parallel and is compute-bound - limited by GPU floating-point operations per second. This determines "time to first token" latency that users directly experience. Decode generates output token-by-token and is memory-bandwidth-bound, moving large amounts of cached keys/values and model weights through memory with minimal computation per pass, making decode throughput dependent on memory speed rather than raw compute power.
+
+To optimize decode performance, the document explains speculative decoding approaches. Traditional methods use a separate smaller "draft model" to propose multiple candidate tokens, which the main model verifies in a single pass. Multi-Token Prediction (MTP) achieves similar results by adding extra prediction heads directly to the base model, eliminating the need for a separate draft model and its memory overhead.
+
+The key success metric is acceptance rate - the fraction of drafted tokens the verifier accepts. Higher acceptance rates deliver greater speedups, with structured workloads like code generation typically seeing better results than unpredictable prose. However, actual performance gains depend heavily on hardware characteristics, particularly the compute-to-memory-bandwidth ratio, meaning speedup benefits vary significantly across different GPU architectures and cannot be directly transferred between platforms.

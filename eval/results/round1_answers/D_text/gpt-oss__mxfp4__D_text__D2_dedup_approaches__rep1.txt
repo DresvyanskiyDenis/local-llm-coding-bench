@@ -1,0 +1,37 @@
+**1. Rule‑based fuzzy‑matching pipeline**  
+*How it works*:  Build a set of deterministic rules that normalise and compare fields: e.g., standardise names (lowercase, remove accents), canonicalise emails (lowercase, strip + domain‑specific tags), split full names into first/last, and compute edit‑distance thresholds on phone numbers and addresses. Combine individual field scores into a weighted sum, flag pairs that exceed a threshold as matches.  
+*Trade‑offs*:  
+- **Accuracy** – good for clear‑cut cases but struggles when data quality is low or fields are missing.  
+- **Engineering effort** – moderate (schema mapping + rule crafting).  
+- **Maintainability** – high: rules are transparent and easy to tweak; new business rules can be added without retraining.  
+- **Explainability** – excellent: each match is traceable to specific rules and scores.  
+- **Compute cost** – low: mostly string operations and pairwise joins on small candidate sets.  
+*Failure mode*: Heavy‑weight cleaning (e.g., address parsing) can mis‑classify legitimate duplicates if the rule thresholds are too strict or too loose; e.g., “J. Doe” vs “John Doe” may be missed if the rule requires a full first‑name match.
+
+---
+
+**2. Probabilistic Record Linkage (Fellegi–Sunter)**  
+*How it works*:  Treat each field as an evidence factor. Estimate *match* and *non‑match* probabilities from a labeled training set (or iteratively from the data). Compute a log‑likelihood ratio for every candidate pair, then classify based on a decision threshold (often with a clerical review zone).  
+*Trade‑offs*:  
+- **Accuracy** – high, especially when the training set captures real noise patterns; can model dependencies between fields.  
+- **Engineering effort** – high: requires statistical expertise, data preparation, and careful calibration of weights.  
+- **Maintainability** – moderate: updating weights or adding fields requires re‑training and re‑validation.  
+- **Explainability** – decent: the score components are interpretable, but the underlying probability model can be opaque to non‑technical stakeholders.  
+- **Compute cost** – moderate to high: needs to evaluate many field‑wise comparisons, but optimised libraries exist.  
+*Failure mode*: If the training labels are biased (e.g., over‑represent a subset of customers), the model will mis‑weight fields, leading to systematic false positives in under‑represented segments (e.g., international phone formats).
+
+---
+
+**3. Embedding‑based supervised classification (deep learning)**  
+*How it works*:  Encode each record into dense vectors using a transformer or Siamese network trained to predict whether two records belong to the same customer. Input features include concatenated normalized strings, phonetic encodings, and numeric embeddings (e.g., phone hash). During inference, compute pairwise cosine similarity or feed concatenated embeddings into a classifier to decide matches.  
+*Trade‑offs*:  
+- **Accuracy** – potentially the highest, especially when data is noisy or contains complex patterns (misspellings, aliases).  
+- **Engineering effort** – very high: requires GPU resources, data labeling, model training, hyper‑parameter tuning, and monitoring.  
+- **Maintainability** – low to moderate: model drift over time may necessitate re‑training; versioning and serving infrastructure add complexity.  
+- **Explainability** – low: decisions are hard to interpret without additional tooling (attention visualisation, SHAP).  
+- **Compute cost** – high at inference, especially for large candidate sets; can be mitigated with indexing or approximate nearest neighbour search.  
+*Failure mode*: Overfitting to the training set can make the model brittle; for example, it might learn to associate a specific domain name (e.g., @gmail.com) with a match, then incorrectly link all Gmail users that are actually distinct.
+
+---
+
+These three strategies span the spectrum from lightweight, rule‑driven approaches to sophisticated, data‑driven models. Choose the one that balances the available data, engineering resources, and the tolerance for false positives/negatives in your integration context.

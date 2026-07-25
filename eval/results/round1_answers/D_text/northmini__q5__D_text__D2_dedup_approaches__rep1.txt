@@ -1,0 +1,27 @@
+Here are three distinct approaches to record linkage between CRM systems with different schemas:
+
+## 1. Rule-Based String Matching with Field Mapping
+
+This approach creates explicit matching rules by mapping equivalent fields and applying string similarity thresholds. First, align schemas by identifying corresponding columns (e.g., `email` vs `email_address`, `full_name` vs `first_name`+`last_name`). For each record pair, compute similarity scores using Levenshtein distance for names, Jaro-Winkler for addresses, and exact matches for emails. Apply business rules like "records match if email matches exactly OR name similarity > 90% AND address similarity > 80%".
+
+**Tradeoffs:** High accuracy when field mapping is clear but requires significant engineering effort to define rules. Highly explainable for stakeholders, but maintenance grows as data quality issues emerge (typos, formatting variations). Compute cost is moderate - O(n²) comparison of all pairs.
+
+**Failure mode:** Cannot handle partial matches well. If two records have correct email but completely different name formats (e.g., "John Doe" vs "Doe, John"), the name similarity rules may incorrectly discard the match.
+
+## 2. Machine Learning-Based Similarity Scoring
+
+Train a supervised model to predict record matches using hand-crafted features and labeled training data. Feature engineering includes string embeddings (TF-IDF, BERT) for textual fields, exact matches for emails, and derived features like name length differences. Use algorithms like Random Forest or Gradient Boosting that handle mixed data types well.
+
+**Tradeoffs:** Good accuracy with sufficient training data, but requires substantial engineering effort for feature extraction and model selection. Less explainable than rule-based approaches (black-box models), though feature importance provides some interpretability. Compute cost is high during training but moderate for inference.
+
+**Failure mode:** Requires labeled training data, which may be unavailable or biased. If the training data doesn't represent real-world variations (e.g., rare name formats, international characters), the model will fail on production data.
+
+## 3. Probabilistic Record Linkage (Bayesian Approach)
+
+Use a statistical framework that computes match probabilities based on field agreement patterns. Each field is scored using agreement/disagreement likelihoods derived from a training phase. The approach calculates a likelihood ratio for each record pair, applying a threshold to decide matches.
+
+**Tradeoffs:** Excellent balance of accuracy and maintainability - well-established methodology with clear statistical foundations. Requires moderate engineering effort for setup and parameter tuning. Highly explainable through probability theory and confusion matrices. Compute cost is high due to O(n²) comparisons and probabilistic calculations.
+
+**Failure mode:** Sensitive to mis-specified agreement probabilities. If the training data contains systematic errors (e.g., all email field agreements are overrepresented), the probabilistic model will produce biased match scores, leading to systematic over- or under-matching.
+
+All three approaches face the fundamental challenge of schema heterogeneity, but each offers different tradeoffs between accuracy, maintainability, and implementation complexity. The choice depends on available labeled data, stakeholder tolerance for black-box predictions, and long-term maintenance requirements.

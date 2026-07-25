@@ -1,0 +1,47 @@
+## 3 Approaches to Cross-System Customer Record Linkage
+
+---
+
+### 1. Deterministic Rule-Based Matching
+
+**How it works:** Apply explicit, hand-crafted rules combining normalized fields. Canonicalize email (lowercase, strip dots), normalize phone numbers to E.164, and tokenize names into comparable sets. Exact email match = certain match. Name overlap ≥ 80% without email = probable match. Combine with AND/OR logic (e.g., email match OR (name match AND phone match)).
+
+**Tradeoffs:**
+- **Accuracy:** Good precision, limited recall on ambiguous cases
+- **Engineering effort:** Low — straightforward to implement
+- **Explainability:** Excellent — every decision is traceable to a rule
+- **Compute cost:** Negligible
+
+**Failure mode:** Cannot resolve cases where a customer has slightly different names across systems (e.g., "Robert Smith" vs. "Rob Smith") without phone or email overlap. Also blind to semantic relationships (e.g., "St." vs. "Street").
+
+---
+
+### 2. Probabilistic Matching (Fellegi-Sunter Model)
+
+**How it works:** For each field pair, estimate P(match) and P(mismatch) empirically from training data. Compute a composite match weight: log-odds sum across fields, weighted by field reliability. Apply thresholds: above W1 = match, below W0 = non-match, between = manual review. Email is most reliable; name partial matches contribute lower weights.
+
+**Tradeoffs:**
+- **Accuracy:** Best balance of precision/recall with proper calibration
+- **Engineering effort:** Medium — requires initial training data and threshold tuning
+- **Explainability:** Good — individual field contributions are quantifiable
+- **Compute cost:** Low to medium
+
+**Failure mode:** Degrades when training data doesn't represent edge cases (e.g., international name formats, transliteration differences like "Müller" vs "Muller"). Assumes field comparisons are conditionally independent, which isn't always true.
+
+---
+
+### 3. Embedding-Based Similarity (Semantic Vector Matching)
+
+**How it works:** Encode each customer record as a dense vector using a sentence transformer (e.g., `all-MiniLM-L6-v2`). For each record, concatenate normalized fields into a text string (e.g., "Robert Smith, rob.smith@email.com, +491701234567"). Compute cosine similarity across embeddings; threshold at ~0.85. Optionally combine with traditional methods via ensemble voting.
+
+**Tradeoffs:**
+- **Accuracy:** Strong on semantic variations and partial information; handles typos naturally
+- **Engineering effort:** High — requires embedding model deployment, vector index (FAISS/ANN), and careful feature engineering for embedding input
+- **Explainability:** Poor — embeddings are opaque; hard to debug why two records matched
+- **Compute cost:** High — embedding generation and vector search are heavier than string comparison
+
+**Failure mode:** Sensitive to input format — if one system stores "Robert J. Smith" and another "Rob Smith" with no email, the embedding may not capture the relationship without explicit training. Also suffers from "semantic drift" when embeddings conflate unrelated but semantically similar names (e.g., "John Smith" matching "Bob Smith" because both are common names).
+
+---
+
+**Recommendation:** Hybrid approach — deterministic email matching as the anchor (highest confidence), probabilistic matching for remaining records, with embeddings as a tiebreaker for ambiguous cases.

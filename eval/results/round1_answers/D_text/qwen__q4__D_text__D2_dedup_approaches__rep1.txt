@@ -1,0 +1,43 @@
+## 1. Deterministic blocking + rule-based matching
+
+Define exact or near-exact match rules on overlapping fields (e.g. `email = email_address`, `phone ≈ phone` with normalization). Use email as the primary key for blocking, then fall back to name+phone rules for unmatched records. Normalize everything first (lowercase, strip punctuation, parse names into first/last).
+
+**Tradeoffs:**
+- Accuracy: Good on clean data with emails; drops sharply on records missing emails or with typos.
+- Engineering effort: Low — straightforward SQL/Python, no ML required.
+- Explainability: Excellent — each match is justified by a specific rule.
+- Compute cost: Very low.
+
+**Failure mode:** A customer "john.smith@gmail.com" in one system and "johnsmith@gmail.com" (typo) in the other won't match, and if both lack a phone number, the record is silently missed.
+
+---
+
+## 2. Probabilistic matching (Fellegi-Sunter framework)
+
+Model each pairwise comparison as a set of feature agreements (Jaro-Winkler on names, Levenshtein on emails, exact on phone). Estimate probability distributions for match/non-match on each feature, then compute a weighted match score. Set a threshold (or three: match, reject, compare) to classify pairs. Train on a small labeled sample or use EM to estimate weights unsupervised.
+
+**Tradeoffs:**
+- Accuracy: Solid across messy, real-world data — handles typos and partial matches gracefully.
+- Engineering effort: Medium — need to implement or adapt a library (e.g. `recordlinkage`), tune weights, pick thresholds.
+- Explainability: Good — each pair gets a score with feature-level breakdowns.
+- Compute cost: Medium — O(n₁×n₂) comparisons, mitigated by blocking on email or name initials.
+
+**Failure mode:** Ambiguous cases — two different customers with the same email (family sharing an address) or same name and phone but different people — will still produce high scores and get merged incorrectly.
+
+---
+
+## 3. Embedding-based similarity + learned threshold
+
+Encode each record into a vector representation using a model fine-tuned on entity resolution (e.g. a transformer trained on name+email+phone sequences, or a simple sentence-transformer on a concatenated text field). Project both tables into the same embedding space, then use approximate nearest-neighbor search (FAISS, Annoy) for efficient retrieval. Calibrate a similarity threshold on a labeled set.
+
+**Tradeoffs:**
+- Accuracy: Best of the three for fuzzy, short-text matching across schemas — captures semantic similarity (e.g. "J. Smith" ≈ "John Smith") that exact/near-exact methods miss.
+- Engineering effort: High — need training data (or a pre-trained ER model), embedding pipeline, ANN index, and threshold calibration.
+- Explainability: Poor — embedding space is opaque; hard to tell a stakeholder *why* two records matched.
+- Compute cost: High — model inference + ANN indexing, though inference is fast after indexing.
+
+**Failure mode:** The model can conflate genuinely different names that look similar in embedding space (e.g. "Chris Smith" and "Christina Smith") when training data is insufficiently diverse, and this error is hard to detect without continuous monitoring.
+
+---
+
+**Recommendation:** Start with approach 1 for quick wins and coverage, layer approach 2 for the fuzzy cases it catches that approach 1 misses, and only invest in approach 3 if the data quality is particularly poor or you're scaling to millions of records where ANN becomes necessary.

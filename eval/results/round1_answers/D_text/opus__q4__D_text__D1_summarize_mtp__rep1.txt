@@ -1,0 +1,9 @@
+**Summary**
+
+Local LLM inference operates across two distinct phases with fundamentally different bottlenecks. Prefill processes the entire input prompt in parallel using large matrix multiplications, making it compute-bound and determining the "time to first token." Decode generates output one token sequentially, requiring attention over all previously cached key-value pairs. Since each step moves all model weights and cache data through memory but performs minimal arithmetic, decode is memory-bandwidth-bound rather than compute-bound.
+
+To avoid recomputing attention over the full prefix at every step, inference engines maintain a KV cache of key-value projections. This cache grows linearly with context length, creating a critical memory budget problem — especially on unified-memory machines like Apple Silicon, where weights, the KV cache, and system RAM all compete for the same pool.
+
+Speculative decoding addresses decode's inefficiency by decoupling token generation from verification. A draft mechanism proposes multiple candidate tokens simultaneously, and the target model verifies them all in a single forward pass. High acceptance rates mean several tokens are accepted per verification pass, multiplying throughput. Multi-Token Prediction (MTP) extends this by attaching extra prediction heads directly to the base model, eliminating the need for a separate draft model's memory overhead.
+
+Acceptance rate is the decisive metric, varying by workload — code generation typically achieves higher rates than free-form prose due to its structured patterns. Hardware balance between compute throughput and memory bandwidth also critically determines actual speedup, meaning acceptance rates and performance gains must be measured directly per platform rather than assumed from results on different architectures.

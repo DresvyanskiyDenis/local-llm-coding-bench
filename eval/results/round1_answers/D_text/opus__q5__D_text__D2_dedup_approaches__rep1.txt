@@ -1,0 +1,48 @@
+## Three Approaches to Cross-CRM Customer Record Linkage
+
+### 1. Deterministic Matching with Fuzzy String Comparison
+
+**How it works:** Normalize fields (lowercase, trim, remove special chars), then compare email addresses exactly and names/phones with fuzzy metrics (Levenshtein distance, Jaro-Winkler). Match if email matches exactly, or if name similarity exceeds a threshold and phone partially overlaps.
+
+**Tradeoffs:**
+- **Accuracy:** Moderate — catches obvious duplicates but struggles with edge cases
+- **Engineering effort:** Low — simple scripts, no ML required
+- **Maintainability:** High — rules are transparent and easy to tune
+- **Compute cost:** Minimal
+
+**Failure mode:** A customer named "Robert Smith" and "Bob Smith" with matching emails won't be caught without alias mappings.
+
+---
+
+### 2. Embedding-Based Similarity
+
+**How it works:** Encode each record into a dense vector using a sentence transformer (e.g., `all-MiniLM-L6-v2`). Concatenate or weight features appropriately, then compute cosine similarity across all cross-table pairs. Set a threshold to flag potential matches.
+
+**Tradeoffs:**
+- **Accuracy:** High — captures semantic similarity ("R. Smith" ≈ "Robert Smith")
+- **Engineering effort:** Medium — requires model deployment and vector indexing
+- **Maintainability:** Medium — threshold tuning needed; model drift possible
+- **Compute cost:** High — O(n×m) pairwise comparisons for large tables
+
+**Failure mode:** Embeddings conflate unrelated fields; "John" and "Jonathan" may appear similar despite being different people.
+
+---
+
+### 3. ML-Based Probabilistic Blocking (Fellegi-Sunter + ML Classifier)
+
+**How it works:** Define comparison vectors (binary flags for each field match: email_match, name_sim>0.8, phone_match). Use blocking keys (e.g., first letter of last name + email domain) to reduce comparisons. Train a classifier (XGBoost, logistic regression) on labeled pairs to output match probability.
+
+**Tradeoffs:**
+- **Accuracy:** Highest — learns from ground truth, handles complex interactions
+- **Engineering effort:** High — requires labeled training data, feature engineering
+- **Maintainability:** Medium — model retraining needed as data patterns shift
+- **Explainability:** Medium-high — feature importance is interpretable
+- **Compute cost:** Medium — blocking reduces search space significantly
+
+**Failure mode:** Requires quality labeled data; poor training examples lead to systematic errors. Also brittle when new field formats emerge post-deployment.
+
+---
+
+### Recommendation
+
+Combine approaches: use **deterministic blocking** to reduce candidates, **embeddings** for semantic matching, and **ML classification** as a final scorer. Ensemble the results with weighted voting or stacking. This balances accuracy, cost, and maintainability while providing fallback paths when individual methods fail.

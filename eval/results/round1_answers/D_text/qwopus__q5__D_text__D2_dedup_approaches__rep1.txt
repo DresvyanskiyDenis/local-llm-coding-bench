@@ -1,0 +1,46 @@
+## 3 Approaches to Cross-CRM Customer Deduplication
+
+---
+
+### 1. Rule-Based Fuzzy Matching (Deterministic + Probabilistic)
+
+**How it works:** Define matching rules on key fields — exact match on email, fuzzy match on phone (Levenshtein distance), and name comparison handling the schema difference by splitting `full_name` into first/last components. Combine signals using a weighted scoring system (e.g., Fellegi-Sunter model): email match = 0.8 weight, phone match = 0.5, name similarity ≥ 0.7 = 0.3. Threshold to classify as match/no-match/uncertain.
+
+**Tradeoffs:**
+- Accuracy: Moderate (~75-85% precision). Depends heavily on feature engineering quality.
+- Engineering effort: Low-to-medium. Straightforward Python implementation with `fuzzywuzzy`/`rapidfuzz`.
+- Maintainability: High — rules are explicit and auditable.
+- Explainability: Excellent — each match has a traceable reason ("matched on email + 92% name similarity").
+- Compute cost: Low — O(n×m) pairwise comparisons, feasible for hundreds of thousands of records with blocking (e.g., block on first letter of last name).
+
+**Failure mode:** A customer named "J. Smith" in one system and "John Smith" in another may score below threshold because the fuzzy match penalizes abbreviations, while a typo like "J. Smiht" vs "J. Smith" scores above it — the model can't distinguish abbreviation from noise without training data.
+
+---
+
+### 2. Supervised Learning on Labeled Pairs (Feature Engineering + ML Classifier)
+
+**How it works:** Create training data by sampling record pairs and labeling them as same/different customer (via a small manual annotation effort or existing golden records). Engineer features: email exact/normalized match, phone Levenshtein, name Jaro-Winkler, address overlap (Jaccard), field completeness, edit distance on raw values. Train a classifier (XGBoost or similar) to predict match probability. Threshold for classification.
+
+**Tradeoffs:**
+- Accuracy: High (~90-95% precision). Learns complex interactions between features automatically.
+- Engineering effort: High — requires labeled training data, feature engineering pipeline, and model deployment.
+- Maintainability: Medium — model drifts as data patterns change; needs retraining cadence.
+- Explainability: Moderate — SHAP values can explain individual predictions, but not intuitive for business users.
+- Compute cost: Medium-high — training is cheap, but scoring millions of pairs requires blocking + distributed compute.
+
+**Failure mode:** Poor generalization to new CRM systems or customer segments not represented in training data. A model trained on European customers with country codes in phone numbers will mis-score US-style formatting without retraining.
+
+---
+
+### 3. Embedding-Based Similarity (Neural/LLM)
+
+**How it works:** Encode each record's text fields into a vector embedding using a pre-trained model (e.g., sentence-transformers for name/email, or an LLM prompt like "Given customer data: full_name=John Smith, email=john@example.com, phone=+1-555-0123"). Normalize embeddings and compute cosine similarity. Threshold at ~0.85 for matches. Optionally fine-tune the embedding model on a small labeled set.
+
+**Tradeoffs:**
+- Accuracy: High-to-very-high (~92-97% precision) when embeddings capture semantic meaning well (e.g., "J." ≈ "John", "St." ≈ "Street").
+- Engineering effort: Medium — requires embedding infrastructure and vector search (FAISS, pgvector). Fine-tuning adds more work.
+- Maintainability: High — pre-trained models generalize without retraining; fine-tuned versions need periodic updates.
+- Explainability: Low — a cosine similarity of 0.89 doesn't tell you *why* the model thinks they match (is it the name? email?).
+- Compute cost: Medium-high — embedding generation is GPU-friendly but slow for millions of records; vector search scales well once embeddings exist.
+
+**Failure mode:** Embeddings conflate signal — two different customers with the same email address (e.g., shared family account) will have near-perfect similarity, producing false positives that are hard to detect without an explicit "email conflict" rule.

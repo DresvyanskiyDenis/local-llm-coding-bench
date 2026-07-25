@@ -1,0 +1,29 @@
+To address the challenge of merging these two disparate CRM systems, I propose the following three approaches, ranging from deterministic logic to advanced semantic representation.
+
+### 1. Rule-Based Deterministic Matching
+**How it works:** This approach relies on explicit, hand-crafted logic. First, we perform "data normalization" (e.g., converting all strings to lowercase, stripping special characters from phone numbers, and standardizing address suffixes). We then apply a hierarchy of rules: if `email` matches exactly, it's a match; if not, we check if `normalized_phone` AND `last_name` match. We can also incorporate string distance metrics like Levenshtein distance to allow for minor typos in names.
+
+* **Tradeoffs:** 
+    * **Explainability:** Extremely high; you can point to the exact rule that triggered a match.
+    * **Compute Cost:** Very low; simple string comparisons are computationally inexpensive.
+    * **Engineering Effort:** Low initially, but maintenance becomes a "rule nightmare" as you try to account for every edge case.
+    * **Accuracy:** Low to moderate; it struggles with significant variations or missing data.
+* **Failure Mode:** It fails on semantic variations that aren't character-level typos, such as a record using "Robert" and another using "Bob."
+
+### 2. Probabilistic Record Linkage (Fellegi-Sunter Model)
+**How it works:** Instead of binary rules, this method assigns weights to different field matches based on their "uniqueness." For example, a match on a rare surname carries more weight than a match on a common one like "Smith." We calculate a total match probability score for pairs of records. If the score exceeds a certain threshold, they are flagged as the same customer.
+
+* **Tradeoffs:**
+    * **Accuracy:** Moderate to high; it handles uncertainty and varying data quality much better than rules.
+    * **Engineering Effort:** Moderate; requires statistical modeling and a "gold standard" labeled dataset to calibrate weights.
+    * **Maintainability:** Moderate; the model is more robust to schema changes than hardcoded rules.
+* **Failure Mode:** It is highly sensitive to the quality of the training/calibration data. If your sample of "known matches" is biased, the weights will incorrectly penalize or reward certain attributes.
+
+### 3. Neural Embedding-Based Matching
+**How it works:** We treat each customer record as a piece of text and use a Transformer-based model (like a fine-tuned BERT or an LLM) to convert the entire record into a high-dimensional vector (an embedding). We then use a vector database to perform a similarity search (e.g., Cosine Similarity). This allows the system to understand that "Apt 4B" and "Apartment 4-B" are semantically identical.
+
+* **Tradeoffs:**
+    * **Accuracy:** Very high; it is remarkably resilient to typos, formatting differences, and semantic shifts.
+    * **Compute Cost:** High; requires GPU acceleration for encoding and efficient vector indexing.
+    * **Explainability:** Low; it acts as a "black box," making it difficult to explain *why* two records were linked.
+* **Failure Mode:** It can suffer from "near-duplicate" false positives, such as incorrectly linking two different family members who share a name and a residential address.

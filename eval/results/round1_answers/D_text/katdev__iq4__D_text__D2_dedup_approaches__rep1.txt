@@ -1,0 +1,46 @@
+Here are three approaches to detecting duplicate customers across different CRM schemas:
+
+## 1. Rule-Based Blocking with String Similarity
+
+**How it works:** Use deterministic rules to create "blocking keys" that group potentially matching records, then apply string similarity algorithms within blocks. For example:
+- Block on exact email matches when available
+- Block on first 3 characters of last name + first 2 of first name
+- Block on phone number prefixes
+- Within blocks, calculate similarity scores using Levenshtein distance, Jaro-Winkler for names, and email domain matching
+
+**Tradeoffs:**
+- **Accuracy:** Medium-high for clean data, but degrades with typos and missing fields
+- **Engineering effort:** Moderate - requires domain expertise to design effective blocking rules
+- **Maintainability:** Low - rules need frequent updates as data patterns change
+- **Explainability:** High - decisions are transparent and auditable
+- **Compute cost:** Low - linear scaling with blocking strategy
+
+**Limitation:** Struggles with systematic data quality issues (e.g., consistently misspelled surnames) and fails when key fields are missing entirely.
+
+## 2. Probabilistic Record Linkage (Fellegi-Sunter Framework)
+
+**How it works:** Treat linkage as a statistical classification problem. Calculate likelihood ratios for each attribute comparison (m and u probabilities), then combine them using a weighted scoring function. Uses machine learning to estimate parameters from a labeled training set.
+
+**Tradeoffs:**
+- **Accuracy:** High when well-calibrated, handles missing data gracefully
+- **Engineering effort:** High - requires labeled training data and statistical modeling expertise
+- **Maintainability:** Medium - periodic retraining needed as data distributions shift
+- **Explainability:** Medium - probability calculations are transparent but threshold selection is somewhat arbitrary
+- **Compute cost:** Medium - depends on training data size and feature engineering complexity
+
+**Limitation:** Performance collapses when training data quality is poor or when the two systems have fundamentally different data collection patterns.
+
+## 3. Embedding-Based Similarity Matching
+
+**How it works:** Convert each customer record into a dense vector embedding using a neural network trained on customer data, then find matches by computing cosine similarity between embeddings. Can use pre-trained models fine-tuned on the specific domain or train from scratch.
+
+**Tradeoffs:**
+- **Accuracy:** Potentially very high, especially with domain-specific training
+- **Engineering effort:** High - requires ML infrastructure, model training, and hyperparameter tuning
+- **Maintainability:** Medium - models need periodic retraining but can adapt to new patterns
+- **Explainability:** Low - "black box" nature makes individual decisions hard to justify
+- **Compute cost:** High - embedding computation and storage scales with record count
+
+**Limitation:** Model bias can amplify existing data quality disparities between systems, and small dataset sizes lead to overfitting.
+
+**Recommendation:** Start with rule-based blocking for immediate results, then transition to probabilistic linkage once sufficient training data is available. Embedding approaches are best reserved for scenarios with large, high-quality datasets and where explainability requirements are minimal.

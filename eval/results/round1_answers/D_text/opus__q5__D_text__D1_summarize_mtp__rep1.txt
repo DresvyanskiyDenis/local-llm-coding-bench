@@ -1,0 +1,11 @@
+## Summary
+
+LLM inference consists of two phases with distinct bottlenecks. **Prefill** processes the entire input prompt in parallel through a large matrix multiply, making it compute-bound and determining time to first token. **Decode** generates one token at a time, requiring a full pass over all model weights and cached key/value projections for each step. Because each decode step moves substantial data through memory but performs minimal arithmetic, decode is memory-bandwidth-bound — explaining why throughput barely varies with GPU compute power but correlates strongly with memory bandwidth.
+
+The KV cache avoids recomputing attention over the entire prefix at every step, but grows linearly with context length, model layers, and attention heads. On unified-memory machines like Apple Silicon, weights and KV cache compete for the same RAM pool, often limiting usable context length below the model's advertised maximum.
+
+Speculative decoding addresses decode's inefficiency by decoupling token generation from verification. A draft mechanism proposes multiple candidate tokens, which the target model verifies in a single forward pass. Multi-Token Prediction (MTP) eliminates the need for a separate draft model by attaching small prediction heads directly to the base model. Either approach maintains mathematical equivalence to the full model — no quality is lost, only computed differently.
+
+The critical metric is **acceptance rate**: the fraction of draft tokens the verifier accepts. Higher acceptance yields greater throughput gains. Workload type matters significantly; code generation tends to produce higher acceptance rates than free-form prose due to its structured, repetitive nature.
+
+Hardware architecture substantially influences achievable speedup. Data-center GPUs with high compute-to-bandwidth ratios can achieve dramatic improvements, while Apple Silicon's unified memory and different balance requires empirical measurement rather than assumption based on published numbers.

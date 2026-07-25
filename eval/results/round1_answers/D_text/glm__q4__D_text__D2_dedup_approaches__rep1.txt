@@ -1,0 +1,16 @@
+## Three Approaches for CRM Record Linkage
+
+**1. Rule-based Matching**
+Define explicit business rules: exact email match, normalized phone number match, or partial name overlap (e.g., Levenshtein distance < 2). Apply rules with decreasing strictness (email first, then phone, then name). This is simple, maintainable, and explainable.
+
+*Tradeoffs*: Low compute cost, high maintainability, low accuracy. *Failure mode*: Misses matches when both systems have typos in the same field (e.g., "gmail.com" vs "Gmail.com" in email).
+
+**2. Supervised Machine Learning Classifier**
+Engineer features from both tables: string similarity scores (Jaro-Winkler, Levenshtein), field presence indicators, and domain-specific rules. Train a classifier (e.g., Random Forest or Gradient Boosting) on a labeled ground truth dataset. Use it to predict matches.
+
+*Tradeoffs*: High accuracy, moderate compute cost, low maintainability. *Failure mode*: Requires labeled data (expensive to collect), and the model degrades when schema distributions shift (e.g., new phone formats).
+
+**3. Fuzzy Clustering (DBSCAN)**
+Treat both tables as a single dataset, compute pairwise similarity between all records, and cluster using DBSCAN or similar. Records in the same cluster are potential matches. This is unsupervised and schema-agnostic.
+
+*Tradeoffs*: High accuracy, high compute cost (O(n²)), low maintainability. *Failure mode*: Struggles with high-dimensional data and parameter sensitivity (epsilon, min_samples); may merge distinct customers with similar attributes.

@@ -1,0 +1,25 @@
+To merge these CRM systems, we must first normalize the schemas into a common intermediate format (e.g., mapping `email_address` to `email`). Once normalized, I propose the following three approaches:
+
+### 1. Deterministic Rule-Based Matching
+**Description:** This approach uses a set of predefined "if-then" logic gates and fuzzy string matching (e.g., Levenshtein distance) on cleaned fields. For example, a match is confirmed if `email` is identical OR if `last_name` matches AND `phone` matches after stripping non-numeric characters.
+
+*   **Tradeoffs:**
+    *   **Pros:** Extremely high explainability; very low compute cost; low engineering effort to implement basic rules.
+    *   **Cons:** Low recall (misses many valid matches); high maintenance as new edge cases arise; sensitive to data quality.
+*   **Failure Mode:** A single typo in a "key" field (like a misspelled email) causes the entire record to be missed, even if all other fields match perfectly.
+
+### 2. Probabilistic Record Linkage (Fellegi-Sunter)
+**Description:** Instead of binary rules, this method assigns weights to different field matches based on their "discriminative power." Matching on a rare surname provides a higher probability score than matching on a common one like "Smith." A composite score determines if a pair is a match, a non-match, or a "clerical review" candidate.
+
+*   **Tradeoffs:**
+    *   **Pros:** Significantly higher accuracy and recall than rules; provides a confidence score for every match; moderate explainability.
+    *   **Cons:** Requires a "gold standard" labeled dataset to calibrate weights; moderate engineering and compute effort.
+*   **Failure Mode:** If the training/calibration data is biased or unrepresentative of the actual CRM population, the weights will be miscalibrated, leading to systemic false positives.
+
+### 3. Semantic Embedding-Based Matching (Neural)
+**Description:** We use a transformer-based model (like a Siamese Network) to convert each entire record into a high-dimensional vector (embedding). We then use vector similarity search (e.g., Cosine Similarity) to find records that are "semantically close" in vector space.
+
+*   **Tradeoffs:**
+    *   **Pros:** Highest potential for accuracy; handles semantic nuances (e.g., "Street" vs "St.") and typos gracefully without explicit rules.
+    *   **Cons:** "Black box" nature (low explainability); very high compute/GPU cost; high engineering complexity.
+*   **Failure Mode:** "Semantic Collisions"—the model may incorrectly group different people with highly similar profiles (e.g., two different "John Smiths" living in the same apartment complex) because the name and address signals are so dominant.

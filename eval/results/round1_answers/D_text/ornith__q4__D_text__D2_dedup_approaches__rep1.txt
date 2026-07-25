@@ -1,0 +1,39 @@
+Here are three approaches:
+
+---
+
+**1. Rule-Based Canonicalization + Exact/Fuzzy Key Join**
+
+Normalize each field (lowercase, strip whitespace, standardize phone formats, split full names into first/last), then join on exact email match. For non-email matches, use fuzzy keys — e.g., Levenshtein ≤ 2 on normalized name + same city from address.
+
+- **Accuracy:** High when emails exist and are reliable; drops sharply for records without email (common in older CRM data).
+- **Engineering effort:** Low. Pure SQL/pandas, no training data needed.
+- **Explainability:** Excellent — every match is traceable to a rule ("matched on normalized phone").
+- **Failure mode:** Misses genuine matches where emails differ across systems (e.g., customer used work email in one CRM and personal in another). Also brittle when fuzzy thresholds are arbitrary — tuning edit-distance cutoffs doesn't generalize well across name distributions.
+
+---
+
+**2. Blocking + Pairwise Feature Comparison + Threshold Classifier**
+
+Define blocks to reduce the cross-product (e.g., block on first-letter-of-last-name + state/province, or email domain). Within each block, compute similarity features: Jaro-Winkler on names, edit distance on phones, address token overlap. Train a lightweight classifier (logistic regression or small random forest) on labeled/annotated pairs to predict "same customer" vs. "different."
+
+- **Accuracy:** Significantly better than rules alone — learns that "phone match is strong evidence even if name has typo" from data.
+- **Engineering effort:** Moderate. Requires annotating a few hundred pairs for training, building the feature pipeline, and tuning blocks/classifier.
+- **Maintainability:** Good — adding a new signal (e.g., company name) means adding a feature, not rewriting rules.
+- **Failure mode:** Performance collapses outside the blocked neighborhoods. If blocking is too coarse, you get false positives; too fine, you miss true matches. Also: requires labeled data, which may not exist for two legacy CRMs.
+
+---
+
+**3. Embedding-Based Near-Duplicate Detection**
+
+Encode each record into a fixed-dimensional vector using a cross-lingual sentence transformer (e.g., `paraphrase-multilingual-MiniLM-L12-v2`) applied to a concatenated, normalized text representation of the fields. Then use approximate nearest neighbors (FAISS) at scale, with a cosine-similarity threshold and a small validation step for borderline cases.
+
+- **Accuracy:** Strong on unstructured/noisy fields — handles typos, format variance, and even different languages without explicit normalization rules.
+- **Engineering effort:** High upfront — model selection, embedding pipeline, ANN index setup, threshold calibration against gold labels.
+- **Compute cost:** Moderate at inference (embedding is batched; ANN search is O(n log n)). Training-free, so no labeled data needed.
+- **Explainability:** Poor — a cosine score of 0.87 doesn't tell you *why* two records matched. Hard to justify to business stakeholders or audit for GDPR "right to explanation."
+- **Failure mode:** Embeddings can conflate different customers who share surface features ("John Smith, Berlin" → high similarity by chance). Without a validation layer, false-positive rate on large tables becomes unacceptable.
+
+---
+
+**Practical recommendation:** Combine approaches — use rule-based email join as the high-confidence core (covers ~60-70% of matches cheaply), then apply approach #2 for the remaining candidates with a human-in-the-loop review loop for ambiguous pairs.

@@ -1,0 +1,29 @@
+# 3 Approaches for CRM Record Linkage
+
+## 1. Rule-Based Exact Matching with Normalization
+
+**How it works:** Apply deterministic heuristics after normalizing fields. For example, convert names to lowercase, strip whitespace, standardize phone formats, and compare exact matches on normalized email addresses and phone numbers. Use configurable thresholds for partial matches (e.g., `fuzzy_name_match(email1, email2) > 0.85`).
+
+**Tradeoffs:** Low compute cost, high explainability (rules are visible), easy to maintain with domain knowledge. Accuracy is limited by the quality of normalization rules and the threshold choices.
+
+**Limitations:** Fails on subtle variations (misspellings, formatting differences), requires manual tuning for each schema, struggles with missing fields where one record has incomplete data.
+
+---
+
+## 2. Fuzzy String Matching with Similarity Thresholds
+
+**How it works:** Use probabilistic string distance metrics (Levenshtein, Jaro-Winkler, or token-based similarity like TF-IDF + cosine) on key fields like name and email. Compute similarity scores across all record pairs and link those above a configurable threshold (e.g., 0.9 for names, 0.85 for emails). Can combine multiple fields with weighted scoring.
+
+**Tradeoffs:** Higher accuracy than exact matching, moderate compute cost (O(n²) pairwise comparisons), explainable but requires tuning thresholds. More flexible than rule-based but still deterministic.
+
+**Limitations:** Still struggles with very different naming conventions across systems, false positives from common names or typos, no learning from historical linkage decisions. Scales poorly to millions of records without indexing or blocking strategies.
+
+---
+
+## 3. Embedding-Based Machine Learning Matching
+
+**How it works:** Convert each record to a dense vector embedding using a language model (e.g., sentence transformer) on concatenated field descriptions. Use cosine similarity in embedding space to find near-duplicate records. Can train a classifier on a small labeled dataset to learn optimal matching behavior.
+
+**Tradeoffs:** Highest accuracy, handles complex variations (typos, formatting, cultural differences), captures semantic similarity beyond surface-level features. High engineering effort to set up embeddings, compute cost for vector generation and similarity search, less explainable than rule-based approaches.
+
+**Limitations:** Requires labeled data for training, embedding generation can be slow at scale, black-box similarity scores are harder to audit, may struggle with domain-specific jargon or abbreviations not well-represented in training data.

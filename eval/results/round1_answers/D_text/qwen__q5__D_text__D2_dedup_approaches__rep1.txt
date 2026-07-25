@@ -1,0 +1,39 @@
+Here are 3 approaches:
+
+---
+
+**1. Deterministic blocking + exact/Levenshtein matching**
+
+Hash records into blocks on the most reliable field (e.g. email, lowercased and normalized), then within blocks apply rule-based matching: exact email match, Levenshtein distance ≤ 2 on full_name, phone number canonicalization (strip dashes, compare last 7 digits). Require at least two fields to match.
+
+- **Accuracy:** Good when email is present and clean; degrades when email is missing or frequently mistyped.
+- **Engineering effort:** Low — pure SQL or pandas, no training data needed.
+- **Explainability:** High — every match has a transparent reason ("email matched, phone matched within edit distance 1").
+- **Failure mode:** `john.smith@email.com` vs `john.smith@email.cm` (typo in domain) won't match, and `John Smith` vs `Jon Smyth` both score high edit distance — two real mismatches that slip through.
+
+---
+
+**2. Embedding-based similarity (learned representations)**
+
+Encode each customer record into a fixed-dimensional vector using a model fine-tuned on entity resolution (e.g. a small transformer trained on paired records, or a zero-shot approach with sentence-transformers on concatenated, normalized fields). Then compute cosine similarity within email-narrowed blocks and threshold.
+
+- **Accuracy:** Best-in-class for fuzzy matching across heterogeneous schemas — handles "John A. Smith" vs "Johnny Smith" and cross-field renames naturally.
+- **Engineering effort:** Medium-high — requires labeled training pairs or a pre-trained model, feature engineering for normalization pipelines, and a vector index (FAISS/Annoy) for scalable search.
+- **Maintainability:** Moderate — retrain when data distributions shift, but inference is fast once trained.
+- **Explainability:** Low — cosine similarity on 768-dim vectors isn't human-interpretable.
+- **Failure mode:** Embeddings can conflate socially common names (e.g., two different "Maria Garcia" with similar emails) into false positives that are hard to detect without ground truth.
+
+---
+
+**3. Probabilistic linkage (Fellegi-Sunter with ML-estimated weights)**
+
+Treat each field comparison as a evidence signal. Estimate *m-probabilities* (match probability given a comparison) and *u-probabilities* (match probability given non-match) from training data or coxistencies. Weight fields by discriminating power (email ≈ 3.2 log-odds, phone ≈ 1.8, name ≈ 0.6). Classify pairs as match/non-match/maybe by thresholding the composite log-odds score.
+
+- **Accuracy:** Strong, especially with sparse/missing fields — naturally downweights unreliable fields instead of discarding the whole record.
+- **Engineering effort:** Medium — requires estimating field weights (EM algorithm or manual from gold standard), but the matching pipeline itself is straightforward.
+- **Explainability:** High — each match comes with per-field contribution scores ("email: +3.2, phone: 0.0 (missing), name: +0.4").
+- **Failure mode:** Assumes field comparisons are conditionally independent given match status — violated when, e.g., a typo in email correlates with a typo in name (both from the same bad manual entry), inflating confidence.
+
+---
+
+**Recommendation:** Start with approach 1 for quick wins and coverage measurement. If coverage is < 80% of expected matches, layer in approach 3 for the fuzzy tail. Approach 2 is worth it only if you have thousands of records across both systems and need cross-system (not just pairwise) deduplication at scale.

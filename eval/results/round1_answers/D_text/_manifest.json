@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "ts": "2026-07-25T20:31:35.345180+00:00",
+  "suite": "D_text",
+  "round": 1,
+  "n_recovered": 30,
+  "n_already_present": 0,
+  "n_export_failed": 0,
+  "n_no_text_found": 0,
+  "n_missing_unit_json": 0,
+  "n_missing_session_id": 0,
+  "units": {
+    "qwen__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a7e40911ffeLDDwfsUhfNi94d",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1797,
+      "word_count": 256,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwen__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:30:58.949130+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "qwen__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a7c79560ffeAgTV5Ndtg5aLWS",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3490,
+      "word_count": 487,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwen__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:30:59.688457+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "qwen__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a7a0e0cdffeNKfYBSU1bJYD7F",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1665,
+      "word_count": 238,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwen__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:00.476026+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "qwen__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a788849bffe5i073pcJ8062Kx",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3455,
+      "word_count": 512,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwen__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:01.242306+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "opus__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a2b7d6ffffefU4JSApX4r7wHq",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2010,
+      "word_count": 278,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/opus__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:02.015324+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "opus__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a29e874dffe2ZoG5Fpa4mSd4u",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2860,
+      "word_count": 384,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/opus__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:02.758618+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "opus__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a2865ea7ffeucRy5iXjSjCqpS",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1830,
+      "word_count": 252,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/opus__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:03.491729+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "opus__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a2715ff0ffehP33P5YrCJneq6",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3376,
+      "word_count": 459,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/opus__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:04.213220+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "glm__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a248bee1ffeyVFhtJs57Na2u3",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1733,
+      "word_count": 251,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/glm__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:05.127115+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "glm__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a22f731fffe9uGmZM6BBDXj8q",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2624,
+      "word_count": 348,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/glm__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:05.869929+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "glm__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a20f08b7ffeqMoBVXT0B10M5e",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1702,
+      "word_count": 237,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/glm__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:06.622645+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "glm__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a1f8ce9cffevLPsVGq9Tbnwks",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1543,
+      "word_count": 206,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/glm__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:08.020441+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "northmini__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09ca8eea8ffex9cFOLlbKj4wcK",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1675,
+      "word_count": 228,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/northmini__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:08.895072+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "northmini__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09c8f3296ffeI8Uv79HvVL7KcG",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3469,
+      "word_count": 457,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/northmini__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:09.648412+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "northmini__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09c6dc01fffeCVQVNxz0JtH5Rt",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1434,
+      "word_count": 193,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/northmini__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:10.406988+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "northmini__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09c5216fdffeBimUoPMKdFe1uf",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2801,
+      "word_count": 368,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/northmini__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:11.231634+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gpt-oss__mxfp4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09cfcd967ffenpOOi1a8lSNzm4",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2520,
+      "word_count": 381,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gpt-oss__mxfp4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:12.991681+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gpt-oss__mxfp4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09cbfd963ffeym9588y6kMcXOY",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 4139,
+      "word_count": 569,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gpt-oss__mxfp4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:18.169879+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gemma__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a1986138ffeoY4vNtL0FvZXCP",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1596,
+      "word_count": 225,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gemma__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:20.265715+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gemma__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0a1603c51ffetzbs8DzybeP2jW",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3257,
+      "word_count": 479,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gemma__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:22.492015+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gemma__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09d8ce8abffer2XCRyYPNeZKeG",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1494,
+      "word_count": 208,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gemma__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:25.056991+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "gemma__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09d582407ffe0NlHNknF7232Cj",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 2690,
+      "word_count": 377,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/gemma__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:26.073106+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "katdev__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0929d9b8dffeuvlC6tUHA7IpQi",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1756,
+      "word_count": 233,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/katdev__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:26.937317+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "katdev__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_09272083effeFH59b1wZG2bmbN",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3268,
+      "word_count": 419,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/katdev__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:29.588179+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "katdev__iq4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_0921c2f87ffeecIVKZl3PvrnuJ",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1694,
+      "word_count": 226,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/katdev__iq4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:31.195023+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "katdev__iq4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_091ee6b64ffeWZGDHYu0hFmBHk",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3367,
+      "word_count": 458,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/katdev__iq4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:32.075893+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "qwopus__q5__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_091db73c2ffeJz6JMosHCioJFR",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1953,
+      "word_count": 290,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwopus__q5__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:32.954657+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "qwopus__q5__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_091d181c0ffeiv3PEzzG1e9FPO",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 4111,
+      "word_count": 568,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/qwopus__q5__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:33.797838+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "ornith__q4__D_text__D1_summarize_mtp__rep1": {
+      "status": "recovered",
+      "session_id": "ses_091c8f037ffevU7pnekN7ZSJEu",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 1701,
+      "word_count": 248,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/ornith__q4__D_text__D1_summarize_mtp__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:34.540482+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    },
+    "ornith__q4__D_text__D2_dedup_approaches__rep1": {
+      "status": "recovered",
+      "session_id": "ses_091c1b5a4ffenmV977yhk19StR",
+      "n_text_parts_in_final_message": 1,
+      "char_len": 3522,
+      "word_count": 493,
+      "out_path": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/results/round1_answers/D_text/ornith__q4__D_text__D2_dedup_approaches__rep1.txt",
+      "recovered_ts": "2026-07-25T20:31:35.344516+00:00",
+      "recovery_method": "opencode export <session_id> -> last assistant message's text part(s) (CONTRACT.md \u00a73 step 3 mechanism)"
+    }
+  }
+}

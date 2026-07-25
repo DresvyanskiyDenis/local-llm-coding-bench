@@ -1,0 +1,42 @@
+I'll propose three distinct approaches for record linkage across different CRM schemas:
+
+## 1. Rule-Based Blocking with Probabilistic Scoring
+
+**How it works:** Use rule-based blocking to reduce comparison space (e.g., same first letter of first name, same email domain), then apply probabilistic record linkage using Fellegi-Sunter framework. Calculate likelihood ratios for each field match (exact, phonetic, partial string), combine with Bayesian framework to compute overall match probability.
+
+**Tradeoffs:**
+- **Accuracy:** High for clean data, degrades with typos/formatting issues
+- **Engineering effort:** Moderate - requires domain knowledge for rule design
+- **Maintainability:** Low - rules need manual updates as data patterns change
+- **Explainability:** High - clear logic behind match decisions
+- **Compute cost:** Low-Medium - blocking reduces comparisons significantly
+
+**Failure mode:** Poor performance when key fields (name/email) have systematic differences in formatting or when blocking rules are too restrictive, missing valid matches.
+
+## 2. Embedding-Based Similarity Matching
+
+**How it works:** Use sentence-BERT or similar embeddings to convert each customer record into a high-dimensional vector representation, then compute similarity scores between all pairs using cosine similarity or Euclidean distance.
+
+**Tradeoffs:**
+- **Accuracy:** High for semantic similarity, handles typos/formatting better than rule-based
+- **Engineering effort:** High - requires model selection, fine-tuning, infrastructure
+- **Maintainability:** Medium - periodic retraining needed for drift
+- **Explainability:** Low - "black box" approach, hard to interpret why records match
+- **Compute cost:** High - embedding generation and similarity computation expensive
+
+**Failure mode:** Embeddings may fail to capture domain-specific matching patterns (e.g., "Inc." vs "Incorporated" variations) and can be brittle to data distribution shifts.
+
+## 3. Hybrid Graph-Based Clustering
+
+**How it works:** Build a bipartite graph where nodes represent customer records and edges represent similarity scores between fields. Use community detection algorithms (Louvain, label propagation) or hierarchical clustering to group similar records into clusters, then apply threshold-based decision rules.
+
+**Tradeoffs:**
+- **Accuracy:** High - leverages global structure, handles complex relationships
+- **Engineering effort:** High - graph construction, algorithm selection, parameter tuning
+- **Maintainability:** Medium - algorithm parameters may need adjustment
+- **Explainability:** Medium - can trace cluster formation but less intuitive than rules
+- **Compute cost:** Medium-High - graph algorithms scale poorly with record count
+
+**Failure mode:** Over-clustering or under-clustering depending on similarity threshold choices; performance degrades significantly with very large datasets due to quadratic similarity computation requirements.
+
+Each approach offers different strengths: rule-based provides explainability and lower compute needs, embeddings handle semantic similarity well, while graph-based methods capture complex relationships. The choice depends on data quality, computational constraints, and the importance of interpretability versus raw accuracy.

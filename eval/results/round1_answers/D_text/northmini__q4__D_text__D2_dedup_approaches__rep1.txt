@@ -1,0 +1,37 @@
+I'll propose three distinct approaches for linking customer records across these CRM systems:
+
+## 1. Rule-based Fuzzy Matching
+**How it works:** Uses string similarity algorithms (Levenshtein distance, Jaro-Winkler, soundex) to compare available fields across schemas. Overlapping columns are scored, and thresholds determine matches. Exact matching on stable identifiers (email when present) serves as ground truth anchors.
+
+**Tradeoffs:**
+- *Accuracy:* High for straightforward cases but brittle with typos/formatting variations
+- *Engineering effort:* Low-to-moderate initial setup, but requires extensive tuning for edge cases
+- *Maintainability:* Easy to understand and modify rules
+- *Explainability:* Excellent - decisions are transparent
+- *Compute cost:* Minimal
+
+**Failure mode:** Completely different name formats (e.g., "John Smith" vs "Robert Johnson") or missing email/phone fields prevent linkage even when records refer to the same person.
+
+## 2. Machine Learning with Feature Engineering
+**How it works:** Creates vector representations of records using engineered features (string similarity scores, n-gram overlap, phonetic codes) and trains classifiers (logistic regression, random forest) on labeled examples. Uses probability thresholds for soft matching decisions.
+
+**Tradeoffs:**
+- *Accuracy:* Potentially highest when trained on representative data
+- *Engineering effort:* High - requires feature engineering, labeling, and model maintenance
+- *Maintainability:* Moderate - models need retraining as schemas evolve
+- *Explainability:* Moderate - feature importance can be analyzed but black-box models less interpretable
+- *Compute cost:* Moderate during training, low for inference
+
+**Failure mode:** Models struggle with novel data patterns not represented in training (e.g., new naming conventions, international character sets).
+
+## 3. Graph-based Community Detection
+**How it works:** Builds a bipartite graph where records are nodes and edges represent similarity scores between records across tables. Applies clustering algorithms (DBSCAN, Louvain) to find communities of connected records, with similarity thresholds determining edge creation.
+
+**Tradeoffs:**
+- *Accuracy:* Good for capturing complex relationship patterns and transitive links
+- *Engineering effort:* Moderate - requires graph construction and clustering parameter tuning
+- *Maintainability:* Moderate - graph algorithms are conceptually clear but computationally intensive
+- *Explainability:* Moderate - can visualize clusters but algorithm decisions less transparent
+- *Compute cost:* High for large datasets due to graph construction and clustering
+
+**Failure mode:** Transitive matching errors where A~B and B~C are linked, but A and C are actually different people (the "chain reaction" problem).
