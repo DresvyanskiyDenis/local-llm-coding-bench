@@ -41,7 +41,9 @@ Verified live on this machine, 2026-07-25:
 | `evaluate.py` imports `gradio_client` and `e2b` at module top level | ✅ | Both must be installed even for local execution. Pure Python, no problem. |
 | IFEval prompts + official verifier are fetchable without auth | ✅ all 5 files HTTP 200 from `raw.githubusercontent.com/google-research/google-research/master/instruction_following_eval/` (`input_data.jsonl` 207 KB) | No HF token, no `lm-eval` (which drags in `torch>=1.8` as a **core** dep — avoided). |
 | `claude` CLI present, `ANTHROPIC_API_KEY` **not** set | ✅ `/opt/homebrew/bin/claude` | The pairwise judge runs through `claude -p`, i.e. against the subscription, not an API key. |
-| 414 GB free, `uv 0.11.31`, endpoint on `:8888` reachable | ✅ | No capacity blocker. |
+| 414 GB free, `uv 0.11.31` | ✅ | No capacity blocker. |
+| **`:8888` is held by `llama-swap`, not `unsloth-serve`** | ⚠️ confirmed live — pid 45518, `-config ~/.config/llama-swap/config.yaml`, backends on `:5800+`, `groups.fleet` with `swap: true, exclusive: true` | **The serving layer changed on 2026-07-21, after round 1 was measured.** See §3.5 — this rewrites the serve lifecycle for both lanes. |
+| Sampler flags survived the port | ✅ verified 2026-07-25: `sampler-qwen` = `--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0`, identical to `unsloth-serve:68`; `sampler-coder` identical to `unsloth-serve:158` | Sampling is **not** a round-1 → round-2 confound. The port manager changed; the decoding did not. |
 
 ### The one genuine unknown
 
@@ -112,6 +114,57 @@ existing 450 units automatically. This lane measures *the harness* (model + agen
 OpenCode. They hit `/v1/chat/completions` directly, single-turn, no agent, no tools. They
 measure *the model*, not the harness.
 
+### 3.5 Serving — changed since round 1, and it bites in three places
+
+Round 1 was served by `~/bin/unsloth-serve <serve_name>`, one model per invocation, orchestrator
+owning `:8888` exclusively. Since **2026-07-21** `:8888` belongs to **llama-swap**, which loads
+backends on demand by model id onto `:5800+`, with `groups.fleet: {swap: true, exclusive: true}`
+and per-model `ttl`. `unsloth-serve` still exists as the escape hatch and, per its own config
+header, is *meant* to fail loud if llama-swap holds the port.
+
+**Bite 1 — `orchestrate.py` will silently kill llama-swap.** `clear_port()` (`orchestrate.py:272`)
+SIGTERMs whatever listens on `:8888`, then SIGKILLs every `llama-server` process, on the stated
+premise that "we own the port exclusively while this engine runs". That premise is now false. The
+intended visible conflict is removed by exactly the function meant to guarantee a clean port.
+**Phase 3 must add a guard**: if the `:8888` listener is `llama-swap`, `clear_port()` aborts with
+an explicit message instead of killing it. Fail loud, per the same principle the config header
+already states.
+
+**Bite 2 — llama-swap cannot express the q4/q5 axis.** One model id → one quant, under the
+config's stated "Q4 everywhere" policy. `configs.json`'s 17 entries (15 working) encode q4/q5
+pairs via distinct `serve_name`s that only `unsloth-serve` understands. Through llama-swap the
+fleet would be ~11 configs, one quant each.
+
+> **Decided 2026-07-25: stop llama-swap for the duration of an eval run and serve with
+> `unsloth-serve`, exactly as round 1 did.** This keeps all 15 configs including the q4/q5 axis,
+> and keeps round-2 units produced under the same serving stack as the 450 round-1 units — which
+> is what the rank correlation depends on. Cost: `:8888` is unavailable for daily OpenCode use
+> while a run is in flight, which is already true of any eval night.
+>
+> Procedure, to be scripted as `eval/harness/ops/serving_mode.sh {eval|daily}`:
+> `eval` → stop the llama-swap process, confirm `:8888` free and no `llama-server` alive, then
+> hand the port to `orchestrate.py`. `daily` → restart llama-swap and confirm it binds.
+> Idempotent, and it records which mode it left the machine in, so a crashed night does not leave
+> Denis wondering why OpenCode has no models in the morning.
+
+**Bite 3 — server-side sampler defaults leak into "greedy" runs.** BCB's client hardcodes
+`top_p=0.95` and sends `temperature=0` (`gen/util/openai_request.py:17-20`) but sends nothing for
+`top_k`, `min_p` or `presence_penalty` — so the per-model server defaults apply, and they differ
+across the fleet (`sampler-coder` carries `--presence-penalty 1.5`, `sampler-qwen` does not).
+A penalty of 1.5 on a code benchmark is a real distortion, and an uneven one. **Both adapters must
+send an explicit neutral sampling block on every request** (`temperature: 0, top_p: 1, top_k: 0,
+min_p: 0, presence_penalty: 0, frequency_penalty: 0`) and record it in the result JSON's
+`generation` block. Do not rely on the server default being neutral; it is not.
+
+**Consequence for the plan as written:** with the decision above, **both lanes serve through
+`unsloth-serve` and both reuse the round-1 lifecycle** — Lane 2 imports `serve_config` / `unload`
+/ `wait_for_ready` from `orchestrate.py` as originally planned. The only structural additions are
+`serving_mode.sh` (bite 2) and the `clear_port()` guard (bite 1), and the guard now earns its keep
+twice over: it is what stops an eval run from silently eating llama-swap when someone forgets to
+flip the mode.
+
+---
+
 That distinction must be stated in the writeup. Round 1 measured harness-level performance;
 IFEval and BCB-Hard measure model-level performance. When the Spearman correlation is computed,
 a divergence may be a harness effect rather than a model effect — and that is a finding, but only
@@ -137,17 +190,25 @@ Nothing downstream is trustworthy until these pass.
    tempdir tree_sitter tree-sitter-python wget gradio-client e2b httpx`), then
    `requirements-eval.txt` **with pins stripped**. Then `env_health.py` → record the number of
    Hard tasks whose test imports resolve. **This number goes in the writeup.**
-5. **Reasoning-leak check** *(needs the endpoint free — the one step that must wait for a quiet
-   machine)*. Serve one thinking config and send a plain chat request. If `<think>…</think>`
+5. **`ops/serving_mode.sh`** (§3.5): `eval` stops llama-swap and hands `:8888` to `unsloth-serve`,
+   `daily` restores it. Write and test this **before** step 6, because step 6 is the first thing
+   that needs the port.
+6. **Reasoning-leak check** *(the one step that needs a quiet machine — run it under
+   `serving_mode.sh eval` and flip back to `daily` afterwards)*. Serve one thinking config via
+   `unsloth-serve` and send a plain chat request. If `<think>…</think>`
    appears inside `choices[0].message.content` instead of a separate `reasoning_content` field,
    every IFEval format constraint and every BCB code extraction is corrupted for thinking models —
    which would silently invalidate exactly the qwen comparison this round exists to test.
    `opencode_driver.py:194` counts a separate `reasoning` part type, which is *evidence* the
    server already separates it, but that is OpenCode's view, not the raw API's. **Verify, don't
    assume.**
-   *Fallback if it leaks:* `eval/harness/reasoning_proxy.py` — a ~60-line pass-through on
-   `:8899` that strips reasoning from responses. Both adapters then point at `:8899` instead of
-   `:8888`. Build it only if step 5 says so.
+   *Handling:* `eval/harness/eval_proxy.py` — a small pass-through on `:8899` forwarding to
+   `:8888`. It is needed **regardless** of the leak answer, because §3.5 bite 3 requires injecting
+   neutral sampling for BigCodeBench, which cannot send those parameters itself. Reasoning
+   stripping is then just a second thing the same proxy does, switched on by step 5's answer.
+7. **Confirm `orchestrate.py --dry-run` still passes** in both serving modes. It reads
+   `~/bin/unsloth-serve` for `serve_name` resolution and `~/.config/opencode/opencode.json` for
+   model ids — neither has moved, but both are now one layer removed from what actually serves.
 
 **Gate:** phases 1 and 2 do not start until 1–4 are green and 5 has a recorded answer.
 
@@ -165,13 +226,14 @@ eval/external/ifeval/
 
 `run_ifeval.py` — `--only <model>`, `--limit N` (dev), `--out`, `--base-url`:
 
-1. Loop `harness/configs.json` (skipping `broken`), reusing `orchestrate.serve_config` /
-   `unload` so serve/ready/zombie-port handling is the proven code path, not a second
-   implementation of it.
-2. Per prompt: single-turn `chat/completions`, `temperature=0`, `max_tokens=1280`, **no system
-   prompt** (a system prompt would contaminate an instruction-following measurement), strip
-   reasoning per Phase 0 step 5. Write `response` alongside `prompt` — resumable per prompt,
-   same skip-if-done discipline as `orchestrate.py`.
+1. Loop `harness/configs.json` (skipping `broken`), reusing `orchestrate.serve_config` / `unload`
+   so serve/ready/zombie-port handling is the proven code path, not a second implementation of it.
+   Requires `serving_mode.sh eval` first (§3.5) — assert `:8888` is not llama-swap before the
+   first launch, and abort loudly if it is.
+2. Per prompt: single-turn `chat/completions`, **no system prompt** (a system prompt would
+   contaminate an instruction-following measurement), the explicit neutral sampling block from
+   §3.5 bite 3, `max_tokens=1280`, strip reasoning per Phase 0 step 5. Write `response` alongside
+   `prompt` — resumable per prompt, same skip-if-done discipline as `orchestrate.py`.
 3. Score by importing **`vendor/evaluation_main.py`'s `test_instruction_following_strict` and
    `…_loose`**, not by reimplementing them. Both the constraint functions and the
    strict/loose response-variant logic must stay theirs.
@@ -209,12 +271,20 @@ eval/external/bigcodebench/
 └── PROVENANCE.md
 ```
 
-`run_bcb.py` per config (serve lifecycle again imported from `orchestrate.py`):
+`run_bcb.py` per config (serve lifecycle imported from `orchestrate.py`, `serving_mode.sh eval`
+asserted first), pointed **through `eval_proxy.py`**, because
+BCB's client offers no way to inject sampling parameters: `make_auto_request` accepts only
+`max_tokens`, `temperature`, `reasoning_effort` and `n` (`gen/util/openai_request.py:7-14`), so
+`top_k`/`min_p`/`presence_penalty` cannot be neutralised from the CLI. The proxy is the only place
+that can, and it is the same component as the Phase-0 reasoning-strip fallback — build it once,
+`eval/harness/eval_proxy.py`, listening on `:8899`, forwarding to `:8888`, injecting the neutral
+sampling block and stripping reasoning if Phase 0 step 5 says it leaks. It logs every injected
+override so the result file can assert what the model actually ran under.
 
 ```bash
 .venv/bin/python -m bigcodebench.generate \
   --model "<opencode_model_id>" --backend openai \
-  --base-url http://127.0.0.1:8888/v1 \
+  --base-url http://127.0.0.1:8899/v1 \        # eval_proxy, NOT :8888 directly
   --split instruct --subset hard --greedy --resume \
   --max-new-tokens 4096          # NOT the 1280 default — thinking models blow that budget
                                  # mid-solution and the sanitizer then sees a truncated program
@@ -440,3 +510,7 @@ result, so each gets flagged rather than silently chosen:
    window is needed elsewhere, `--judge-cmd` takes an API-backed alternative unchanged.
 4. **Re-weighting the composite** — deliberately *not* done. BCB and IFEval land as unweighted
    reported axes until the correlation is known, per the expansion plan.
+5. ~~**Serving stack**~~ — **decided 2026-07-25: llama-swap is stopped for the run and
+   `unsloth-serve` serves, as in round 1.** Keeps all 15 configs including the q4/q5 axis, and
+   keeps the serving stack constant across rounds. `:8888` is then unavailable for daily OpenCode
+   use while a run is in flight. Mechanised as `ops/serving_mode.sh {eval|daily}` (§3.5).

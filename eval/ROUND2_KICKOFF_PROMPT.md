@@ -35,6 +35,11 @@ ALREADY DECIDED — do not re-litigate:
 - BigCodeBench executor: relaxed-pin LOCAL execution. No Docker (RAM), no Gradio remote (upload).
   Consequence: BCB pass@1 is a within-fleet number, not comparable to the public leaderboard.
   Label it that way everywhere it appears.
+- Serving: :8888 is currently held by llama-swap (since 2026-07-21), NOT unsloth-serve as in
+  round 1. For an eval run llama-swap is STOPPED and unsloth-serve serves, exactly as round 1 did
+  — this keeps all 15 configs (llama-swap is one quant per model id) and keeps the serving stack
+  constant across rounds. Read §3.5 of the plan; it has three consequences and all three are
+  build items: ops/serving_mode.sh, the clear_port() guard, and eval_proxy.py.
 - IFEval: vendor the google-research verifier, do NOT use lm-evaluation-harness (torch is a core
   dependency there and is not wanted on this machine).
 - Pairwise judge: `claude -p` via --judge-cmd. There is no ANTHROPIC_API_KEY on this machine.
@@ -53,8 +58,12 @@ HARD RULES
 - uv / uv run only. Never pip, never poetry. Never /tmp — use $TMPDIR or the scratchpad.
 - Every new script gets the PEP 723 inline header, per CONTRACT.md.
 
-VERIFY, DO NOT ASSUME — these three have already burned this project once each:
-- Phase 0 step 5, reasoning leak: if <think> lands inside choices[0].message.content instead of a
+VERIFY, DO NOT ASSUME — these four have already burned this project once each:
+- orchestrate.py's clear_port() SIGKILLs whatever holds :8888 on the premise that the engine owns
+  the port exclusively. That premise is now false — it would silently kill llama-swap. Guard it
+  (fail loud) before anything else touches the port. Never leave the machine in eval serving mode:
+  serving_mode.sh daily must run at the end, or OpenCode has no models in the morning.
+- Phase 0 step 6, reasoning leak: if <think> lands inside choices[0].message.content instead of a
   separate field, every IFEval constraint and every BCB code extraction is corrupted for thinking
   models. Check it with a real request before building on top of it. Fallback (reasoning_proxy.py)
   is specified in the plan — build it only if the check says so.
@@ -96,5 +105,7 @@ Then commit and push feature/round2-expansion.
 
 ## Before pasting
 
-The reasoning-leak check (Phase 0 step 5) loads a model onto `:8888`. Make sure the port is free
-and nothing else needs the GPU for the night.
+The reasoning-leak check (Phase 0 step 6) stops llama-swap and loads a model via `unsloth-serve`.
+Nothing else may need `:8888` or the GPU while it runs — and the session is instructed to restore
+`serving_mode.sh daily` afterwards. If a night ends badly, that is the first thing to check in the
+morning: `pgrep -fl llama-swap` should return a process.
