@@ -142,6 +142,24 @@ parser here). Match findings against `grade/key.json` via location overlap + syn
 ```
 `ambiguous` = findings that partially matched; Opus resolves later, so SAVE them, don't guess.
 
+**Round 2 addition — control tasks (e.g. `B6_control_nobugs`, not yet on disk, Phase 4):**
+`grade/key.json` plants nothing, recognised via an explicit `{"control": true, "bugs": []}`
+(a bare `{"bugs": []}` is also honoured). `planted` is then 0, so `recall` is `null` — never
+`0.0`, recall is undefined when nothing was planted. `precision` collapses to the
+control-specific rule (any finding on a no-bug file is a false positive): `1.0` if the model
+reported nothing, else `0.0`. The verdict additionally gains `false_positive_rate` (findings
+count ÷ 1), present **only** for control-task verdicts — non-control verdicts keep exactly
+the schema above.
+```json
+{
+  "grader": "review",
+  "planted": 0, "found": 0, "hallucinated": 2,
+  "recall": null, "precision": 0.0,
+  "matched_ids": [], "missed_ids": [], "ambiguous": [],
+  "false_positive_rate": 2.0             // control tasks only
+}
+```
+
 ### diff_grader.py  → verdict schema (for C_edit; pairs with pytest_grader)
 Computes `git diff` (or difflib) between task `repo/` (original) and `<rundir>/repo/` (edited):
 ```json
@@ -154,6 +172,47 @@ Computes `git diff` (or difflib) between task `repo/` (original) and `<rundir>/r
 }
 ```
 For C_edit the orchestrator runs BOTH pytest_grader and diff_grader and merges (schema §4).
+
+**Round 2 addition — `noise.json` gains a `kind` field** (`out_of_scope` | `already_done` |
+`contradiction` | `must_survive`; `must_survive` is today's only kind, now explicit) and may
+carry multiple entries via `{"noise": [...]}` (e.g. `C5_contradiction`, `C3_scope_creep`,
+`C4_already_done` — not yet on disk, Phase 4). A `noise.json` with no `kind` key (today's
+only real shape, e.g. C1/C2) is untouched and byte-identical to before this addition. Which
+`grade/noise.json` key each `kind` pairs with:
+- `must_survive` / `already_done` → `required_pattern`/`required_snippet` (correct code that
+  must remain untouched; `acted_on` == it is now ABSENT).
+- `out_of_scope` → `forbidden_pattern`/`forbidden_snippet` (code that must NOT appear;
+  `acted_on` == it is now PRESENT).
+- `contradiction` → not diff-gradable at all (see below); `acted_on` is always `null`.
+
+When `noise.json` opts into the new schema (has `kind` and/or the `{"noise": [...]}`
+wrapper), the verdict's `noise_comment_acted_on` becomes an aggregate (`true` if ANY entry
+was acted on, so existing consumers of that key keep working) and the verdict gains a
+`noise` list, one entry per noise comment:
+```json
+{
+  "grader": "diff",
+  "files_touched": 1, "lines_added": 1, "lines_removed": 3,
+  "touched_expected_only": true,
+  "noise_comment_acted_on": true,        // aggregate: true if ANY entry below was acted on
+  "surgical_score": 0.7,
+  "noise": [
+    {"kind": "must_survive", "file": "src/x.py", "acted_on": true},
+    {"kind": "out_of_scope", "file": "src/x.py", "acted_on": false}
+  ]
+}
+```
+`contradiction` is the one noise kind a diff cannot grade: whether the model SURFACED the
+conflict between two contradicting review comments lives in prose (`<rundir>/answer.txt`),
+not in the tree. For that kind the grader instead reads `answer.txt` and reports
+`conflict_surfaced: true|false|null` (null if `answer.txt` is missing) via a case-insensitive
+substring match against `grade/noise.json`'s `conflict_signal.answer_must_mention`, tagged
+`conflict_signal_kind: "keyword_match"` — reported honestly as WEAKER evidence than the
+diff-based checks above, never presented as equivalent:
+```json
+{"kind": "contradiction", "file": "src/x.py", "acted_on": null,
+ "conflict_surfaced": true, "conflict_signal_kind": "keyword_match"}
+```
 
 ---
 
