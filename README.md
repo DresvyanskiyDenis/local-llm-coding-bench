@@ -43,6 +43,34 @@ Top 3 for **"a local agentic-coding driver in OpenCode"** (composite of correctn
 
 ---
 
+## Round 2 (in progress) — two lanes, external benchmarks
+
+Round 1 measured one thing: the model driven through OpenCode — agentic, tool-using, multi-turn.
+Round 2 adds a second, deliberately separate measurement rather than blending it into the first.
+
+- **Lane 1 — in-harness** (round 1's A/B/C/D suites, now being expanded by bug/noise/context
+  kind). Still runs through OpenCode. Measures the model **plus** the harness — tool-call
+  formatting, context handling, and compaction behaviour all count.
+- **Lane 2 — external** ([BigCodeBench Hard](https://github.com/bigcode-project/bigcodebench),
+  [IFEval](https://arxiv.org/abs/2311.07911)): single-turn, straight to
+  `/v1/chat/completions`, no agent, no tools. Measures the model alone, graded by verifiers
+  vendored **unmodified** from their upstream projects — code nobody in this repo wrote.
+
+A model can be strong in one lane and weak in the other; that gap is reported as a finding, not
+explained away. Both external benchmarks land as **new axes reported alongside** the existing
+composite — the composite formula itself is unchanged this round. BigCodeBench Hard here runs
+local with relaxed dependency pins (the official path is a Docker image with no arm64 manifest, or
+a remote Gradio executor that uploads solutions to a third party) — 148/148 hard tasks resolve
+locally with 0 blocked, but the resulting `pass@1` is a **within-fleet** number, not comparable to
+the public BigCodeBench leaderboard.
+
+Full method: [`docs/methodology.md`](docs/methodology.md) §6. Live build/run status:
+[`eval/ROUND2_STATUS.md`](eval/ROUND2_STATUS.md). Per-benchmark setup and repro commands:
+[`eval/external/ifeval/README.md`](eval/external/ifeval/README.md),
+[`eval/external/bigcodebench/README.md`](eval/external/bigcodebench/README.md).
+
+---
+
 ## Repo layout
 
 ```
@@ -52,6 +80,7 @@ local-llm-coding-bench/
 ├── eval/
 │   ├── harness/        ← resumable orchestrator, speed probe, graders, driver
 │   ├── tasks/          ← the self-contained A/B/C/D task dirs
+│   ├── external/       ← round-2 external lane: BigCodeBench Hard + IFEval adapters (vendored, unmodified graders)
 │   └── results/        ← raw per-unit JSON + append-only manifest
 ├── bench/              ← lightweight smoke test for a serving endpoint
 ├── setup/              ← stand up the identical local serving stack on your Mac

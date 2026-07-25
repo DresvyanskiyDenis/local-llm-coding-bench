@@ -232,3 +232,215 @@ the board — equal-or-better pass-rate at lower RAM — so Q4 is the recommende
   than estimated.
 - **`qwen27`** remains broken (serve/template, not the sanitizer): smoke-failed both quants →
   0 units, excluded from the ranking.
+
+---
+
+## 6. Round 2 — two lanes, external graders, expanded suites
+
+*Added 2026-07-25/26, branch `feature/round2-expansion`. Companion docs:
+[`eval/experiments_expansion_plan.md`](../eval/experiments_expansion_plan.md) (what and why),
+[`eval/IMPLEMENTATION_PLAN.md`](../eval/IMPLEMENTATION_PLAN.md) (how, in this repo), and the live
+build/run record [`eval/ROUND2_STATUS.md`](../eval/ROUND2_STATUS.md).*
+
+### 6.1 Why: credibility and saturation
+
+Every task, hidden test, planted-bug key, rubric and judge in round 1 was authored by Opus — the
+suite grades itself, a fair objection. Independently of who wrote them, two suites had also
+stopped discriminating: `A_coding` (0.883–0.994 pass-rate, seven of nine models above 0.88) and
+`D_text` (8.67–9.83/10, a 1.2-point spread on a ten-point scale). `B_review` (0.111–0.611 recall)
+remained the one suite still separating the fleet. Round 2 answers both problems at once: external,
+third-party-authored graders for credibility, and harder or expanded tasks for spread. The goal is
+validation, not replacement — see §6.7.
+
+### 6.2 Two lanes — do not conflate them
+
+This is the central methodological change this round makes, and the docs exist to prevent it being
+flattened back into one number.
+
+- **Lane 1 — in-harness** (suites A/B/C/D, including the round-2 expansions in §6.8). Runs through
+  OpenCode exactly like round 1: multi-turn, tool-using, agentic. It measures **the model plus the
+  harness** — tool-call formatting, context handling, and compaction behaviour all count toward
+  the score.
+- **Lane 2 — external** (BigCodeBench Hard, IFEval). Single-turn, direct
+  `POST /v1/chat/completions`, no OpenCode, no agent, no tools in the loop. It measures **the
+  model** in isolation.
+
+A model can rank well in one lane and poorly in the other. That is not an inconsistency to be
+explained away — it is informative on its own terms. If, say, `qwen`'s malformed-tool-call tax
+(28–32%, the most contested finding in round 1) shows up as an in-harness weakness with no
+equivalent degradation on IFEval, that points at the harness/tool-formatting integration rather
+than raw instruction-following. If IFEval shows the same weakness, that is evidence the problem is
+in the model. Report both lanes per model; never average across them into a single number.
+
+### 6.3 Lane 2, axis 1 — BigCodeBench Hard (replaces A's headline metric)
+
+[BigCodeBench](https://github.com/bigcode-project/bigcodebench) Hard, Instruct track — 148 tasks
+requiring correct composition of 3–4 library calls, run greedy at 1 rep (deterministic grader,
+additional reps buy no variance information). Newer and materially less saturated than the
+existing A tasks, though not contamination-free.
+
+**Execution and comparability — this caveat belongs next to every `pass@1` number, not only here.**
+BigCodeBench's official evaluator is a Docker image with no arm64 manifest, and its pinned
+`requirements-eval.txt` (`numpy==1.21.2`, `numba==0.55.0`, `keras==2.11.0`, …) has no
+Apple-Silicon wheels. The remaining official path, the Gradio remote executor, uploads generated
+solutions to a third-party HF Space — rejected on that basis alone. This repo instead installs the
+same ~71 packages **unpinned** and runs `--execution local`. Confirmed on this machine:
+**148/148 Hard tasks resolvable, 0 blocked** — but **37 packages sit at a different version than
+upstream's pinned set** (e.g. numpy 1.21.2 → 2.4.6, pandas 2.0.3 → 3.0.5, Django 4.2.7 → 6.0.7;
+full mapping in `eval/external/bigcodebench/PROVENANCE.md`).
+
+Consequence: every config runs under the *identical* relaxed-pin executor, so the **within-fleet
+ranking is valid** — that is what the Spearman correlation in §6.7 needs. The **absolute `pass@1`
+is not comparable to the public BigCodeBench leaderboard** and must never be quoted as if it were.
+Each result JSON carries this in a `comparability` field for exactly this reason.
+
+The existing A tasks stay in the tree, unreplaced — they become the easy floor of the coding axis,
+and the A → BigCodeBench-Hard delta per model is itself a result (which models degrade fastest as
+difficulty rises).
+
+### 6.4 Lane 2, axis 2 — IFEval (new axis)
+
+[Zhou, Lou et al., arXiv:2311.07911](https://arxiv.org/abs/2311.07911) (Google Research) — 541
+prompts, 25 programmatically-verifiable instruction types (format, length, keywords, content).
+Every constraint is checked by a short deterministic Python function: no LLM judge, no reference
+answer, no rubric. Four metrics, each strict (raw response) and loose (8 lightly-normalized
+variants — with/without first line, last line, both, `*` stripped):
+
+| Metric | Meaning |
+|---|---|
+| `prompt_level_strict` | fraction of prompts where every tagged instruction passed, strict — **headline** |
+| `inst_level_strict` | fraction of individual instruction checks passed, strict |
+| `prompt_level_loose` / `inst_level_loose` | same, loose variant |
+
+`by_instruction_type` breaks `inst_level_strict` down per instruction id — not decoration, it is
+what turns "qwen is bad at formats" into "qwen fails *these* format classes," the fine-grained
+corroboration (or refutation) of the round-1 malformed-tool-call finding.
+
+### 6.5 Reasoning-leak handling — affects how every round-2 number is read
+
+The served (thinking) models in this fleet emit a literal `<think>…</think>` block **inside**
+`choices[0].message.content`. Confirmed live against a served config (`qwen`) as a property of the
+serving stack itself rather than a per-model output convention — though not yet re-probed against
+every model individually. `message`'s keys are exactly `content`, `refusal`, `role`: there is no
+`reasoning_content` field, and `usage.completion_tokens_details.reasoning_tokens` reports `0`. The
+leak is therefore **invisible at the API level** — nothing in the response envelope flags that
+reasoning happened, so it can only be detected and removed textually, by pattern-matching the tag
+in the content string itself.
+
+Both external adapters strip `<think>`/`<reasoning>`/`<thinking>` blocks from the response before
+scoring, **on by default**. The conservative case is truncation: a thinking model can spend its
+entire token budget on reasoning and return `finish_reason: "length"` with an *opening* `<think>`
+and no closing tag. That response is not "mostly reasoning, a bit of answer" — it is reasoning,
+full stop — so the stripper discards it entirely, yielding an **empty** response rather than
+leaking a partial chain-of-thought into the scored text. An empty response then legitimately fails
+the grader (every IFEval instruction, or no BigCodeBench program at all) — correct scoring, not a
+bug — but it must stay *visible* as such: result JSONs separately count
+`n_finish_length`/`n_empty_after_strip` (IFEval) and `n_empty_completions`/`n_sanitizer_dropped`
+(BigCodeBench), so a near-zero score on a thinking config reads as "it never reached an answer
+within the token budget," not "it ignored every instruction." Scoring a truncated `<think>` as if
+it were the answer would silently corrupt every downstream number; discarding it and counting the
+discard is the conservative choice.
+
+### 6.6 Composite — unchanged; new axes reported alongside
+
+**The composite formula in §4 is not modified by round 2.** BigCodeBench Hard and IFEval are new,
+**unweighted** axes reported next to the existing composite, not folded into it:
+
+```
+Overall = 0.35·A_coding + 0.25·(1 − tool_malformed%) + 0.15·C_edit
+        + 0.10·B_recall + 0.10·(D_text/10) + 0.05·(decode/137)      → ×100   [unchanged]
+
++ bcb_hard_pass@1        (reported, unweighted, within-fleet only — §6.3)
++ ifeval_prompt_strict   (reported, unweighted — §6.4)
+```
+
+Re-weighting the composite to include either axis is deliberately deferred until the rank
+correlation (§6.7) between the composite and the external rankings is known — folding an axis in
+before checking whether it agrees with or diverges from the existing ranking would beg the
+question the round exists to answer.
+
+### 6.7 Validation — rank correlation (the scientific claim of this round)
+
+Once BigCodeBench Hard and IFEval have full-fleet results, Spearman rank correlation is computed
+between the existing round-1 composite ranking and each external benchmark's ranking over the same
+configs, reported with its p-value and n, per axis and on the composite. A significant positive
+correlation is the answer to the authorship objection — the Opus-authored suite measures something
+real, confirmed by graders written by third parties. A divergence identifies exactly which axis the
+home-grown suite was mis-measuring; either outcome is reported, not just the one that flatters the
+round-1 suite.
+
+**Comparability caveat for this correlation, too.** Published leaderboard numbers for these model
+families are BF16 vendor checkpoints; this fleet runs Q4/Q5/IQ4 GGUF, and several configs (`qwen`
+MTP, `opus` distill, `qwopus`, `ornith`) are community fine-tunes with no public leaderboard entry
+at all. Any gap between this fleet's numbers and published ones should be attributed first to
+quantization plus serving-stack delta — public numbers are useful for "are we in the right
+ballpark," never as an apples-to-apples comparison.
+
+### 6.8 B_review, C_edit, D_text — kept, expanded by kind, D re-judged pairwise
+
+`B_review` and `C_edit` measure something not matched in the current public literature (planted
+bugs with a machine-checkable key, scored for recall *and* precision; a deliberately wrong
+instruction graded for non-compliance rather than compliance) and are kept, expanded by *kind*
+rather than by count, so results can report which specific failure modes local models miss:
+
+- **B_review** gains four task directories covering eight bug classes (off-by-one,
+  concurrency/race, resource leak, swallowed exception, encoding/unicode, float precision,
+  timezone/DST, mutable default argument) plus a **no-bug control** (`B6_control_nobugs`) — a file
+  with zero planted bugs, so precision is measured with a clean false-positive rate instead of only
+  on files already known to contain bugs. `review_grader.py`'s control path reports recall as
+  `null` (undefined, not `0.0`) and precision as `1 − (findings > 0)`.
+- **C_edit** gains three noise kinds beyond "a required pattern must survive": scope creep (an
+  out-of-scope refactor is demanded), redundant churn (asks for something already done), and a
+  contradiction between two review comments in the same file (does the model surface the conflict
+  or silently pick one) — plus a task with 2 noise comments out of 5, so the model cannot
+  pattern-match "exactly one comment is wrong."
+- **D_text** gains long-context summarization at 30K/60K/100K tokens sharing one identical core
+  document (so the degradation curve measures degradation, not a content change) and a
+  PR-description-from-diff task graded by key-fact recall. **All D tasks, new and existing, switch
+  from absolute 0–10 judging to pairwise comparison** (Bradley–Terry over judged pairs, position
+  bias measured via randomized presentation order per pair) — absolute scoring was compressing the
+  entire fleet into an 8.7–9.8 band; pairwise discriminates better at the top of the range, the
+  same reason Arena-Hard-v2 and WildBench use it. Round-1 D answers are re-judged pairwise so
+  round-1 and round-2 D numbers stay on a comparable method (see `eval/ROUND2_STATUS.md` for how
+  the round-1 answer text was recovered from OpenCode's session storage after the original
+  `eval/runs/` scratch directory had been cleaned).
+
+### 6.9 Vendored graders
+
+Both external verifiers — IFEval's `instruction_following_eval` package and BigCodeBench's
+`evaluate`/`generate` modules — are vendored or installed **unmodified**, with a `PROVENANCE.md`
+per component recording source URL, version, sha256, and fetch date
+(`eval/external/ifeval/vendor/PROVENANCE.md`, `eval/external/bigcodebench/PROVENANCE.md`). Every
+deviation from upstream defaults is expressed as a CLI flag (e.g. `--execution local`,
+`--max-new-tokens 4096`, relaxed rlimits on macOS), never a source edit, and is logged in the
+result JSON. The point: the grader that decides whether a response passes IFEval or BigCodeBench
+Hard is code nobody on this project wrote. That is what makes it usable as an independent check on
+the Opus-authored suite rather than another instance of the same authorship problem.
+
+### 6.10 Reproducing the external lane
+
+Detailed setup — venv bootstrap, environment-health checks, exact flags, and the known upstream
+quirks worked around — lives in each benchmark's own README, not duplicated here:
+[`eval/external/ifeval/README.md`](../eval/external/ifeval/README.md),
+[`eval/external/bigcodebench/README.md`](../eval/external/bigcodebench/README.md). Minimal
+copy-pasteable entry points:
+
+```bash
+# put :8888 in eval mode (stops llama-swap, hands the port to unsloth-serve)
+eval/harness/ops/serving_mode.sh eval
+
+# IFEval — one config, 20 prompts, live acceptance check
+uv run eval/external/ifeval/run_ifeval.py --only opus --limit 20
+
+# BigCodeBench Hard — one config, 10 tasks
+uv run eval/external/bigcodebench/run_bcb.py --only opus --limit 10
+
+# hand the port back for daily OpenCode use
+eval/harness/ops/serving_mode.sh daily
+```
+
+Live build and run status — what has actually executed on this machine, and what is still pending
+a sizing decision (the full 541-prompt IFEval suite runs ~44 h across 15 configs and needs a
+subsampling call before an overnight run fits) — is tracked in
+[`eval/ROUND2_STATUS.md`](../eval/ROUND2_STATUS.md), not here: this document describes method,
+that one describes progress.
