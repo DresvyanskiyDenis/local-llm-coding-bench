@@ -21,23 +21,35 @@ On every POST .../chat/completions this proxy OVERRIDES, regardless of what the 
 and appends one JSONL line per request recording exactly what it changed, so a result file can
 assert what the model actually ran under instead of hoping.
 
-Optionally (--strip-reasoning) it removes reasoning text from
-`choices[0].message.content` / streaming `delta.content`, for servers that inline it there
-instead of exposing a separate `reasoning_content` field. Run the reasoning-leak probe first;
-this flag is only correct if the leak is real for that config.
+It also STRIPS reasoning out of `choices[0].message.content` / streaming `delta.content`.
+**This is ON by default** (`--no-strip-reasoning` disables it), because the leak is measured,
+not hypothetical: `eval/external/reasoning_leak_probe.json` (qwen4, Q4, 2026-07-25) shows
+`choices[0].message` keys are exactly `['content', 'refusal', 'role']` — no `reasoning_content`,
+no `reasoning`, `usage.completion_tokens_details.reasoning_tokens == 0` — with the content
+beginning at a literal `<think>`. So for every thinking config in this fleet, an unstripped
+response scores the monologue instead of the answer: IFEval format constraints and BCB code
+extraction both read the wrong text. Defaulting this off would make the quiet, wrong thing
+the easy thing.
+
+A truncated response (finish_reason "length") is all reasoning and no answer. The correct
+stripped result is then EMPTY, never the monologue passed off as an answer — so empty-after-
+strip responses are COUNTED and logged per request (`empty_after_strip`) and summarised on
+shutdown, because a benchmark night where thinking models silently returned nothing must be
+visible in the artifacts rather than showing up as an unexplained zero in the scores.
 
 Everything else — other paths, other methods, headers, status codes, SSE framing — is
 forwarded untouched.
 
 Usage:
-    uv run eval/harness/eval_proxy.py                      # :8899 -> 127.0.0.1:8888
-    uv run eval/harness/eval_proxy.py --strip-reasoning --log $TMPDIR/proxy.jsonl
+    uv run eval/harness/eval_proxy.py                      # :8899 -> 127.0.0.1:8888, strip ON
+    uv run eval/harness/eval_proxy.py --no-strip-reasoning --log $TMPDIR/proxy.jsonl
     curl -s http://127.0.0.1:8899/v1/chat/completions -d '{...}' -H 'Content-Type: application/json'
 """
 
 import argparse
 import json
 import re
+import signal
 import sys
 import threading
 from datetime import datetime, timezone
@@ -76,20 +88,29 @@ HARMONY_ANALYSIS = re.compile(
 
 LOG_LOCK = threading.Lock()
 
+# Cumulative, process-wide: how many assistant messages came back with nothing left after
+# reasoning was removed (a truncated all-monologue response). Printed on shutdown so the
+# number is in the run's stdout, not only buried per-line in the JSONL.
+STATS = {"requests": 0, "stripped": 0, "empty_after_strip": 0}
+STATS_LOCK = threading.Lock()
+
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
 def strip_reasoning(text):
-    """Remove reasoning wrappers from an assistant message body. Returns (text, stripped?)."""
+    """Remove reasoning wrappers from an assistant message body. Returns (text, stripped?).
+
+    An UNCLOSED <think> (finish_reason "length": the model burned its whole budget on the
+    monologue and never reached an answer) correctly yields the EMPTY string. That is the
+    honest result — the model produced no answer — and it is why the caller counts empties:
+    passing the monologue through as the answer would score reasoning as if it were work."""
     if not text:
         return text, False
     out = THINK_BLOCK.sub("", text)
     out = ORPHAN_CLOSE.sub("", out)  # template-opened block: monologue …</think> answer
     out = HARMONY_ANALYSIS.sub("", out)
-    # An unclosed <think> means the model never emitted an answer within its budget;
-    # keeping the raw monologue would be scored as if it were the answer.
     out = THINK_UNCLOSED.sub("", out)
     out = out.lstrip()
     return out, out != text
@@ -143,22 +164,37 @@ class Proxy(BaseHTTPRequestHandler):
         return json.dumps(body).encode(), record
 
     def _rewrite_response(self, raw):
-        """Non-streaming: strip reasoning out of every choice's message.content."""
+        """Non-streaming: strip reasoning out of every choice's message.content.
+
+        Returns (body, stats) where stats counts choices stripped, choices left EMPTY by
+        stripping (all-reasoning truncation), and their finish_reasons — the diagnostic that
+        tells a "0.0 pass@1" apart from "the model never emitted an answer"."""
+        stats = {"stripped_choices": 0, "empty_after_strip": 0, "empty_finish_reasons": []}
         if not self.do_strip:
-            return raw, 0
+            return raw, stats
         try:
             data = json.loads(raw)
         except (json.JSONDecodeError, UnicodeDecodeError):
-            return raw, 0
-        n = 0
+            return raw, stats
         for ch in data.get("choices") or []:
             msg = ch.get("message")
             if isinstance(msg, dict) and isinstance(msg.get("content"), str):
                 new, changed = strip_reasoning(msg["content"])
                 if changed:
                     msg["content"] = new
-                    n += 1
-        return (json.dumps(data).encode(), n) if n else (raw, 0)
+                    stats["stripped_choices"] += 1
+                if msg["content"].strip() == "" and changed:
+                    stats["empty_after_strip"] += 1
+                    stats["empty_finish_reasons"].append(ch.get("finish_reason"))
+        if stats["empty_after_strip"]:
+            sys.stderr.write(
+                f"[eval_proxy] WARNING: {stats['empty_after_strip']} choice(s) EMPTY after "
+                f"stripping reasoning (finish_reason={stats['empty_finish_reasons']}) — the "
+                "model spent its whole budget thinking and never answered\n")
+        with STATS_LOCK:
+            STATS["stripped"] += stats["stripped_choices"]
+            STATS["empty_after_strip"] += stats["empty_after_strip"]
+        return (json.dumps(data).encode() if stats["stripped_choices"] else raw), stats
 
     # -- HTTP ---------------------------------------------------------------
     def _forward(self, method):
@@ -188,10 +224,15 @@ class Proxy(BaseHTTPRequestHandler):
                 return
             with httpx.Client(timeout=httpx.Timeout(600.0, connect=15.0)) as client:
                 r = client.request(method, url, headers=headers, content=raw or None)
-            body, n_stripped = self._rewrite_response(r.content)
+            body, strip_stats = self._rewrite_response(r.content)
             if record is not None:
                 record["upstream_status"] = r.status_code
-                record["reasoning_stripped_choices"] = n_stripped
+                record["reasoning_stripped_choices"] = strip_stats["stripped_choices"]
+                record["empty_after_strip"] = strip_stats["empty_after_strip"]
+                record["empty_finish_reasons"] = strip_stats["empty_finish_reasons"]
+                with STATS_LOCK:
+                    STATS["requests"] += 1
+                    record["cumulative"] = dict(STATS)
                 self._log_event(record)
             self.send_response(r.status_code)
             for k, v in r.headers.items():
@@ -325,8 +366,11 @@ def main():
     ap.add_argument("--upstream", default="http://127.0.0.1:8888")
     ap.add_argument("--log", default=str(Path(__file__).resolve().parent / "eval_proxy.jsonl"),
                     help="JSONL of every injected override (append-only)")
-    ap.add_argument("--strip-reasoning", action="store_true",
-                    help="remove <think>…</think> / harmony analysis from assistant content")
+    ap.add_argument("--strip-reasoning", action=argparse.BooleanOptionalAction, default=True,
+                    help="remove <think>…</think> / harmony analysis from assistant content. "
+                         "ON by default: the leak is measured, not assumed — see "
+                         "eval/external/reasoning_leak_probe.json. Use --no-strip-reasoning "
+                         "only to capture raw model output for inspection.")
     args = ap.parse_args()
 
     Proxy.upstream = args.upstream
@@ -337,12 +381,29 @@ def main():
     print(f"[eval_proxy] :{args.port} -> {args.upstream}  "
           f"strip_reasoning={args.strip_reasoning}  log={args.log}", flush=True)
     print(f"[eval_proxy] forcing {NEUTRAL_SAMPLING} on every chat/completions request", flush=True)
+    # Callers stop this proxy with SIGTERM (subprocess.terminate) and humans with ^C.
+    # Both must reach the summary below — an empty-answer count that only appears on a
+    # clean exit is exactly the number that goes missing on the night it matters.
+    def _graceful(signum, _frame):
+        sys.stderr.write(f"[eval_proxy] signal {signum}, shutting down\n")
+        threading.Thread(target=srv.shutdown, daemon=True).start()
+
+    signal.signal(signal.SIGTERM, _graceful)
+    signal.signal(signal.SIGINT, _graceful)
+
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         srv.server_close()
+        print(f"[eval_proxy] SUMMARY requests={STATS['requests']} "
+              f"stripped_choices={STATS['stripped']} "
+              f"empty_after_strip={STATS['empty_after_strip']}", flush=True)
+        if STATS["empty_after_strip"]:
+            print("[eval_proxy] ^ those responses were ALL reasoning and no answer — treat "
+                  "the matching benchmark items as 'no output', not as wrong answers",
+                  flush=True)
 
 
 if __name__ == "__main__":
