@@ -65,8 +65,9 @@ VERIFY, DO NOT ASSUME — these four have already burned this project once each:
   serving_mode.sh daily must run at the end, or OpenCode has no models in the morning.
 - Phase 0 step 6, reasoning leak: if <think> lands inside choices[0].message.content instead of a
   separate field, every IFEval constraint and every BCB code extraction is corrupted for thinking
-  models. Check it with a real request before building on top of it. Fallback (reasoning_proxy.py)
-  is specified in the plan — build it only if the check says so.
+  models. Check it with a real request before building on top of it. eval_proxy.py gets built
+  either way (it is what injects neutral sampling for BCB, §3.5 bite 3); the check only decides
+  whether it also strips reasoning.
 - Phase 3: round-1 fixtures must re-grade BYTE-IDENTICALLY after the grader changes. Prove it.
 - Phase 6 gate: aggregate.py must reproduce the EXISTING LEADERBOARD.md composite from the
   existing result files. If it cannot, either methodology.md's formula or the hand-written
