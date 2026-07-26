@@ -1650,6 +1650,21 @@ def main():
         "changing while other agents commit concurrently. `--bare` (which would strip "
         "that dynamic context) cannot be used here — it requires ANTHROPIC_API_KEY and "
         "this account authenticates via Pro-subscription OAuth.",
+        "BUG FOUND & FIXED (2026-07-26): order_effect_estimate's first_position_win_rate "
+        "previously required `d['order']=='first'` (whether the CANONICAL cfg_a happened "
+        "to be shown first — irrelevant bookkeeping) in addition to `winner==shown_first`, "
+        "which restricted the numerator to ~half the decisive games while the denominator "
+        "still counted all of them. Under a perfectly unbiased judge this reads ~0.25, not "
+        "~0.5 — it is not a measure of position bias at all, which is why a real run once "
+        "showed an implausible ~0.10. This was a report-computation bug ONLY: no cached "
+        "verdict/winner was ever wrong, so nothing was discarded or re-judged. Corrected "
+        "value on the same 76 already-judged pairs: D1 first-position win rate 0.326 (95% "
+        "CI [0.209, 0.470], n=46, still significant — genuine, moderate second-position "
+        "preference, within the typical 55-70% range for LLM judges), D2 0.467 (95% CI "
+        "[0.302, 0.639], n=30, NOT significant — consistent with no bias at this sample "
+        "size). Independently corroborated with an identity-control test (same real D1 "
+        "answer text supplied as both A and B): judge correctly returned TIE, ruling out "
+        "a hardcoded position-mapping defect.",
     ]
     if blocker:
         notes.insert(
