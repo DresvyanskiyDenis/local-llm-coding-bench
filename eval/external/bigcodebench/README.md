@@ -113,6 +113,69 @@ starts `eval/harness/eval_proxy.py` on `:8899`, generates through the **proxy** 
 directly), unloads the model, evaluates locally, and writes
 `eval/results/bcb__<model>__<quant>.json`.
 
+## Memory sandbox: what bounds a runaway task, and what does not
+
+**This machine has 36 GiB, not 128 GB.** Measured, because the number drives every decision
+below: `hw.memsize` = 38,654,705,664 (36 GiB), `hw.model` = `Mac16,5` (M4 Max). Any advice
+premised on 128 GB does not apply here.
+
+### No memory cap is reachable — reproduced, not inherited
+
+`reliability_guard`'s rlimits are disabled (`--max-as-limit 0 --max-data-limit 0
+--max-stack-limit 0`) because they cannot be set at all on this platform. Re-verified
+2026-07-26 on macOS 26.5.2 arm64 / CPython 3.12.13:
+
+```
+RLIMIT_AS:    soft=9223372036854775807 hard=9223372036854775807 -> ValueError: current limit exceeds maximum limit
+RLIMIT_DATA:  soft=9223372036854775807 hard=9223372036854775807 -> ValueError: current limit exceeds maximum limit
+RLIMIT_RSS:   soft=9223372036854775807 hard=9223372036854775807 -> ValueError: current limit exceeds maximum limit
+```
+
+Setting a 4 GiB **soft** limit below an unlimited **hard** limit is legal under POSIX and still
+fails: Darwin does not implement `RLIMIT_AS`. So there is **no per-task memory ceiling**, and
+none can be added without a wrapper. That is a permanent property of the platform, not a
+configuration mistake.
+
+### What *is* bounded
+
+Each task runs in its own `multiprocessing.Process` with
+`timeout = max(240.0, gt_time) + 1` ≥ **241 s**, then `terminate()` → `kill()`
+(`eval/__init__.py:182-208`). So a runaway allocator can hold memory for at most ~241 s, and
+the kill reclaims it. Time is bounded and the process is killable; only the *rate* and *peak*
+of allocation are not.
+
+> **Do not set `BIGCODEBENCH_TIMEOUT_PER_TASK`.** `max(os.getenv(...), min_time_limit)`
+> compares `str` to `float` → `TypeError: '>' not supported between instances of 'float' and
+> 'str'` (`eval/__init__.py:182`, `gen/util/__init__.py:105`). Setting it crashes every task.
+> The per-task bound must be changed in code, not by env var.
+
+### Recommendation
+
+The dominant risk is **not** `--parallel 4`. It is a resident model during evaluation.
+
+1. **Never evaluate while a model is loaded.** `run_bcb.py` already unloads before evaluating
+   (`[unload] RAM released, port clear` precedes `[evaluate]`), which leaves ~30 GB of headroom
+   instead of ~10 GB. Two ways to lose that guarantee, both to be avoided at full scale:
+   `--no-serve` (leaves the 35B resident through evaluation), and **running the in-harness
+   suite concurrently on the same box**. On 36 GB, a 35B GGUF (~20 GB) plus four unbounded
+   test processes is the realistic path to a swap storm or a Jetsam kill of something that
+   matters. Serialise the two runs; do not overlap them.
+2. **`--parallel 4` is acceptable on an idle box, `--parallel 2` if anything shares it.**
+   Halving roughly doubles evaluation wall clock (~96 min → ~190 min per 148-task config), so
+   pay that cost only when sharing is actually happening.
+3. **Prefer a watchdog over lower parallelism** if the wall clock matters: poll the evaluate
+   process tree's RSS inside `wait_for_evaluate()` — which already owns the process group and
+   already has `kill_group()` — and kill above a budget (~24 GB). ~15 lines, no vendored
+   change. It aborts the whole config's evaluation rather than the one bad task, which is why
+   it is a fallback and not the default.
+
+**Risk accepted as configured (`--parallel 4`, rlimits off, model unloaded, box otherwise
+idle):** up to four concurrent test processes can allocate without limit for up to 241 s each.
+A single task allocating >30 GB would push the machine into heavy compression/swap before its
+timeout fires. Nothing in the 148-task ground-truth pass or the 10-task gate has exhibited it,
+and peak RSS during evaluation is **not currently instrumented** — that is the measurement gap
+to close before treating "it has not happened yet" as "it cannot happen".
+
 ## Why generation must go through the proxy
 
 BigCodeBench's client accepts only `max_tokens`, `temperature`, `reasoning_effort` and `n`

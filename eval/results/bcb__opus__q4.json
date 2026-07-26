@@ -16,6 +16,18 @@
   "n_env_errors": 0,
   "env_error_task_ids": [],
   "gt_pass_rate": 1.0,
+  "gt_pass_rate_scope": "THIS RUN'S SLICE ONLY (10 task(s)) \u2014 the fraction of the evaluated tasks whose own ground truth ran here. The whole-subset executor ceiling is executor.gt_pass_rate_ceiling, a different denominator.",
+  "untagged_reasoning": {
+    "n_with_prose_before_code_fence": 0,
+    "n_unfenced_and_unparseable": 0,
+    "n_marker_hits": 0,
+    "max_preamble_chars": 0,
+    "affected_task_ids": [],
+    "marker_task_ids": [],
+    "method": "structural: text before the first ``` fence in raw_solution (the model's own output, post-proxy-strip). Detection only \u2014 no completion is ever modified. n_marker_hits is an advisory keyword cross-check, not the measure.",
+    "affected_task_statuses": {},
+    "correlation_with_non_pass": "no correlation to assess: 0 of 10 completions carry untagged reasoning prose, so none of the non-passing tasks can be a stripping artifact. pass@1 reflects model capability under this executor."
+  },
   "status_counts": {
     "fail": 5,
     "pass": 3,
@@ -27,7 +39,8 @@
     "rlimits": "disabled: macOS setrlimit(RLIMIT_AS/RLIMIT_DATA) returns EINVAL at any value, so BigCodeBench's default 30 GB caps make every task fail in reliability_guard before its test runs",
     "parallel": 4,
     "env_health": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/env_health.json",
-    "gt_pass_rate_ceiling": 0.9054
+    "gt_pass_rate_ceiling": 0.9054,
+    "gt_pass_rate_ceiling_scope": "ALL 148 BigCodeBench-hard tasks (134/148 ground truths pass, 14 fail), measured by env_health.py at bigcodebench ground-truth timing cache /Users/denisdresvyanskiy/Library/Caches/bigcodebench/f8d6f9609f8f9c528e1af2baf74ddb68.pkl. NOT this run's --limit slice: the slice number is the top-level `gt_pass_rate`."
   },
   "generation": {
     "max_new_tokens": 4096,
@@ -74,9 +87,9 @@
     "evaluate": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/.venv/bin/python -m bigcodebench.evaluate --split instruct --subset hard --execution local --samples /Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/_gen/opus__q4/hesamation--Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF--main--bigcodebench-hard-instruct--openai-0-1-sanitized_calibrated.jsonl --parallel 4 --max-as-limit 0 --max-data-limit 0 --max-stack-limit 0 --selective-evaluate BigCodeBench/13,BigCodeBench/15,BigCodeBench/17,BigCodeBench/19,BigCodeBench/34,BigCodeBench/37,BigCodeBench/82,BigCodeBench/89,BigCodeBench/92,BigCodeBench/93"
   },
   "bigcodebench_version": "0.2.5",
-  "schema_version": 2,
-  "wall_clock_s": 544.8,
-  "generate_s": 127.9,
-  "evaluate_s": 395.2,
-  "ts": "2026-07-26T21:12:36.348079+00:00"
+  "schema_version": 3,
+  "wall_clock_s": 548.9,
+  "generate_s": 143.9,
+  "evaluate_s": 389.1,
+  "ts": "2026-07-26T21:25:45.990529+00:00"
 }

@@ -92,7 +92,10 @@ SERVING_MODE = HARNESS_DIR / "ops" / "serving_mode.sh"
 BCB_VERSION = "0.2.5"
 # 2: generation.reasoning_stripped went from a bool echoing the CLI flag to a dict reporting
 #    what the proxy actually observed, and generation.completions_provenance was added.
-SCHEMA_VERSION = 2
+# 3: added untagged_reasoning (exposure to the leak shape the tag-anchored stripper cannot
+#    see, measured not assumed) and explicit SCOPE labels on both gt_pass_rate fields, which
+#    carry different denominators and were previously distinguishable only by reading the code.
+SCHEMA_VERSION = 3
 SPLIT = "instruct"
 SUBSET = "hard"
 N_HARD_TASKS = 148
@@ -642,6 +645,75 @@ def completion_stats(samples: list[dict]) -> dict:
     }
 
 
+# Advisory only, and deliberately SECONDARY to the structural measure below. Listed because
+# these are the openings actually observed on this model by the IFEval lane, not guessed at.
+UNTAGGED_REASONING_MARKERS = (
+    "thinking process",
+    "let me think",
+    "let me analyze",
+    "let's think",
+    "first, i need to",
+    "i need to analyze",
+    "step 1:",
+    "analysis:",
+)
+
+
+def untagged_reasoning_stats(samples: list[dict]) -> dict:
+    """Count completions carrying reasoning prose that the TAG-ANCHORED stripper cannot see.
+
+    eval_proxy.strip_reasoning() keys off literal delimiters (<think>, harmony analysis). A
+    response that reasons in plain prose with no delimiter passes straight through — MEASURED
+    on this same model by the IFEval lane (13 of 15 length-truncated responses). This function
+    MEASURES that exposure. It never modifies a completion: inventing a prose-stripping
+    heuristic would corrupt the many BigCodeBench solutions that carry prose in docstrings and
+    comments, which is a worse trade than reporting the number and letting a human decide.
+
+    The PRIMARY signal is structural, not keyword-based: BigCodeBench prompts ask for a
+    markdown code block, so anything before the first ``` fence is preamble the model added.
+    That catches an untagged monologue regardless of how it opens, with no wordlist to guess.
+    `n_marker_hits` is reported alongside only as corroboration.
+
+    A completion with NO fence at all is only suspicious if it also fails to parse as Python —
+    a bare unfenced program is legitimate output, prose is not. That case is already counted in
+    n_unparseable_solutions; it is repeated here so both readings sit in one place.
+    """
+    preamble_ids, marker_ids, unfenced_prose_ids = [], [], []
+    max_preamble = 0
+    for s in samples:
+        raw = s.get("raw_solution") or ""
+        tid = s.get("task_id")
+        fence = raw.find("```")
+        if fence < 0:
+            try:
+                ast.parse(raw)
+            except (SyntaxError, ValueError):
+                unfenced_prose_ids.append(tid)
+            preamble = ""
+        else:
+            preamble = raw[:fence].strip()
+        if preamble:
+            preamble_ids.append(tid)
+            max_preamble = max(max_preamble, len(preamble))
+        low = raw[: fence if fence > 0 else 400].lower()
+        if any(m in low for m in UNTAGGED_REASONING_MARKERS):
+            marker_ids.append(tid)
+    affected = sorted(set(preamble_ids) | set(unfenced_prose_ids))
+    return {
+        "n_with_prose_before_code_fence": len(preamble_ids),
+        "n_unfenced_and_unparseable": len(unfenced_prose_ids),
+        "n_marker_hits": len(marker_ids),
+        "max_preamble_chars": max_preamble,
+        "affected_task_ids": affected,
+        "marker_task_ids": sorted(set(marker_ids)),
+        "method": (
+            "structural: text before the first ``` fence in raw_solution (the model's own "
+            "output, post-proxy-strip). Detection only — no completion is ever modified. "
+            "n_marker_hits is an advisory keyword cross-check, not the measure."
+        ),
+    }
+
+
 def summarize(samples_path: Path) -> dict:
     """Pull pass@1 and the load-bearing denominators out of BCB's own artifacts."""
     eval_results_path = Path(str(samples_path).replace(".jsonl", "_eval_results.json"))
@@ -651,6 +723,7 @@ def summarize(samples_path: Path) -> dict:
     task_ids = sorted({s["task_id"] for s in samples if "task_id" in s})
     out = {"task_ids": task_ids, "n_completed": len(task_ids)}
     out.update(completion_stats(samples))
+    out["untagged_reasoning"] = untagged_reasoning_stats(samples)
 
     pk = json.loads(pass_at_k_path.read_text()) if pass_at_k_path.exists() else {}
     out["pass@1"] = pk.get("pass@1")
@@ -680,6 +753,33 @@ def summarize(samples_path: Path) -> dict:
         # within-fleet number when the executor itself cannot run some references.
         out["pass@1_gt_ok"] = round(n_pass / n_scored, 4) if n_scored else None
         out["n_scored_gt_ok"] = n_scored
+
+        # Does the untagged-reasoning exposure line up with the tasks that did NOT pass? If it
+        # does, part of pass@1 is a stripping artifact rather than model capability, and the
+        # score must not be read as a capability number. Stated per run, either way.
+        per_task = {
+            tid: (runs[0].get("status") if runs else None) for tid, runs in ev.items()
+        }
+        affected = out["untagged_reasoning"]["affected_task_ids"]
+        non_pass = [t for t in task_ids if per_task.get(t) != "pass"]
+        overlap = sorted(set(affected) & set(non_pass))
+        if not affected:
+            verdict = (
+                f"no correlation to assess: 0 of {len(task_ids)} completions carry untagged "
+                "reasoning prose, so none of the non-passing tasks can be a stripping artifact. "
+                "pass@1 reflects model capability under this executor."
+            )
+        else:
+            verdict = (
+                f"{len(overlap)} of {len(affected)} completions with untagged reasoning prose "
+                f"are among the {len(non_pass)} non-passing tasks ({', '.join(overlap) or 'none'}"
+                "). Treat pass@1 as PARTLY a stripping artifact for those task ids, not as pure "
+                "capability."
+            )
+        out["untagged_reasoning"]["affected_task_statuses"] = {
+            t: per_task.get(t) for t in affected
+        }
+        out["untagged_reasoning"]["correlation_with_non_pass"] = verdict
     return out
 
 
@@ -693,6 +793,40 @@ def _env_health_gt_rate():
         )
     except json.JSONDecodeError:
         return None
+
+
+def _gt_ceiling_scope() -> str:
+    """State the DENOMINATOR of gt_pass_rate_ceiling, read from env_health.json rather than
+    asserted.
+
+    This matters because the artifact carries two similarly named fields with DIFFERENT
+    denominators, and reading one as the other silently rescales the result:
+      * executor.gt_pass_rate_ceiling — from env_health.py's separate ground-truth pass over
+        the WHOLE Hard subset. The executor's ceiling; no model here can beat it.
+      * gt_pass_rate (top level) — from THIS run's pass_at_k.json, over the --limit slice only.
+        With --limit 10 it is a 10-task number and 1.0 merely means those 10 references ran.
+    """
+    if not ENV_HEALTH.exists():
+        return "unknown: env_health.json missing — run env_health.py"
+    try:
+        gt = json.loads(ENV_HEALTH.read_text()).get("gt_check") or {}
+    except json.JSONDecodeError:
+        return "unknown: env_health.json unparseable"
+    n_cached = gt.get("n_tasks_in_cache")
+    n_failed = gt.get("n_failed_tasks")
+    if n_cached is None:
+        return "unknown: env_health.json gt_check has no n_tasks_in_cache"
+    n_ok = n_cached - n_failed if isinstance(n_failed, int) else None
+    return (
+        f"ALL {n_cached} BigCodeBench-{SUBSET} tasks"
+        + (
+            f" ({n_ok}/{n_cached} ground truths pass, {n_failed} fail)"
+            if n_ok is not None
+            else ""
+        )
+        + f", measured by env_health.py at {gt.get('source', 'the ground-truth cache')}"
+        + ". NOT this run's --limit slice: the slice number is the top-level `gt_pass_rate`."
+    )
 
 
 def completions_provenance(n_proxy: int, n_completed: int) -> str:
@@ -831,6 +965,12 @@ def build_result(
         "n_env_errors": s.get("n_env_errors", 0),
         "env_error_task_ids": s.get("env_error_task_ids", []),
         "gt_pass_rate": s.get("gt_pass_rate"),
+        "gt_pass_rate_scope": (
+            f"THIS RUN'S SLICE ONLY ({limit or N_HARD_TASKS} task(s)) — the fraction of the "
+            "evaluated tasks whose own ground truth ran here. The whole-subset executor "
+            "ceiling is executor.gt_pass_rate_ceiling, a different denominator."
+        ),
+        "untagged_reasoning": s.get("untagged_reasoning", {}),
         "status_counts": s.get("status_counts", {}),
         "executor": {
             "mode": "local",
@@ -839,6 +979,7 @@ def build_result(
             "parallel": EVAL_PARALLEL,
             "env_health": str(ENV_HEALTH),
             "gt_pass_rate_ceiling": _env_health_gt_rate(),
+            "gt_pass_rate_ceiling_scope": _gt_ceiling_scope(),
         },
         "generation": {
             "max_new_tokens": MAX_NEW_TOKENS,
