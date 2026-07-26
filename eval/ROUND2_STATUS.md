@@ -261,6 +261,34 @@ is what happened. The guard is not a substitute for someone owning the restore, 
 dies mid-run owns nothing. Worth a watchdog before the real 15-config night: eval mode should not be
 a state the machine can be left parked in.
 
+## Open finding — the pairwise judge's order effect is implausibly extreme
+
+The re-run works mechanically: **76 real judgements** of the 210-pair design, `n_backend_errors: 0`,
+`n_unparseable: 0`, fully cache-resumable, and the partial run is labelled unmissably. Separating
+backend failures from genuine unparseables — the defect that silently wasted 30 calls on the first
+attempt — is fixed and demonstrated.
+
+But the order effect reads:
+
+| task | first-position win rate | decisive games |
+|---|---|---|
+| D1_summarize_mtp | **0.109** | 46 |
+| D2_dedup_approaches | **0.100** | 30 |
+
+The answer shown *second* wins roughly nine times in ten. Unbiased is 0.5, and genuine positional
+bias in LLM judges typically lands at 0.55–0.70. **0.10 across 76 decisive games is not noise and is
+far outside the usual range**, which makes a label-mapping bug at least as likely as real recency
+preference — presentation order randomised per pair while the returned A/B verdict is interpreted
+against the pre-shuffle order would invert results exactly like this.
+
+**No Bradley-Terry strength from this run is readable until that is resolved**, and judging more
+pairs first would only buy a more confident wrong answer. Diagnosis in progress: same pair re-judged
+in both orders, an identity control (both sides the same text — a sane judge returns TIE), and a
+read of the fully rendered prompt to confirm the A/B labels match the answers actually sent.
+
+If it proves to be genuine bias, the fix is a swap-and-rejudge pass (each pair in both orders,
+combined), which doubles the pair count and must be priced in usage-limit tokens before it runs.
+
 ## Blockers
 
 ### Resolved — round-1 D_text answers were unrecoverable, then recovered
