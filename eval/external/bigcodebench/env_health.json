@@ -1,0 +1,190 @@
+{
+  "n_hard_tasks": 148,
+  "n_resolvable": 148,
+  "n_resolvable_incl_solution_imports": 148,
+  "n_blocked": 0,
+  "blocked_task_ids": [],
+  "n_distinct_modules": 87,
+  "missing_modules": {},
+  "version_shifts": {
+    "pycryptodome": {
+      "pinned": "3.14.1",
+      "installed": "3.23.0"
+    },
+    "levenshtein": {
+      "pinned": "0.25.0",
+      "installed": "0.27.3"
+    },
+    "pillow": {
+      "pinned": "10.3.0",
+      "installed": "12.3.0"
+    },
+    "beautifulsoup4": {
+      "pinned": "4.8.2",
+      "installed": "4.15.0"
+    },
+    "chardet": {
+      "pinned": "5.2.0",
+      "installed": "7.4.3"
+    },
+    "cryptography": {
+      "pinned": "38.0.0",
+      "installed": "49.0.0"
+    },
+    "opencv-python-headless": {
+      "pinned": "4.9.0.80",
+      "installed": "5.0.0.93"
+    },
+    "python-docx": {
+      "pinned": "1.1.0",
+      "installed": "1.2.0"
+    },
+    "faker": {
+      "pinned": "20.1.0",
+      "installed": "40.36.0"
+    },
+    "flask": {
+      "pinned": "3.0.3",
+      "installed": "3.1.3"
+    },
+    "flask-mail": {
+      "pinned": "0.9.1",
+      "installed": "0.10.0"
+    },
+    "flask-wtf": {
+      "pinned": "1.2.1",
+      "installed": "1.3.0"
+    },
+    "gensim": {
+      "pinned": "4.3.2",
+      "installed": "4.4.0"
+    },
+    "geopandas": {
+      "pinned": "0.13.2",
+      "installed": "1.1.4"
+    },
+    "keras": {
+      "pinned": "2.11.0",
+      "installed": "3.15.0"
+    },
+    "librosa": {
+      "pinned": "0.10.1",
+      "installed": "0.11.0"
+    },
+    "lxml": {
+      "pinned": "4.9.3",
+      "installed": "6.1.1"
+    },
+    "matplotlib": {
+      "pinned": "3.7.0",
+      "installed": "3.11.1"
+    },
+    "nltk": {
+      "pinned": "3.8",
+      "installed": "3.10.0"
+    },
+    "numpy": {
+      "pinned": "1.21.2",
+      "installed": "2.4.6"
+    },
+    "openpyxl": {
+      "pinned": "3.1.2",
+      "installed": "3.1.5"
+    },
+    "pandas": {
+      "pinned": "2.0.3",
+      "installed": "3.0.5"
+    },
+    "psutil": {
+      "pinned": "5.9.5",
+      "installed": "7.2.2"
+    },
+    "pyquery": {
+      "pinned": "1.4.3",
+      "installed": "2.0.1"
+    },
+    "pytesseract": {
+      "pinned": "0.3.10",
+      "installed": "0.3.13"
+    },
+    "pytz": {
+      "pinned": "2023.3.post1",
+      "installed": "2026.3.post1"
+    },
+    "requests": {
+      "pinned": "2.31.0",
+      "installed": "2.34.2"
+    },
+    "rsa": {
+      "pinned": "4.9",
+      "installed": "4.9.1"
+    },
+    "scipy": {
+      "pinned": "1.7.2",
+      "installed": "1.18.0"
+    },
+    "shapely": {
+      "pinned": "2.0.4",
+      "installed": "2.1.2"
+    },
+    "scikit-learn": {
+      "pinned": "1.3.1",
+      "installed": "1.9.0"
+    },
+    "soundfile": {
+      "pinned": "0.12.1",
+      "installed": "0.14.0"
+    },
+    "statsmodels": {
+      "pinned": "0.14.0",
+      "installed": "0.14.6"
+    },
+    "tensorflow": {
+      "pinned": "2.11.0",
+      "installed": "2.21.0"
+    },
+    "werkzeug": {
+      "pinned": "3.0.1",
+      "installed": "3.1.8"
+    },
+    "wordcloud": {
+      "pinned": "1.9.3",
+      "installed": "1.9.6"
+    },
+    "wtforms": {
+      "pinned": "3.1.2",
+      "installed": "3.2.2"
+    }
+  },
+  "notes": "n_resolvable counts tasks whose TEST imports all resolve. n_resolvable_incl_solution_imports additionally requires the task's own solution imports to resolve, which is the bound that matters because untrusted_check executes solution + test together. Relaxed pins => within-fleet comparison only, NOT comparable to the public leaderboard.",
+  "requirements_eval": "requirements-eval-0.2.5.txt",
+  "ts": "2026-07-25T20:46:41+00:00",
+  "python": "3.12.13",
+  "executable": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/.venv/bin/python",
+  "platform": "Darwin-25.5.0-arm64",
+  "gt_check": {
+    "gt_pass_rate": 0.9054,
+    "failed_tasks": [
+      "BigCodeBench/101",
+      "BigCodeBench/1020",
+      "BigCodeBench/108",
+      "BigCodeBench/177",
+      "BigCodeBench/187",
+      "BigCodeBench/227",
+      "BigCodeBench/501",
+      "BigCodeBench/503",
+      "BigCodeBench/511",
+      "BigCodeBench/590",
+      "BigCodeBench/654",
+      "BigCodeBench/879",
+      "BigCodeBench/945",
+      "BigCodeBench/971"
+    ],
+    "n_failed_tasks": 14,
+    "n_tasks_in_cache": 148,
+    "source": "bigcodebench ground-truth timing cache /Users/denisdresvyanskiy/Library/Caches/bigcodebench/f8d6f9609f8f9c528e1af2baf74ddb68.pkl",
+    "rlimits": "disabled",
+    "rlimits_reason": "rlimits disabled: macOS setrlimit(RLIMIT_AS/RLIMIT_DATA) returns EINVAL at any value, so BigCodeBench's default 30 GB caps make every task fail in reliability_guard before the test runs",
+    "note": "gt_pass_rate is the CEILING on every model's pass@1 under this executor; failed_tasks are environment errors by construction, not model errors."
+  }
+}

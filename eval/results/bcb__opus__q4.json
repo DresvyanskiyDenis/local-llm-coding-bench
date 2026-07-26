@@ -1,0 +1,74 @@
+{
+  "benchmark": "bigcodebench-hard",
+  "split": "instruct",
+  "model": "opus",
+  "quant": "q4",
+  "opencode_model_id": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+  "pass@1": 0.3,
+  "pass@1_gt_ok": 0.3,
+  "n_tasks": 10,
+  "n_completed": 10,
+  "n_empty_completions": 0,
+  "n_empty_raw_completions": 0,
+  "n_sanitizer_dropped": 0,
+  "n_unparseable_solutions": 0,
+  "n_no_program": 0,
+  "n_env_errors": 0,
+  "env_error_task_ids": [],
+  "gt_pass_rate": 1.0,
+  "status_counts": {
+    "fail": 5,
+    "pass": 3,
+    "timeout": 2
+  },
+  "executor": {
+    "mode": "local",
+    "pins": "relaxed",
+    "rlimits": "disabled: macOS setrlimit(RLIMIT_AS/RLIMIT_DATA) returns EINVAL at any value, so BigCodeBench's default 30 GB caps make every task fail in reliability_guard before its test runs",
+    "parallel": 4,
+    "env_health": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/env_health.json",
+    "gt_pass_rate_ceiling": 0.9054
+  },
+  "generation": {
+    "max_new_tokens": 4096,
+    "greedy": true,
+    "endpoint": "http://127.0.0.1:8899/v1",
+    "upstream": "http://127.0.0.1:8888/v1",
+    "sampling_injected": {
+      "temperature": 0,
+      "top_p": 1,
+      "top_k": 0,
+      "min_p": 0,
+      "presence_penalty": 0,
+      "frequency_penalty": 0
+    },
+    "n_proxy_requests": 10,
+    "proxy_stats": {
+      "n_requests": 10,
+      "n_reasoning_stripped_choices": 10,
+      "n_empty_after_strip": 0,
+      "finish_reasons_on_empty": {},
+      "finish_reason_coverage": "empty-after-strip choices only; BCB's own artifacts preserve no finish_reason at all"
+    },
+    "completions_provenance": "this-run \u2014 all 10 scored completions were generated through eval_proxy (10 requests logged, neutral sampling injected on each)",
+    "reasoning_stripped": {
+      "requested": true,
+      "n_responses_seen_by_proxy": 10,
+      "n_choices_stripped": 10,
+      "n_empty_after_strip": 0,
+      "verdict": "enabled and observed: 10 of 10 responses had a reasoning wrapper removed before scoring"
+    },
+    "batch_size": 1
+  },
+  "comparability": "within-fleet only; relaxed-pin local executor, NOT comparable to the public BigCodeBench leaderboard",
+  "commands": {
+    "generate": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/.venv/bin/python -m bigcodebench.generate --model hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF --backend openai --base-url http://127.0.0.1:8899/v1 --split instruct --subset hard --greedy --resume --max-new-tokens 4096 --bs 1 --root /Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/_gen/opus__q4 --id-range 0-10",
+    "evaluate": "/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/.venv/bin/python -m bigcodebench.evaluate --split instruct --subset hard --execution local --samples /Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/external/bigcodebench/_gen/opus__q4/hesamation--Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF--main--bigcodebench-hard-instruct--openai-0-1-sanitized_calibrated.jsonl --parallel 4 --max-as-limit 0 --max-data-limit 0 --max-stack-limit 0 --selective-evaluate BigCodeBench/13,BigCodeBench/15,BigCodeBench/17,BigCodeBench/19,BigCodeBench/34,BigCodeBench/37,BigCodeBench/82,BigCodeBench/89,BigCodeBench/92,BigCodeBench/93"
+  },
+  "bigcodebench_version": "0.2.5",
+  "schema_version": 2,
+  "wall_clock_s": 563.1,
+  "generate_s": 142.4,
+  "evaluate_s": 389.2,
+  "ts": "2026-07-26T20:54:36.216590+00:00"
+}
