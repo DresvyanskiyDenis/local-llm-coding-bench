@@ -56,7 +56,15 @@
       "n_responses_seen_by_proxy": 10,
       "n_choices_stripped": 10,
       "n_empty_after_strip": 0,
-      "verdict": "enabled and observed: 10 of 10 responses had a reasoning wrapper removed before scoring"
+      "verdict": "enabled and observed on the TAGGED shapes: 10 of 10 responses had a tagged reasoning wrapper removed before scoring. Says nothing about the untagged shape in shape_not_covered, which is not detected",
+      "shapes_covered": [
+        "<think>\u2026</think>",
+        "orphan </think>",
+        "unclosed <think>",
+        "harmony <|channel|>analysis"
+      ],
+      "shape_not_covered": "untagged reasoning prose (a response that reasons in plain text with no delimiter at all, e.g. opening 'Thinking Process:'). eval_proxy's stripper is tag-anchored and passes this shape through unchanged. NOT fixed here by design: a keyword heuristic would corrupt legitimate prose in docstrings and comments. See eval/external/ifeval/README.md.",
+      "untagged_leak_exposure_check": "n_unparseable_solutions + n_no_program (top level) are the heuristic-free exposure check: untagged reasoning that survived into a scored answer cannot be parsed as Python. Both 0 means no untagged leak reached scoring in this run."
     },
     "batch_size": 1
   },
@@ -67,8 +75,8 @@
   },
   "bigcodebench_version": "0.2.5",
   "schema_version": 2,
-  "wall_clock_s": 563.1,
-  "generate_s": 142.4,
-  "evaluate_s": 389.2,
-  "ts": "2026-07-26T20:54:36.216590+00:00"
+  "wall_clock_s": 544.8,
+  "generate_s": 127.9,
+  "evaluate_s": 395.2,
+  "ts": "2026-07-26T21:12:36.348079+00:00"
 }

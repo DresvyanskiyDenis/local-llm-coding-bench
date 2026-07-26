@@ -20,7 +20,7 @@ WHAT THIS IS AND IS NOT COMPARABLE TO
     it is not comparable to the public BigCodeBench leaderboard, and the result JSON says so in
     its `comparability` field.
 
-THREE THINGS THIS SCRIPT REFUSES TO DO IMPLICITLY
+FOUR THINGS THIS SCRIPT REFUSES TO DO IMPLICITLY
  1. It will not kill llama-swap. If :8888 is held by llama-swap the run aborts and names
     `eval/harness/ops/serving_mode.sh eval`. (orchestrate.clear_port() now guards this too;
     the assert is repeated here so the failure lands before a model is ever launched.)
@@ -724,12 +724,47 @@ def completions_provenance(n_proxy: int, n_completed: int) -> str:
     )
 
 
+# eval_proxy.strip_reasoning() is TAG-ANCHORED: THINK_BLOCK, ORPHAN_CLOSE, THINK_UNCLOSED and
+# HARMONY_ANALYSIS all key off a literal delimiter. A response that reasons in plain prose with
+# no tag at all is NOT detected and NOT stripped — MEASURED on this same model by the IFEval
+# lane (eval/external/ifeval/README.md, "Reasoning leak: a second, untagged shape"): 13 of 15
+# length-truncated responses were unterminated monologue opening "Thinking Process:" with no
+# <think>, and were scored as if they were answers. Claiming a blanket `reasoning_stripped:
+# true` would overstate coverage on exactly the shape that is unprotected, so the artifact
+# names the shapes it covers and the one it does not.
+STRIP_SHAPES_COVERED = [
+    "<think>…</think>",
+    "orphan </think>",
+    "unclosed <think>",
+    "harmony <|channel|>analysis",
+]
+STRIP_SHAPE_NOT_COVERED = (
+    "untagged reasoning prose (a response that reasons in plain text with no delimiter at all, "
+    "e.g. opening 'Thinking Process:'). eval_proxy's stripper is tag-anchored and passes this "
+    "shape through unchanged. NOT fixed here by design: a keyword heuristic would corrupt "
+    "legitimate prose in docstrings and comments. See eval/external/ifeval/README.md."
+)
+# Why BigCodeBench is nonetheless not silently corrupted by that gap, unlike IFEval: BCB runs
+# every completion through sanitize() (a markdown code-fence extractor) and this script then
+# ast.parse()s the result. Untagged prose therefore lands in one of two OBSERVABLE places
+# rather than in the score — it is either discarded as non-code by the fence extractor (no
+# scoring impact), or it leaves nothing parseable and is counted in n_unparseable_solutions /
+# n_no_program. Those two counters are the structural, heuristic-free exposure check for this
+# benchmark; IFEval has no equivalent because it scores free text directly.
+STRIP_GAP_DETECTOR = (
+    "n_unparseable_solutions + n_no_program (top level) are the heuristic-free exposure check: "
+    "untagged reasoning that survived into a scored answer cannot be parsed as Python. Both 0 "
+    "means no untagged leak reached scoring in this run."
+)
+
+
 def reasoning_strip_report(requested: bool, proxy_stats: dict) -> dict:
-    """What stripping ACTUALLY did, not what it was asked to do.
+    """What stripping ACTUALLY did, not what it was asked to do — and what it does not cover.
 
     The old field was a bool that echoed the CLI flag back, so it read `true` even on a run
     where the proxy handled zero responses. `requested` keeps that intent; `verdict` is the
-    measurement, and the two are allowed to disagree out loud.
+    measurement, and the two are allowed to disagree out loud. `shape_not_covered` is there
+    because a field that overstates its coverage is worse than no field.
     """
     n_resp = proxy_stats.get("n_requests", 0)
     n_stripped = proxy_stats.get("n_reasoning_stripped_choices", 0)
@@ -742,13 +777,15 @@ def reasoning_strip_report(requested: bool, proxy_stats: dict) -> dict:
         )
     elif n_stripped == 0:
         verdict = (
-            f"enabled but a no-op: none of the {n_resp} responses contained a reasoning "
-            "wrapper (<think>…</think>, orphan </think>, or a harmony analysis channel)"
+            f"enabled but a no-op on the TAGGED shapes: none of the {n_resp} responses "
+            "contained a reasoning delimiter. This is NOT evidence that no reasoning leaked — "
+            "an untagged monologue produces exactly this count too; see shape_not_covered"
         )
     else:
         verdict = (
-            f"enabled and observed: {n_stripped} of {n_resp} responses had a reasoning "
-            "wrapper removed before scoring"
+            f"enabled and observed on the TAGGED shapes: {n_stripped} of {n_resp} responses "
+            "had a tagged reasoning wrapper removed before scoring. Says nothing about the "
+            "untagged shape in shape_not_covered, which is not detected"
         )
     return {
         "requested": requested,
@@ -756,6 +793,9 @@ def reasoning_strip_report(requested: bool, proxy_stats: dict) -> dict:
         "n_choices_stripped": n_stripped,
         "n_empty_after_strip": proxy_stats.get("n_empty_after_strip", 0),
         "verdict": verdict,
+        "shapes_covered": STRIP_SHAPES_COVERED,
+        "shape_not_covered": STRIP_SHAPE_NOT_COVERED,
+        "untagged_leak_exposure_check": STRIP_GAP_DETECTOR,
     }
 
 
