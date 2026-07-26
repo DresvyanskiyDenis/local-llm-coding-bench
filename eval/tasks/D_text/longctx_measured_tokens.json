@@ -1,0 +1,41 @@
+{
+  "measurements": [
+    {
+      "ts": "2026-07-26T20:29:57+00:00",
+      "tag": "opus4",
+      "base_url": "http://127.0.0.1:8888",
+      "served_model": "hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+      "method": "usage /v1/chat/completions",
+      "authoritative": true,
+      "tasks": {
+        "D3_longctx_30k": {
+          "corpus_tokens": 32609,
+          "prompt_tokens": 438,
+          "corpus_bytes": 118506,
+          "chars_per_token": 3.622,
+          "target_tokens": 30000,
+          "provisional_tokens": 30629,
+          "delta_vs_target_pct": 8.7
+        },
+        "D4_longctx_60k": {
+          "corpus_tokens": 64027,
+          "prompt_tokens": 438,
+          "corpus_bytes": 227163,
+          "chars_per_token": 3.541,
+          "target_tokens": 60000,
+          "provisional_tokens": 60104,
+          "delta_vs_target_pct": 6.7
+        },
+        "D5_longctx_100k": {
+          "corpus_tokens": 105076,
+          "prompt_tokens": 438,
+          "corpus_bytes": 387125,
+          "chars_per_token": 3.672,
+          "target_tokens": 100000,
+          "provisional_tokens": 98994,
+          "delta_vs_target_pct": 5.1
+        }
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
   "title": "Brief a project report embedded in a 30K-token documentation bundle",
   "grader": "judge",
   "timeout_s": 1800,
-  "est_ctx_tokens": 30000,
+  "est_ctx_tokens": 32609,
   "entrypoint": null,
   "reps": [1],
   "grade": {
