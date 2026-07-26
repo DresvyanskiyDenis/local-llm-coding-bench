@@ -1,0 +1,984 @@
+{
+  "schema_version": 2,
+  "ts": "2026-07-26T20:28:36.035134+00:00",
+  "suite": "D_text",
+  "round": 1,
+  "seed": 42,
+  "judge": {
+    "label": "claude -p --model sonnet (minimal context: --strict-mcp-config --disable-slash-commands --tools '')",
+    "model": "sonnet",
+    "judge_cmd": null,
+    "dry_run": false
+  },
+  "configs": [
+    "qwen__q5",
+    "qwen__q4",
+    "opus__q5",
+    "opus__q4",
+    "glm__q5",
+    "glm__q4",
+    "northmini__q5",
+    "northmini__q4",
+    "gpt-oss__mxfp4",
+    "gemma__q5",
+    "gemma__q4",
+    "katdev__q4",
+    "katdev__iq4",
+    "qwopus__q5",
+    "ornith__q4"
+  ],
+  "input_inventory": {
+    "n_expected": 30,
+    "n_found": 30,
+    "n_missing": 0,
+    "missing_detail": [],
+    "missing_detail_truncated": false,
+    "blocker": null
+  },
+  "run_budget": {
+    "n_calls": 0,
+    "n_cached": 76,
+    "n_unparseable": 0,
+    "n_backend_errors": 0,
+    "n_skipped_limit": 134,
+    "limit": 0,
+    "tokens_this_run": {
+      "cache_creation": 0,
+      "cache_read": 0,
+      "input": 0,
+      "output": 0,
+      "note": "usage-limit tokens for NEW live calls only this invocation (cache hits and backend errors consume none). total_cost_usd stored per-pair is a notional API price, not money spent \u2014 this account runs on a Pro subscription."
+    }
+  },
+  "aborted": false,
+  "abort_reason": null,
+  "failure_samples": {
+    "backend_errors": [],
+    "unparseable": []
+  },
+  "partial_run": {
+    "is_partial": true,
+    "n_pairs_judged_total": 76,
+    "n_pairs_designed_total": 210,
+    "n_pairs_remaining_total": 134,
+    "per_task": {
+      "D1_summarize_mtp": {
+        "judged": 46,
+        "designed": 105
+      },
+      "D2_dedup_approaches": {
+        "judged": 30,
+        "designed": 105
+      }
+    },
+    "statement": "PARTIAL PASS: 76 of 210 designed pairs judged across 2 task(s) (134 pairs remain). All BT strengths, order-effect estimates, and Spearman correlations below are fitted on this partial pass ONLY \u2014 they are not the full round-robin design and must not be read as final rankings. Already-judged pairs are permanently cache-resumable at $0 (use --limit 0 to refresh this report against the cache with guaranteed zero new spend); re-running with the same nonzero --limit is NOT a no-op \u2014 it will additionally spend on up to --limit new pairs per task. The remainder awaits Denis's explicit authorization to run."
+  },
+  "tasks": {
+    "D1_summarize_mtp": {
+      "pairing_scheme": "roundrobin",
+      "n_pairs_designed": 105,
+      "n_pairs_attempted": 105,
+      "n_pairs_judged": 46,
+      "n_pairs_skipped_missing_answer": 0,
+      "n_unparseable": 0,
+      "n_backend_errors": 0,
+      "win_matrix": {
+        "qwen__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "qwen__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "opus__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "opus__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "glm__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 1.0,
+          "opus__q4": 1.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 1.0,
+          "northmini__q4": 1.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 1.0,
+          "katdev__iq4": 1.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "glm__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 1.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 1.0,
+          "northmini__q4": 1.0,
+          "gpt-oss__mxfp4": 1.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 1.0,
+          "katdev__iq4": 1.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "northmini__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "northmini__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "gpt-oss__mxfp4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 1.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "gemma__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 1.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 1.0,
+          "gpt-oss__mxfp4": 1.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 1.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 1.0,
+          "ornith__q4": 0.0
+        },
+        "gemma__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 1.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 1.0,
+          "katdev__iq4": 1.0,
+          "qwopus__q5": 1.0,
+          "ornith__q4": 0.0
+        },
+        "katdev__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "katdev__iq4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "qwopus__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "ornith__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        }
+      },
+      "bt_strengths": {
+        "qwen__q5": {
+          "strength": 552.9639885837366,
+          "ci95": [
+            1.0,
+            4101.412676492597
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "qwen__q4": {
+          "strength": 552.9639885837366,
+          "ci95": [
+            1.0,
+            3629.035353934396
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "opus__q5": {
+          "strength": 0.247303417372992,
+          "ci95": [
+            0.0,
+            543.380680942158
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "opus__q4": {
+          "strength": 0.8905525406103597,
+          "ci95": [
+            0.0,
+            2087.742484930913
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "glm__q5": {
+          "strength": 0.7056118597625424,
+          "ci95": [
+            0.03690441386896159,
+            1238.9578739379324
+          ],
+          "insufficient_data": false,
+          "n_games": 10,
+          "low_confidence": false
+        },
+        "glm__q4": {
+          "strength": 0.4308821697415208,
+          "ci95": [
+            0.011846165071407039,
+            57.04547447523431
+          ],
+          "insufficient_data": false,
+          "n_games": 14,
+          "low_confidence": false
+        },
+        "northmini__q5": {
+          "strength": 0.247303417372992,
+          "ci95": [
+            0.0,
+            120.57238163377737
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "northmini__q4": {
+          "strength": 0.0671368802162473,
+          "ci95": [
+            0.0,
+            3.1325912190076743
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "gpt-oss__mxfp4": {
+          "strength": 0.0671368802162473,
+          "ci95": [
+            0.0,
+            551.7271149400626
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "gemma__q5": {
+          "strength": 0.16985897396007255,
+          "ci95": [
+            0.00013831790903934575,
+            2.0411297256709613
+          ],
+          "insufficient_data": false,
+          "n_games": 14,
+          "low_confidence": false
+        },
+        "gemma__q4": {
+          "strength": 0.06845847234716824,
+          "ci95": [
+            2.124071792317414e-07,
+            0.30929624127439814
+          ],
+          "insufficient_data": false,
+          "n_games": 14,
+          "low_confidence": false
+        },
+        "katdev__q4": {
+          "strength": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "katdev__iq4": {
+          "strength": 0.0671368802162473,
+          "ci95": [
+            0.0,
+            3.7641279450686675
+          ],
+          "insufficient_data": false,
+          "n_games": 4,
+          "low_confidence": false
+        },
+        "qwopus__q5": {
+          "strength": 0.07794118247482051,
+          "ci95": [
+            0.0,
+            1139.5618754278455
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "ornith__q4": {
+          "strength": 552.9639885837366,
+          "ci95": [
+            1.0,
+            4664.251304840749
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        }
+      },
+      "order_effect": {
+        "first_position_win_rate": 0.32608695652173914,
+        "ci95": [
+          0.20865764564493355,
+          0.4703253725567292
+        ],
+        "n_decisive": 46,
+        "n_ties": 0,
+        "n_unparseable": 0,
+        "n_backend_errors": 0,
+        "null_hypothesis": "unbiased judge -> first_position_win_rate == 0.5",
+        "significant_bias": true,
+        "method": "first-shown win-rate over decisive (non-tie, parseable, non-backend-error) judgements, Wilson score 95% CI"
+      },
+      "spearman_vs_round1_absolute": {
+        "rho": 0.36790019366204957,
+        "p": 0.1775911204439778,
+        "n": 15,
+        "method": "permutation, 20000 draws, seed=42",
+        "configs_compared": [
+          "qwen__q5",
+          "qwen__q4",
+          "opus__q5",
+          "opus__q4",
+          "glm__q5",
+          "glm__q4",
+          "northmini__q5",
+          "northmini__q4",
+          "gpt-oss__mxfp4",
+          "gemma__q5",
+          "gemma__q4",
+          "katdev__q4",
+          "katdev__iq4",
+          "qwopus__q5",
+          "ornith__q4"
+        ],
+        "meaningful": true,
+        "median_games_per_config": 4.0
+      }
+    },
+    "D2_dedup_approaches": {
+      "pairing_scheme": "roundrobin",
+      "n_pairs_designed": 105,
+      "n_pairs_attempted": 105,
+      "n_pairs_judged": 30,
+      "n_pairs_skipped_missing_answer": 0,
+      "n_unparseable": 0,
+      "n_backend_errors": 0,
+      "win_matrix": {
+        "qwen__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "qwen__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "opus__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "opus__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "glm__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "glm__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "northmini__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "northmini__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "gpt-oss__mxfp4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "gemma__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 1.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 1.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "gemma__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 1.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 1.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 1.0,
+          "katdev__iq4": 1.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "katdev__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "katdev__iq4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 1.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 0.0,
+          "gemma__q4": 0.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "qwopus__q5": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        },
+        "ornith__q4": {
+          "qwen__q5": 0.0,
+          "qwen__q4": 0.0,
+          "opus__q5": 0.0,
+          "opus__q4": 0.0,
+          "glm__q5": 0.0,
+          "glm__q4": 0.0,
+          "northmini__q5": 0.0,
+          "northmini__q4": 0.0,
+          "gpt-oss__mxfp4": 0.0,
+          "gemma__q5": 1.0,
+          "gemma__q4": 1.0,
+          "katdev__q4": 0.0,
+          "katdev__iq4": 0.0,
+          "qwopus__q5": 0.0,
+          "ornith__q4": 0.0
+        }
+      },
+      "bt_strengths": {
+        "qwen__q5": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1284.1710368028905
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "qwen__q4": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1064.4736644697778
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "opus__q5": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1060.7393631795421
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "opus__q4": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1181.1515148370297
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "glm__q5": {
+          "strength": 8.002663438898768e-09,
+          "ci95": [
+            0.0,
+            2.0
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "glm__q4": {
+          "strength": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "insufficient_data": false,
+          "n_games": 5,
+          "low_confidence": false
+        },
+        "northmini__q5": {
+          "strength": 0.0016452685427855442,
+          "ci95": [
+            0.0,
+            18.69176457651715
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "northmini__q4": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1285.9337690992954
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "gpt-oss__mxfp4": {
+          "strength": 330.21208212806425,
+          "ci95": [
+            1.0,
+            940.078148459684
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "gemma__q5": {
+          "strength": 5.150885630013994e-06,
+          "ci95": [
+            0.0,
+            0.028580880463511878
+          ],
+          "insufficient_data": false,
+          "n_games": 14,
+          "low_confidence": false
+        },
+        "gemma__q4": {
+          "strength": 0.4465436141471754,
+          "ci95": [
+            0.006733350451707602,
+            8.000213755066552
+          ],
+          "insufficient_data": false,
+          "n_games": 14,
+          "low_confidence": false
+        },
+        "katdev__q4": {
+          "strength": 0.0016452685427855442,
+          "ci95": [
+            0.0,
+            19.009986651882716
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "katdev__iq4": {
+          "strength": 8.002663438898768e-09,
+          "ci95": [
+            0.0,
+            2.0
+          ],
+          "insufficient_data": false,
+          "n_games": 3,
+          "low_confidence": true
+        },
+        "qwopus__q5": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1103.7587317177586
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        },
+        "ornith__q4": {
+          "strength": 495.7318336416505,
+          "ci95": [
+            1.0,
+            1038.3574537298632
+          ],
+          "insufficient_data": false,
+          "n_games": 2,
+          "low_confidence": true
+        }
+      },
+      "order_effect": {
+        "first_position_win_rate": 0.4666666666666667,
+        "ci95": [
+          0.3023212722412823,
+          0.6385798671847496
+        ],
+        "n_decisive": 30,
+        "n_ties": 0,
+        "n_unparseable": 0,
+        "n_backend_errors": 0,
+        "null_hypothesis": "unbiased judge -> first_position_win_rate == 0.5",
+        "significant_bias": false,
+        "method": "first-shown win-rate over decisive (non-tie, parseable, non-backend-error) judgements, Wilson score 95% CI"
+      },
+      "spearman_vs_round1_absolute": {
+        "rho": null,
+        "p": null,
+        "n": 15,
+        "meaningful": false,
+        "median_games_per_config": 2.0,
+        "method": "NOT COMPUTED \u2014 median per-config coverage in this pass is only 2.0 judged games (< 4 threshold for a stable BT point estimate). A rho fitted on this would mostly reflect single-game sample noise, not true rank agreement with round-1 absolute scores.",
+        "n_pairs_judged_needed_for_median_ge_threshold": 30
+      }
+    }
+  },
+  "notes": [
+    "PARTIAL RUN \u2014 see top-level `partial_run`. PARTIAL PASS: 76 of 210 designed pairs judged across 2 task(s) (134 pairs remain). All BT strengths, order-effect estimates, and Spearman correlations below are fitted on this partial pass ONLY \u2014 they are not the full round-robin design and must not be read as final rankings. Already-judged pairs are permanently cache-resumable at $0 (use --limit 0 to refresh this report against the cache with guaranteed zero new spend); re-running with the same nonzero --limit is NOT a no-op \u2014 it will additionally spend on up to --limit new pairs per task. The remainder awaits Denis's explicit authorization to run.",
+    "Round-1 D tasks (D1, D2) use full round-robin so they are directly comparable to the round-1 absolute judging (same method decided in IMPLEMENTATION_PLAN.md \u00a77). D3-D6 (not authored yet this session) would use 8-round Swiss per the same plan.",
+    "Position bias is measured from the per-pair randomized presentation order (fixed seed, independently randomized per pair) \u2014 see order_effect per task. If significant_bias is true, the plan's prescribed fix is a swap-and-rejudge pass (judge each pair in both orders and combine), not yet run by default this session.",
+    "Bradley-Terry via MM iteration (Hunter 2004), plain numpy. 95% CIs via 1000-resample bootstrap over individual judged games.",
+    "Spearman rho computed on ranks (average-rank tie handling) with a permutation p-value (20000 draws) \u2014 no scipy dependency.",
+    "Budget tracking: this account runs on a Pro subscription \u2014 total_cost_usd stored per-pair is a notional API price, not money spent. The scarce resource is the usage limit; see run_budget.tokens_this_run (cache_creation/cache_read/input/output) for NEW live-call consumption this invocation. Investigated whether each pair's ~11.5K cache-creation tokens (system prompt re-cached fresh every process) could instead be cache reads: `claude -p --resume <session_id>` DOES convert a prior call's cache_creation into this call's cache_read (proven: 2nd-turn cache_read exactly matched 1st-turn cache_creation in an isolated test). NOT adopted for the full 210-pair design because (a) sharing one session across pairs breaks the judge's blind, independent-per-pair assumption (accumulated transcript = contamination risk across comparisons \u2014 a methodology call for Denis, not a silent perf optimization), and (b) savings were unstable in this actively multi-agent repo: a 3rd-turn test still re-created 3.4K fresh tokens, most likely from per-turn dynamic context (git status) that keeps changing while other agents commit concurrently. `--bare` (which would strip that dynamic context) cannot be used here \u2014 it requires ANTHROPIC_API_KEY and this account authenticates via Pro-subscription OAuth."
+  ]
+}
