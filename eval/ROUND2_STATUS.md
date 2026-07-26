@@ -148,6 +148,43 @@ instruction-following was never measured here at all.
 D is treated twice over: harder tasks (the 30K/60K/100K ladder) *and* a better scoring method
 (pairwise Bradley-Terry instead of absolute scores that saturated at 8.67–9.83).
 
+## Composite change — decided 2026-07-26
+
+Two decisions by Denis that change the composite. It is **no longer the round-1 quantity** and every
+place it appears must say so.
+
+**1. `tool_malformed%` drops from 0.25 to 0.10.** The round-1 data is bimodal, not saturated:
+
+| | configs | value |
+|---|---|---|
+| working | gemma, glm, katdev, opus, qwopus | 2.4 – 5.5 % |
+| worse | ornith, gpt-oss | 8.7 – 10.5 % |
+| broken | northmini, qwen | 17.9 – 32.5 % |
+
+The outliers are 5–10× worse, so even a small weight punishes them decisively. Meanwhile the
+differences *inside* the 2–5 % cluster are 3 versus 5 malformed calls out of ~100 — noise, and noise
+should not carry a quarter of the composite.
+
+**2. A stops being four saturated hand-written tasks.** BigCodeBench Hard tasks are wrapped as
+ordinary in-harness A tasks (`repo/` + `PROMPT.md` + the existing `pytest_grader.py`), so A
+discriminates again *without* ceasing to be a harness-level measurement. A keeps its 0.35.
+
+The wrapped tasks are deliberately **the same tasks the external lane runs directly**. Same task, two
+delivery modes — through OpenCode with tools and turns, versus single-turn straight at the endpoint.
+The difference between them **isolates the harness contribution**. That is a controlled comparison
+rather than two metrics reported side by side, and it is the answer to "why measure the model at all
+when the harness is the product": the model-level number is the control that makes the harness-level
+number interpretable.
+
+Proposed redistribution of the freed 0.15 — weight follows spread, so B (0.111–0.611, the healthiest
+axis in round 1) gains most and the narrow C (0.803–0.909) gains least:
+
+```
+0.35·A + 0.10·(1 − tool_malformed%) + 0.20·C + 0.20·B_recall + 0.10·(D/10) + 0.05·(decode/137)
+```
+
+*Awaiting Denis's confirmation of the split; the two weight decisions themselves are settled.*
+
 ## Needs Denis
 
 1. **IFEval run size.** At full 541 prompts the suite costs ~44 h across 15 configs. A seeded
