@@ -132,16 +132,37 @@ _pending — Phase 2 gate in flight._
    is being measured to size the effect. Raising the cap and shrinking the sample pull against each
    other — that trade is item 1.
 
-3. **Pairwise judge budget.** The full D1+D2 round-robin is **210 `claude -p` calls** against your
-   subscription. Unattended spend was capped at a reduced but *real* pass (~30 pairs across both
-   tasks) so the order-effect and Bradley-Terry paths run on genuine judgements; the remaining ~180
-   pairs await your authorisation. The result cache makes the remainder resumable without
-   re-spending. Any partial Bradley-Terry fit is labelled partial wherever it appears.
+3. **Pairwise judge budget — now measured, not estimated.** One `claude -p` judge call costs
+   **$0.070** (11,465 cache-creation tokens per invocation; the system prompt is re-cached every
+   time). The full D1+D2 round-robin is 210 pairs ≈ **$14.70**. Unattended spend is capped at a
+   reduced but *real* pass (~30 pairs across both tasks, ≈ $2.10) so the order-effect and
+   Bradley-Terry paths run on genuine judgements; the remaining ~180 pairs await your authorisation.
+   The result cache makes the remainder resumable without re-spending. Any partial Bradley-Terry fit
+   is labelled partial wherever it appears.
 
 4. **Round-1 answers are now tracked — keep it that way.** See the blocker below. The recovered
    answers live in `eval/results/round1_answers/`, which is **in git on purpose**. If a future
    cleanup gitignores it again, the next round of pairwise judging becomes impossible without
    re-running inference.
+
+## Incident — the machine was left with no server for four hours
+
+At 20:34 the machine was put into `eval` mode. The IFEval gate finished at 20:41. At 20:53 the
+session hit its usage limit and every agent died at once — including the one holding the port.
+
+Nothing restored `daily` mode. From 20:41 until roughly 00:50 the machine sat with **`.serving_mode`
+= eval, nothing listening on `:8888` or `:8899`, no llama-swap process, and the launchd job
+unloaded**. Denis's daily OpenCode fleet was down that whole time, for no benefit — no gate was
+running either.
+
+Restored with `serving_mode.sh daily`: llama-swap pid 20309 is on `:8888`, launchd job loaded,
+state file back to `daily`.
+
+**The gap this exposes.** The Phase 0 `clear_port()` guard protects llama-swap from being *killed by
+accident*. It does nothing about llama-swap being *stopped deliberately and never restarted* — which
+is what happened. The guard is not a substitute for someone owning the restore, and an agent that
+dies mid-run owns nothing. Worth a watchdog before the real 15-config night: eval mode should not be
+a state the machine can be left parked in.
 
 ## Blockers
 
