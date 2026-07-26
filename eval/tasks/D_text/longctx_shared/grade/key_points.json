@@ -1,0 +1,65 @@
+{
+  "key_points": [
+    {
+      "id": "kp1",
+      "point": "The benchmark answers one decision: which local model + quant is the best day-to-day agentic coding driver on a 36 GB MacBook Pro M4 Max, and what each costs in speed and quality.",
+      "weight": "high"
+    },
+    {
+      "id": "kp2",
+      "point": "It runs on the real stack: Unsloth Studio serving one model at a time on 127.0.0.1:8888, driven by the OpenCode agent client, with a separate raw-endpoint speed probe for throughput.",
+      "weight": "high"
+    },
+    {
+      "id": "kp3",
+      "point": "There are four suites over 10 tasks: A_coding (4, implement from a spec, hidden pytest pass-rate), B_review (2, planted-bug key, recall + precision), C_edit (2, apply valid review fixes while ignoring exactly one deliberate noise comment, pytest + surgical-diff), D_text (2, prose, scored offline by a single Opus judge 0-10).",
+      "weight": "high"
+    },
+    {
+      "id": "kp4",
+      "point": "450 graded units = 10 tasks x 15 model/quant configs x 3 reps; the 15 configs come from 9 working models (q4 and q5 where both exist). A 10th model, qwen27, smoke-failed both quants and was excluded with 0 units.",
+      "weight": "high"
+    },
+    {
+      "id": "kp5",
+      "point": "The composite is an explicit weighting: 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137), times 100, computed on each model's q4 (or single) quant.",
+      "weight": "high"
+    },
+    {
+      "id": "kp6",
+      "point": "ornith tops the composite at 88.3 by having no weak axis rather than by leading any single one; the composite is only one weighting and sorting by a single axis changes the winner.",
+      "weight": "high"
+    },
+    {
+      "id": "kp7",
+      "point": "qwen has the best raw coding and prose but a 28-32% malformed-tool-call rate drops it to 7th (83.0) - the clearest illustration of the 'no weak axis' property.",
+      "weight": "medium"
+    },
+    {
+      "id": "kp8",
+      "point": "Cross-cutting quant finding: Q4 >= Q5 on coding across the board (equal-or-better pass-rate at lower RAM), so Q4 is the recommended default.",
+      "weight": "high"
+    },
+    {
+      "id": "kp9",
+      "point": "A harness bug was found and corrected: an opencode-log-sanitizer plugin rewrote the task prompt to the literal string \"redacted\" for katdev, qwopus and ornith, which had ranked them last; removing it and re-running inverted them to the top of the fleet - the lesson being to validate the harness before writing off a model.",
+      "weight": "high"
+    },
+    {
+      "id": "kp10",
+      "point": "Stated measurement gaps: MTP speculative-decode acceptance rate was never captured (null fleet-wide), the 80K speed-probe point was skipped, and long-context quality degradation plus auto-compaction survival are unmeasured because every task stays under ~30K context, below OpenCode's ~74K compaction trigger.",
+      "weight": "high"
+    },
+    {
+      "id": "kp11",
+      "point": "Controls for fairness: identical prompts and task dirs for every model, reasoning effort locked HIGH for every thinking model, one model loaded at a time with RAM release verified between configs, 3 reps everywhere it works, a broken-config policy, and a speed probe kept separate from agent wall-clock (measured at 2K/8K/24K/48K context, decode normalized to the fleet max of 137 t/s).",
+      "weight": "medium"
+    },
+    {
+      "id": "kp12",
+      "point": "Reproduction expectations: the whole harness runs as PEP-723 `uv run` scripts with no project venv, needs an Apple-silicon Mac with >=32 GB (36 GB reference) plus the opencode CLI, is resumable (atomic per-unit JSON + append-only manifest, existing units skipped), and is explicitly not bit-reproducible on Metal - a reproduction is judged by per-dimension winners and composite tiers, not by matching scores to the decimal.",
+      "weight": "medium"
+    }
+  ],
+  "notes": "IDENTICAL FILE for D3_longctx_30k, D4_longctx_60k and D5_longctx_100k: the three corpora embed one byte-identical core document (proved by eval/tasks/D_text/longctx_build_report.json), so the same key points are recallable at 30K, 60K and 100K context and the degradation curve measures degradation, not a change of content. Scoring is offline (Opus, Stage 3), not automated here. Score on substantive equivalence, not wording; paraphrase is fine. The judge must apply this file identically at all three sizes -- do not grade the 100K answer more leniently because the task was harder; the point of the series is that the score is allowed to fall."
+}

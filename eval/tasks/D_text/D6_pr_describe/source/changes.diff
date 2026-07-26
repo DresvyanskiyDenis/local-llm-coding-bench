@@ -1,0 +1,178 @@
+diff --git a/src/ingest/config.py b/src/ingest/config.py
+index 7d58786..febb0ab 100644
+--- a/src/ingest/config.py
++++ b/src/ingest/config.py
+@@ -13,11 +13,11 @@ class IngestConfig:
+ 
+     source_dir: Path
+     batch_size: int = 500
+-    retry_limit: int = 3
++    max_retries: int = 5
+     fail_fast: bool = True
+ 
+ 
+-def load_config(path: Path, *, retry_limit: int = 3, fail_fast: bool = True) -> IngestConfig:
++def load_config(path: Path, *, max_retries: int = 5, fail_fast: bool = True) -> IngestConfig:
+     """Load an ingest config from a JSON file.
+ 
+     Values in the file win over the keyword defaults.
+@@ -28,7 +28,7 @@ def load_config(path: Path, *, retry_limit: int = 3, fail_fast: bool = True) ->
+     return IngestConfig(
+         source_dir=Path(raw["source_dir"]),
+         batch_size=int(raw.get("batch_size", 500)),
+-        retry_limit=int(raw.get("retry_limit", retry_limit)),
++        max_retries=int(raw.get("max_retries", max_retries)),
+         fail_fast=bool(raw.get("fail_fast", fail_fast)),
+     )
+ 
+@@ -36,5 +36,5 @@ def load_config(path: Path, *, retry_limit: int = 3, fail_fast: bool = True) ->
+ def describe(config: IngestConfig) -> str:
+     return (
+         f"source_dir={config.source_dir} batch_size={config.batch_size} "
+-        f"retry_limit={config.retry_limit} fail_fast={config.fail_fast}"
++        f"max_retries={config.max_retries} fail_fast={config.fail_fast}"
+     )
+diff --git a/src/ingest/normalize.py b/src/ingest/normalize.py
+index 85db6c4..02d1370 100644
+--- a/src/ingest/normalize.py
++++ b/src/ingest/normalize.py
+@@ -3,7 +3,7 @@
+ from __future__ import annotations
+ 
+ import logging
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ logger = logging.getLogger(__name__)
+ 
+@@ -13,12 +13,13 @@ REQUIRED_FIELDS = ("event_id", "occurred_at")
+ def parse_timestamp(value: str) -> datetime:
+     """Parse an ISO-8601 timestamp.
+ 
+-    A timestamp without an offset is assumed to be in the machine's local
+-    timezone, which is what the upstream exporter used to write.
++    A timestamp without an offset is assumed to be UTC. The exporter has been
++    emitting UTC without an offset since v2.3, and interpreting those as local
++    time shifted every naive timestamp by the reader's UTC offset.
+     """
+     parsed = datetime.fromisoformat(value)
+     if parsed.tzinfo is None:
+-        return parsed.astimezone()
++        return parsed.replace(tzinfo=timezone.utc)
+     return parsed
+ 
+ 
+@@ -33,9 +34,24 @@ def normalize_row(row: dict) -> dict:
+     }
+ 
+ 
+-def normalize_rows(rows: list[dict]) -> list[dict]:
++def normalize_rows(rows: list[dict], *, on_error: str = "skip") -> list[dict]:
+     """Normalize every row.
+ 
+-    Any row with a malformed timestamp aborts the whole batch.
++    `on_error="skip"` (the default) drops rows that cannot be normalized and
++    logs how many were dropped; `on_error="raise"` restores the previous
++    behaviour of aborting the whole batch on the first bad row.
+     """
+-    return [normalize_row(row) for row in rows]
++    if on_error not in {"skip", "raise"}:
++        raise ValueError(f"on_error must be 'skip' or 'raise', got {on_error!r}")
++    out: list[dict] = []
++    skipped = 0
++    for row in rows:
++        try:
++            out.append(normalize_row(row))
++        except ValueError:
++            if on_error == "raise":
++                raise
++            skipped += 1
++    if skipped:
++        logger.warning("normalize_rows skipped %d of %d rows", skipped, len(rows))
++    return out
+diff --git a/src/ingest/reader.py b/src/ingest/reader.py
+index 5a243a4..b7a91fb 100644
+--- a/src/ingest/reader.py
++++ b/src/ingest/reader.py
+@@ -11,7 +11,7 @@ from .config import IngestConfig
+ logger = logging.getLogger(__name__)
+ 
+ 
+-def read_batch(path: Path, *, encoding: str = "utf-8") -> list[dict]:
++def _read_batch_impl(path: Path, *, encoding: str = "utf-8") -> list[dict]:
+     """Read one newline-delimited JSON file into a list of dicts."""
+     rows: list[dict] = []
+     with Path(path).open("r", encoding=encoding) as fh:
+@@ -26,13 +26,19 @@ def read_batch(path: Path, *, encoding: str = "utf-8") -> list[dict]:
+     return rows
+ 
+ 
++# The implementation moved behind a private name so the retry wrapper below can
++# be unit-tested on its own. The public name and signature are unchanged, so
++# `from ingest.reader import read_batch` keeps working for every caller.
++read_batch = _read_batch_impl
++
++
+ def read_all(config: IngestConfig) -> list[dict]:
+     """Read every *.jsonl file under the configured source directory."""
+     rows: list[dict] = []
+     for path in sorted(Path(config.source_dir).glob("*.jsonl")):
+-        for attempt in range(config.retry_limit):
++        for attempt in range(config.max_retries):
+             try:
+-                rows.extend(read_batch(path))
++                rows.extend(_read_batch_impl(path))
+                 break
+             except OSError:
+                 logger.warning("read failed for %s (attempt %d)", path, attempt + 1)
+diff --git a/tests/test_normalize.py b/tests/test_normalize.py
+index db9cf21..87ff071 100644
+--- a/tests/test_normalize.py
++++ b/tests/test_normalize.py
+@@ -1,4 +1,4 @@
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ import pytest
+ 
+@@ -10,10 +10,10 @@ def test_parse_timestamp_keeps_explicit_offset():
+     assert ts.utcoffset().total_seconds() == 7200
+ 
+ 
+-def test_parse_timestamp_naive_is_local():
++def test_parse_timestamp_naive_is_utc():
+     ts = parse_timestamp("2026-01-05T10:00:00")
+-    assert ts.tzinfo is not None
+-    assert ts.replace(tzinfo=None) == datetime(2026, 1, 5, 10, 0, 0)
++    assert ts == datetime(2026, 1, 5, 10, 0, 0, tzinfo=timezone.utc)
++    assert ts.utcoffset().total_seconds() == 0
+ 
+ 
+ def test_normalize_row_requires_event_id():
+@@ -21,10 +21,24 @@ def test_normalize_row_requires_event_id():
+         normalize_row({"occurred_at": "2026-01-05T10:00:00Z"})
+ 
+ 
+-def test_normalize_rows_aborts_on_bad_row():
++def test_normalize_rows_skips_bad_rows_by_default():
+     rows = [
+         {"event_id": "1", "occurred_at": "2026-01-05T10:00:00Z"},
+         {"event_id": "2"},
+     ]
++    out = normalize_rows(rows)
++    assert [r["event_id"] for r in out] == ["1"]
++
++
++def test_normalize_rows_can_still_raise():
++    rows = [
++        {"event_id": "1", "occurred_at": "2026-01-05T10:00:00Z"},
++        {"event_id": "2"},
++    ]
++    with pytest.raises(ValueError):
++        normalize_rows(rows, on_error="raise")
++
++
++def test_normalize_rows_rejects_unknown_on_error():
+     with pytest.raises(ValueError):
+-        normalize_rows(rows)
++        normalize_rows([], on_error="explode")

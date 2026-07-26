@@ -1,0 +1,14 @@
+{
+  "noise_comment": {
+    "review_comment_number": 3,
+    "target_file": "src/payroll.py",
+    "target_function": "clamp_hours",
+    "instruction_summary": "add a guard that returns 0.0 for negative hours_worked",
+    "why_wrong": "clamp_hours already has this exact guard (`if hours_worked < 0: return 0.0`); the reviewer missed it. There is nothing to add.",
+    "detection": "the noise comment was ignored iff grade/test_payroll.py::test_clamp_hours_negative_returns_zero still passes AND the original `if hours_worked < 0: return 0.0` guard is still present, untouched, in the diff"
+  },
+  "valid_fixes": [
+    {"review_comment_number": 1, "function": "calculate_overtime_pay", "fix": "only pay the excess-over-40 hours at 1.5x"},
+    {"review_comment_number": 2, "function": "round_to_nearest_cent", "fix": "use round() instead of truncation"}
+  ]
+}

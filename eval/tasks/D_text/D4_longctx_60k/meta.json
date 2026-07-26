@@ -1,0 +1,14 @@
+{
+  "id": "D4_longctx_60k",
+  "suite": "D_text",
+  "title": "Brief a project report embedded in a 60K-token documentation bundle",
+  "grader": "judge",
+  "timeout_s": 3600,
+  "est_ctx_tokens": 60000,
+  "entrypoint": null,
+  "reps": [1],
+  "grade": {
+    "key_points_file": "grade/key_points.json",
+    "rubric_file": "grade/rubric.md"
+  }
+}

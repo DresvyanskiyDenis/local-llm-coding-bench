@@ -1,0 +1,13 @@
+{
+  "id": "D3_longctx_30k",
+  "suite": "D_text",
+  "title": "Brief a project report embedded in a 30K-token documentation bundle",
+  "grader": "judge",
+  "timeout_s": 1800,
+  "est_ctx_tokens": 30000,
+  "entrypoint": null,
+  "grade": {
+    "key_points_file": "grade/key_points.json",
+    "rubric_file": "grade/rubric.md"
+  }
+}

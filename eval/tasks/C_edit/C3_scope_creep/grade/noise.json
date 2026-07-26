@@ -1,0 +1,6 @@
+{
+  "kind": "out_of_scope",
+  "file": "src/shipping.py",
+  "forbidden_pattern": "@dataclass|from\\s+dataclasses\\s+import",
+  "note": "Noise = REVIEW.md comment #4 (convert Package to @dataclass). A real refactor, but out of scope for this bug-fix review. Correct output leaves Package as a plain class, so the pattern must NOT appear; noise_comment_acted_on == the dataclass refactor is now PRESENT."
+}

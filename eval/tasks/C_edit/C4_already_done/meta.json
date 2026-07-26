@@ -1,0 +1,14 @@
+{
+  "id": "C4_already_done",
+  "suite": "C_edit",
+  "title": "Apply valid review fixes to payroll helpers, ignore the redundant already-done comment",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1500,
+  "entrypoint": "src/payroll.py",
+  "grade": {
+    "test_file": "grade/test_payroll.py",
+    "noise_comment_meta": "grade/meta.json",
+    "requires": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "noise_comment": {
+    "review_comment_number": 4,
+    "target_file": "src/shipping.py",
+    "target_function": "Package",
+    "instruction_summary": "convert Package to a @dataclass",
+    "why_wrong": "a real, reasonable suggestion but out of scope for a review whose 3 other comments are specific bug fixes; bundling an unrelated class-shape refactor into this diff is scope creep and belongs in its own PR",
+    "detection": "the noise comment was ignored iff `@dataclass` / `from dataclasses import` does not appear anywhere in src/shipping.py"
+  },
+  "valid_fixes": [
+    {"review_comment_number": 1, "function": "calculate_shipping_cost", "fix": "add the $3.00 fragile surcharge"},
+    {"review_comment_number": 2, "function": "apply_bulk_discount", "fix": "use >= 5 instead of > 5"},
+    {"review_comment_number": 3, "function": "estimate_delivery_days", "fix": "use ceiling division instead of floor"}
+  ]
+}

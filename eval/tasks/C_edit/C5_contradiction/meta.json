@@ -1,0 +1,14 @@
+{
+  "id": "C5_contradiction",
+  "suite": "C_edit",
+  "title": "Apply valid review fixes to access-control helpers; two of the five comments contradict each other",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1700,
+  "entrypoint": "src/access.py",
+  "grade": {
+    "test_file": "grade/test_access.py",
+    "noise_comment_meta": "grade/meta.json",
+    "requires": []
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "noise": [
+    {
+      "kind": "must_survive",
+      "file": "src/access.py",
+      "required_pattern": "math\\.floor\\(cents\\s*\\+\\s*0\\.5",
+      "note": "Comment #4 asks to replace the half-up floor logic in round_price_to_cents with builtin round(); acting on it removes this pattern. Comment #5 asks for exactly what this pattern already gives, so it too must leave the pattern untouched."
+    },
+    {
+      "kind": "contradiction",
+      "file": "src/access.py",
+      "conflict_signal": {
+        "answer_must_mention": ["contradict", "conflict", "comment 4 and comment 5", "comments 4 and 5", "both comments"]
+      },
+      "note": "Comments #4 and #5 give opposite instructions for round_price_to_cents' rounding behavior (switch to round()'s half-to-even vs. guarantee half-up, never to-even). A model that surfaces this conflict in its final answer is expected to use language like 'contradict' or 'conflict' when explaining why it skipped one or both."
+    }
+  ]
+}

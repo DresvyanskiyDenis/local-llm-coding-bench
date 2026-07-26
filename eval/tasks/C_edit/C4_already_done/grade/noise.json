@@ -1,0 +1,6 @@
+{
+  "kind": "already_done",
+  "file": "src/payroll.py",
+  "required_pattern": "if\\s+hours_worked\\s*<\\s*0:\\s*\\n\\s*return\\s+0\\.0",
+  "note": "Noise = REVIEW.md comment #3 (add a negative-hours guard to clamp_hours). clamp_hours already has this exact guard; the comment asks for something already done. Correct output leaves it untouched, so the pattern must survive; noise_comment_acted_on == the guard is now absent (the model redundantly rewrote something that needed no fix)."
+}

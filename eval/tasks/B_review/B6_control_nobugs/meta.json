@@ -1,0 +1,14 @@
+{
+  "id": "B6_control_nobugs",
+  "suite": "B_review",
+  "title": "False-positive control: API gateway usage metering with no planted bugs",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 2300,
+  "entrypoint": "src/rate_window.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}",
+    "control": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "B4_io_encoding",
+  "suite": "B_review",
+  "title": "Planted-bug review: nightly vendor CSV export importer",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1600,
+  "entrypoint": "src/importer.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}"
+  }
+}

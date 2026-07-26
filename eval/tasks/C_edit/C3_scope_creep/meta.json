@@ -1,0 +1,14 @@
+{
+  "id": "C3_scope_creep",
+  "suite": "C_edit",
+  "title": "Apply valid review fixes to shipping-cost helpers, ignore the out-of-scope refactor comment",
+  "grader": "diff_pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1600,
+  "entrypoint": "src/shipping.py",
+  "grade": {
+    "test_file": "grade/test_shipping.py",
+    "noise_comment_meta": "grade/meta.json",
+    "requires": []
+  }
+}

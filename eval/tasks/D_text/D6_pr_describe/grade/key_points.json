@@ -1,0 +1,130 @@
+{
+  "task": "D6_pr_describe",
+  "ground_truth": "EXACT BY CONSTRUCTION — the diff in source/changes.diff was authored for this task, so every fact below is checkable against it without judgement. Match on substance, not wording: a fact counts as recalled if any of its synonyms (or an obvious paraphrase) appears and the claim is not contradicted elsewhere in the answer.",
+  "key_points": [
+    {
+      "id": "kf1",
+      "point": "Four existing files are modified and no file is added, deleted or renamed: src/ingest/config.py, src/ingest/normalize.py, src/ingest/reader.py, tests/test_normalize.py.",
+      "synonyms": [
+        "config.py, normalize.py, reader.py and test_normalize.py",
+        "three modules under src/ingest plus one test file",
+        "4 files changed",
+        "no new files"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf2",
+      "point": "BREAKING: the retry setting is renamed from retry_limit to max_retries on both the IngestConfig dataclass field and the load_config() keyword argument, with no alias, property or deprecation shim — code reading config.retry_limit or calling load_config(retry_limit=...) now fails.",
+      "synonyms": [
+        "retry_limit renamed to max_retries",
+        "IngestConfig.retry_limit no longer exists",
+        "load_config(retry_limit=...) raises TypeError",
+        "attribute/keyword rename with no backwards compatibility"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf3",
+      "point": "BREAKING AND SILENT: load_config now reads the JSON key \"max_retries\" instead of \"retry_limit\" with no fallback, so an existing config file that still says retry_limit does not error — the key is ignored and the default is used instead.",
+      "synonyms": [
+        "the JSON/config file key changed",
+        "old config files silently fall back to the default",
+        "raw.get(\"max_retries\") replaces raw.get(\"retry_limit\")",
+        "existing config files must be updated",
+        "fails silently rather than loudly"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf4",
+      "point": "The default retry count changes from 3 to 5 (both the dataclass default and the load_config keyword default).",
+      "synonyms": ["default retries 3 -> 5", "retries default increased to five"],
+      "weight": "medium"
+    },
+    {
+      "id": "kf5",
+      "point": "BEHAVIOUR CHANGE: parse_timestamp now treats a timestamp with no UTC offset as UTC (tzinfo replaced with timezone.utc) instead of the machine's local timezone (datetime.astimezone()), so naive timestamps are no longer shifted by the reader's local offset.",
+      "synonyms": [
+        "naive timestamps are now interpreted as UTC",
+        "offset-less timestamps assumed UTC instead of local time",
+        "removes a timezone shift that depended on the machine running the ingest",
+        "replace(tzinfo=timezone.utc) instead of astimezone()"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf6",
+      "point": "BEHAVIOUR CHANGE: normalize_rows no longer aborts the whole batch on the first bad row. It gains a keyword-only on_error parameter defaulting to \"skip\", which drops unnormalizable rows and logs a warning with the skipped count; on_error=\"raise\" restores the old abort behaviour.",
+      "synonyms": [
+        "bad rows are skipped by default instead of raising",
+        "new on_error argument, defaults to skip",
+        "partial results instead of an exception",
+        "logs how many rows were skipped",
+        "on_error='raise' keeps the previous behaviour"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf7",
+      "point": "The read_batch implementation is moved to a private _read_batch_impl, but the public name is preserved by the module-level alias read_batch = _read_batch_impl, so the public API and signature are unchanged and callers importing read_batch are NOT affected.",
+      "synonyms": [
+        "read_batch kept as an alias",
+        "renamed internally but the public name still works",
+        "not a breaking change because the alias preserves it",
+        "read_batch = _read_batch_impl"
+      ],
+      "weight": "high"
+    },
+    {
+      "id": "kf8",
+      "point": "read_all is updated to the renamed setting (config.max_retries) and calls _read_batch_impl directly.",
+      "synonyms": ["read_all uses max_retries", "internal caller updated"],
+      "weight": "low"
+    },
+    {
+      "id": "kf9",
+      "point": "The tests are updated to the new behaviour: test_parse_timestamp_naive_is_local becomes test_parse_timestamp_naive_is_utc, and the abort-on-bad-row test is replaced by three tests covering skip-by-default, on_error=\"raise\", and rejection of an unknown on_error value (net: two more tests).",
+      "synonyms": [
+        "tests updated for the UTC assumption",
+        "new tests for the skip/raise modes",
+        "test coverage added for on_error validation"
+      ],
+      "weight": "medium"
+    },
+    {
+      "id": "kf10",
+      "point": "normalize_rows validates on_error and raises ValueError for any value other than \"skip\" or \"raise\".",
+      "synonyms": ["on_error is validated", "unknown on_error raises ValueError"],
+      "weight": "low"
+    }
+  ],
+  "anti_facts": [
+    {
+      "id": "af1",
+      "claim": "Calling the read_batch -> _read_batch_impl rename a breaking change / an API removal.",
+      "synonyms": [
+        "read_batch was renamed, update your imports",
+        "breaking: read_batch is now private",
+        "public function removed"
+      ],
+      "why": "The diff adds `read_batch = _read_batch_impl` immediately after the function, so the public name and signature survive. This is the deliberate looks-breaking-but-is-not change; asserting it is breaking is a false positive and must cost precision.",
+      "weight": "high"
+    },
+    {
+      "id": "af2",
+      "claim": "Calling normalize_rows' new on_error parameter a breaking signature change.",
+      "synonyms": ["normalize_rows signature changed, callers must update"],
+      "why": "on_error is keyword-only with a default, so every existing call still type-checks and runs. The DEFAULT BEHAVIOUR change (kf6) is real and must be reported; an API break is not.",
+      "weight": "medium"
+    },
+    {
+      "id": "af3",
+      "claim": "Any invented content: a migration script, a CHANGELOG entry, a version bump, new files or modules, an issue/ticket number, a performance claim, or a deprecation warning being emitted.",
+      "synonyms": ["deprecation warning is emitted", "adds a migration", "bumps the version"],
+      "why": "None of it is in the diff. Long prose invites confabulation; this is the axis that catches it.",
+      "weight": "medium"
+    }
+  ],
+  "notes": "Recall = key_points found / 10, weighting 'high' above 'medium' above 'low'. Precision penalty = anti_facts asserted. kf7 vs af1 is the discriminator the task exists for: one genuine breaking change (kf2/kf3) and one change that looks breaking but is not (kf7). A model that reports both as breaking has pattern-matched on 'rename' rather than read the diff. Scoring is offline (Opus, Stage 3); this file is not consumed by an automated grader."
+}

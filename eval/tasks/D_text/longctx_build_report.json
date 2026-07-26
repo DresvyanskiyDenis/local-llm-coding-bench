@@ -1,0 +1,290 @@
+{
+  "generated_utc": "2026-07-25T20:48:52+00:00",
+  "counter": "tiktoken/o200k_base (PROVISIONAL \u2014 not the served tokenizer)",
+  "counter_is_authoritative": false,
+  "core_file": "longctx_core/core.md",
+  "core_file_sha256": "8703a2d4bd7f7051c9ee9d90b95fcc1cabc58fe9e6ae8ecbbf2c501651c5290c",
+  "core_chunks": 19,
+  "tasks": {
+    "D3_longctx_30k": {
+      "target_tokens": 30000,
+      "corpus_path": "D3_longctx_30k/source/corpus.md",
+      "corpus_bytes": 118506,
+      "corpus_sha256": "b6b92e7ca338e0b35f871a039282cb3d0e38494db343637d6e00238a402a1610",
+      "tokens_total": 30629,
+      "tokens_core": 10553,
+      "tokens_padding": 20071,
+      "core_byte_ranges": [
+        [
+          4429,
+          5192
+        ],
+        [
+          6959,
+          7529
+        ],
+        [
+          19935,
+          22715
+        ],
+        [
+          22717,
+          24103
+        ],
+        [
+          26023,
+          29306
+        ],
+        [
+          33033,
+          34882
+        ],
+        [
+          37950,
+          41323
+        ],
+        [
+          51445,
+          52463
+        ],
+        [
+          52465,
+          54820
+        ],
+        [
+          59694,
+          61938
+        ],
+        [
+          61940,
+          62454
+        ],
+        [
+          68581,
+          69301
+        ],
+        [
+          72927,
+          73977
+        ],
+        [
+          77808,
+          79046
+        ],
+        [
+          80710,
+          83730
+        ],
+        [
+          91188,
+          92394
+        ],
+        [
+          92396,
+          97638
+        ],
+        [
+          97640,
+          100082
+        ],
+        [
+          117199,
+          118505
+        ]
+      ],
+      "core_region_sha256": "2b9ca64c525ade32628a31a7921e90c5f412b8e618d8ef4b84215fde19502dd1",
+      "shared_files_sha256": {
+        "PROMPT.md": "1c2e71c589ef399988e3ed8f83c728031a86f97e6ed28e16f079256412028958",
+        "grade/key_points.json": "027b5e151d6feb6eb8649853352b342fb05b8a575cdf4a497586da9d08044159",
+        "grade/rubric.md": "ad5bc8029c0ab099f0e879611db35697622bf26c7e8d28eea9e8dc4e0f2e81a7"
+      }
+    },
+    "D4_longctx_60k": {
+      "target_tokens": 60000,
+      "corpus_path": "D4_longctx_60k/source/corpus.md",
+      "corpus_bytes": 227163,
+      "corpus_sha256": "c727c3915eb1b82ae45f1fe1248298d74713e2d746dab25463c71278886a3636",
+      "tokens_total": 60104,
+      "tokens_core": 10553,
+      "tokens_padding": 49536,
+      "core_byte_ranges": [
+        [
+          6194,
+          6957
+        ],
+        [
+          22222,
+          22792
+        ],
+        [
+          28644,
+          31424
+        ],
+        [
+          46418,
+          47804
+        ],
+        [
+          56009,
+          59292
+        ],
+        [
+          66331,
+          68180
+        ],
+        [
+          75638,
+          79011
+        ],
+        [
+          96128,
+          97146
+        ],
+        [
+          98625,
+          100980
+        ],
+        [
+          116517,
+          118761
+        ],
+        [
+          123989,
+          124503
+        ],
+        [
+          126862,
+          127582
+        ],
+        [
+          146604,
+          147654
+        ],
+        [
+          157826,
+          159064
+        ],
+        [
+          166950,
+          169970
+        ],
+        [
+          179830,
+          181036
+        ],
+        [
+          188969,
+          194211
+        ],
+        [
+          202404,
+          204846
+        ],
+        [
+          216701,
+          218007
+        ]
+      ],
+      "core_region_sha256": "2b9ca64c525ade32628a31a7921e90c5f412b8e618d8ef4b84215fde19502dd1",
+      "shared_files_sha256": {
+        "PROMPT.md": "1c2e71c589ef399988e3ed8f83c728031a86f97e6ed28e16f079256412028958",
+        "grade/key_points.json": "027b5e151d6feb6eb8649853352b342fb05b8a575cdf4a497586da9d08044159",
+        "grade/rubric.md": "ad5bc8029c0ab099f0e879611db35697622bf26c7e8d28eea9e8dc4e0f2e81a7"
+      }
+    },
+    "D5_longctx_100k": {
+      "target_tokens": 100000,
+      "corpus_path": "D5_longctx_100k/source/corpus.md",
+      "corpus_bytes": 387125,
+      "corpus_sha256": "48e33031279321c46d5357ddb708d1760f4e3cc30e95b8bfa44cf33489bc19d5",
+      "tokens_total": 98994,
+      "tokens_core": 10553,
+      "tokens_padding": 88415,
+      "core_byte_ranges": [
+        [
+          19074,
+          19837
+        ],
+        [
+          40035,
+          40605
+        ],
+        [
+          56017,
+          58797
+        ],
+        [
+          69114,
+          70500
+        ],
+        [
+          89094,
+          92377
+        ],
+        [
+          107914,
+          109763
+        ],
+        [
+          136368,
+          139741
+        ],
+        [
+          153393,
+          154411
+        ],
+        [
+          170307,
+          172662
+        ],
+        [
+          187154,
+          189398
+        ],
+        [
+          208008,
+          208522
+        ],
+        [
+          228012,
+          228732
+        ],
+        [
+          254174,
+          255224
+        ],
+        [
+          267634,
+          268872
+        ],
+        [
+          289866,
+          292886
+        ],
+        [
+          315978,
+          317184
+        ],
+        [
+          322530,
+          327772
+        ],
+        [
+          351523,
+          353965
+        ],
+        [
+          372729,
+          374035
+        ]
+      ],
+      "core_region_sha256": "2b9ca64c525ade32628a31a7921e90c5f412b8e618d8ef4b84215fde19502dd1",
+      "shared_files_sha256": {
+        "PROMPT.md": "1c2e71c589ef399988e3ed8f83c728031a86f97e6ed28e16f079256412028958",
+        "grade/key_points.json": "027b5e151d6feb6eb8649853352b342fb05b8a575cdf4a497586da9d08044159",
+        "grade/rubric.md": "ad5bc8029c0ab099f0e879611db35697622bf26c7e8d28eea9e8dc4e0f2e81a7"
+      }
+    }
+  },
+  "core_region_sha256_identical": true
+}

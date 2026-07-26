@@ -1,0 +1,13 @@
+{
+  "id": "D6_pr_describe",
+  "suite": "D_text",
+  "title": "Write a PR title and description from a synthetic multi-file diff",
+  "grader": "judge",
+  "timeout_s": 900,
+  "est_ctx_tokens": 2500,
+  "entrypoint": null,
+  "grade": {
+    "key_points_file": "grade/key_points.json",
+    "rubric_file": "grade/rubric.md"
+  }
+}

@@ -1,0 +1,850 @@
+{
+  "version": 1,
+  "generated_utc": "2026-07-25T20:45:43+00:00",
+  "purpose": "Sources for the D3/D4/D5 long-context corpora. The core is identical at all three sizes; only the amount of distractor padding changes.",
+  "targets_tokens": {
+    "D3_longctx_30k": 30000,
+    "D4_longctx_60k": 60000,
+    "D5_longctx_100k": 100000
+  },
+  "token_counters": {
+    "provisional": "tiktoken/o200k_base (local estimate, NOT the served tokenizer)",
+    "authoritative": "served tokenizer, measured by measure_ctx_tokens.py against the live endpoint"
+  },
+  "core": {
+    "assembled_path": "longctx_core/core.md",
+    "assembly": "the source files concatenated verbatim in listed order, joined by a blank line",
+    "sha256": "8703a2d4bd7f7051c9ee9d90b95fcc1cabc58fe9e6ae8ecbbf2c501651c5290c",
+    "sources": [
+      {
+        "id": "docs/methodology.md",
+        "kind": "repo-relative",
+        "path": "docs/methodology.md",
+        "licence": "MIT (this repository \u2014 see ./LICENSE, Copyright (c) 2026 Denis Dresvyanskiy)",
+        "sha256": "dc027cd579d063f22a9e90923ef6a5c977342e0624a5bf4b1b0674f77a5c6a7f",
+        "bytes_total": 14017,
+        "byte_range_used": [
+          0,
+          14017
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "docs/leaderboard.md",
+        "kind": "repo-relative",
+        "path": "docs/leaderboard.md",
+        "licence": "MIT (this repository \u2014 see ./LICENSE, Copyright (c) 2026 Denis Dresvyanskiy)",
+        "sha256": "ced0f2c0f4c864de714be0e91783c3cd24546a217e770c05aabc75f7d29b5451",
+        "bytes_total": 6860,
+        "byte_range_used": [
+          0,
+          6860
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "docs/replication.md",
+        "kind": "repo-relative",
+        "path": "docs/replication.md",
+        "licence": "MIT (this repository \u2014 see ./LICENSE, Copyright (c) 2026 Denis Dresvyanskiy)",
+        "sha256": "abe47373fb9315d1416c56cb62d56c7a3da4eba79d8ac3f12005e2d4a8df0b1e",
+        "bytes_total": 15517,
+        "byte_range_used": [
+          0,
+          15517
+        ],
+        "note": "verbatim, whole file"
+      }
+    ]
+  },
+  "padding": {
+    "consumption": "consumed strictly in listed order; D3 uses a prefix, D4 a longer prefix, D5 the longest \u2014 so smaller corpora's distractors are a subset of larger ones'",
+    "screening": "each source was checked to be same-domain (local LLM inference / agentic CLI), plausible, and free of statements contradicting the core's key points; llama.cpp docs/speculative.md and docs/ops.md were excluded (topic overlap with the core's MTP notes, and a machine-generated support matrix respectively)",
+    "order": [
+      {
+        "id": "opencode:agents.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/agents.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "0941601a02a57c97aa2072bd8accb15900dc6c78e78d99de44435c17e62e6b32",
+        "bytes_total": 20515,
+        "byte_range_used": [
+          0,
+          20515
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/build.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/build.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "14ed1bafeac10bf796ea9d74efa1cf2a881c82ab17639fbeaeafc038beff4943",
+        "bytes_total": 36611,
+        "byte_range_used": [
+          0,
+          36611
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:config.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/config.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "ce370f039c48e4cfb9e06e43a80c34c8ea0531b37ee9ad69e46a419c5ca64f05",
+        "bytes_total": 26188,
+        "byte_range_used": [
+          0,
+          26188
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/function-calling.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/function-calling.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "6846d311460ab691ec976b6f23ee2572d6de3bd7dd5b6d1fbe982b4ceb3c318c",
+        "bytes_total": 21029,
+        "byte_range_used": [
+          0,
+          21029
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:cli.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/cli.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "a6ed4d307713067695a7cfc141c2f4f0b25f9ac95ac252f651eb0bb6d1b591ef",
+        "bytes_total": 27194,
+        "byte_range_used": [
+          0,
+          27194
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/docker.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/docker.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "5d5339ec506a011f2e8ca2aeb62a3a781dcaaa69d1c7d0deb155a23632fbcf41",
+        "bytes_total": 12235,
+        "byte_range_used": [
+          0,
+          12235
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:tools.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/tools.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "776d7e2c15171fcbcd0f5df8a17b6b3d25058d13efc316fa73f9d3af89cdaa30",
+        "bytes_total": 8424,
+        "byte_range_used": [
+          0,
+          8424
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/SYCL.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/SYCL.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "40556909901001cd9f40837caa52e71957c6d4ed13b13e282c77c6624d5f9db8",
+        "bytes_total": 38708,
+        "byte_range_used": [
+          0,
+          38708
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:mcp-servers.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/mcp-servers.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "3e99f66ed4a4a40d238b539497bb8739a140e94aa7ab27fd08e4ee0c3a0c6102",
+        "bytes_total": 13991,
+        "byte_range_used": [
+          0,
+          13991
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/multi-gpu.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/multi-gpu.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "08508e676483fb40fdb67730f1787255d4d992599a8c9fd067cf2e1b35b5bad5",
+        "bytes_total": 10148,
+        "byte_range_used": [
+          0,
+          10148
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:server.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/server.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "56aac4ea75990012a9ebf838d074760aa91e198f3b5859b38d6786b5e2d14c39",
+        "bytes_total": 18243,
+        "byte_range_used": [
+          0,
+          18243
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/autoparser.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/autoparser.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "d4d96a43cd33d77a6c7dd0ed1c3412422066a2a3722842bce640133d66d6cfb4",
+        "bytes_total": 32036,
+        "byte_range_used": [
+          0,
+          32036
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:sdk.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/sdk.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "147d4b88ce0dbcbfdb64df429f89280742ef95c34fef535ffbae95b840a6e93c",
+        "bytes_total": 19967,
+        "byte_range_used": [
+          0,
+          19967
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/OPENVINO.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/OPENVINO.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "6ca939542f3e2bfb06938c1e2df43bfabb8c537a91f7652423f634d39607dce6",
+        "bytes_total": 40165,
+        "byte_range_used": [
+          0,
+          40165
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:plugins.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/plugins.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "4cc0d8db8645a036d1398a9e3be65c386ab75d003a2699c14bc06c267ea1354f",
+        "bytes_total": 9473,
+        "byte_range_used": [
+          0,
+          9473
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/CANN.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/CANN.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "c794f8a9fb448358beeed5855959f8556d6285766d2d346052172e93ccfdd2dd",
+        "bytes_total": 14014,
+        "byte_range_used": [
+          0,
+          14014
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:zen.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/zen.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "fdb33a697c940561bbdf368669cbd2f97eddd933490d5b09aed12b66b4a1ee40",
+        "bytes_total": 23258,
+        "byte_range_used": [
+          0,
+          23258
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/OPENCL.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/OPENCL.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "385272f5f7a40eeebab2e4ad50e0d544f7eb686db337c5442327392190b8a2b2",
+        "bytes_total": 11834,
+        "byte_range_used": [
+          0,
+          11834
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:themes.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/themes.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "5ccead60e73e32388c91769d629245162af2f6eb34c98007c8c87b9385487819",
+        "bytes_total": 9853,
+        "byte_range_used": [
+          0,
+          9853
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/development/HOWTO-add-model.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/development/HOWTO-add-model.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "10447fea313184d5532c7ab71a7e801797fc10f361b619762d16be8e20bfed15",
+        "bytes_total": 10672,
+        "byte_range_used": [
+          0,
+          10672
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:keybinds.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/keybinds.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "fb4839da68f9104b2f3574176e73f414f3a1352b5238a6e9f3c926af843a8953",
+        "bytes_total": 9807,
+        "byte_range_used": [
+          0,
+          9807
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/build-s390x.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/build-s390x.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "5dfb3d1a6c884e05ab2bf1cb0b8a87cbccb8da413e245914d1ee13532b1ccf6c",
+        "bytes_total": 10992,
+        "byte_range_used": [
+          0,
+          10992
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:providers.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/providers.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "cc8c93289d5c908e66f58fbdd5ed75139513f9fa64f40db87026c62ce244fc08",
+        "bytes_total": 61554,
+        "byte_range_used": [
+          0,
+          61554
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/ZenDNN.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/ZenDNN.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "712113bbe1905e14ee9379f5ded4a3ebb1d9167c9c6c3ab87e53b0761aa32579",
+        "bytes_total": 10501,
+        "byte_range_used": [
+          0,
+          10501
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:troubleshooting.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/troubleshooting.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "95c5f784c1cbcdb857a7076350583c8d9fac389c953e9d00171801f9d6b7834d",
+        "bytes_total": 9539,
+        "byte_range_used": [
+          0,
+          9539
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/development/parsing.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/development/parsing.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "eab39b9d41be364b2eb2beed196d5e069991cfd739c769fbe5c56043ad2169c9",
+        "bytes_total": 10514,
+        "byte_range_used": [
+          0,
+          10514
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:tui.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/tui.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "76c85430f7506296ca81c4aee4b9f0249cb8fe44af243ee9099f1587e58b158b",
+        "bytes_total": 9424,
+        "byte_range_used": [
+          0,
+          9424
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/CUDA-FEDORA.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/CUDA-FEDORA.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "6ec000adf0a2295b4b2f8fc6885d89af0316537e8f22bc0ea721c1f46dc76fb5",
+        "bytes_total": 10558,
+        "byte_range_used": [
+          0,
+          10558
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:github.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/github.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "50c70f93fd2e51254624c480b9202ee115459ee4c2a9703232df15c4cc40d482",
+        "bytes_total": 10861,
+        "byte_range_used": [
+          0,
+          10861
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/android.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/android.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "56a4c79995720870f6edbdfcd304e2faeba7168d7270e5f29b8e1f64a0948a44",
+        "bytes_total": 6099,
+        "byte_range_used": [
+          0,
+          6099
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:lsp.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/lsp.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "62584a2f8bafdf8c910c445c1887d689125f2b5123af264e73d89845b982b3cd",
+        "bytes_total": 10432,
+        "byte_range_used": [
+          0,
+          10432
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/ET.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/ET.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "9afe4b9b91922e23f59eb87ed48c2af9753149ace977fb60942f5a81ae2cd716",
+        "bytes_total": 7107,
+        "byte_range_used": [
+          0,
+          7107
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:permissions.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/permissions.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "e929098f6f772186eeb4f0eb55e332c477d88e30cb1efc45d0839dfa333b5163",
+        "bytes_total": 7449,
+        "byte_range_used": [
+          0,
+          7449
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/multimodal.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/multimodal.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "2c4089673241d6a6cccc4bd577c9d282976ea61596948b13db3f5decd60788bb",
+        "bytes_total": 5053,
+        "byte_range_used": [
+          0,
+          5053
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:rules.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/rules.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "2d789f8467c7018a07b2307d44beb37ef13b10038aed1124aa20098cb4296fd9",
+        "bytes_total": 6758,
+        "byte_range_used": [
+          0,
+          6758
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/backend/VirtGPU.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/backend/VirtGPU.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "7cb434e6dd261960017a45393c50c24523ff790a31a7118a9800cbfab5a9ecd3",
+        "bytes_total": 6227,
+        "byte_range_used": [
+          0,
+          6227
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:go.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/go.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "c18867f6cea21e7baf3d6077218c1fa65f832068365084326692413a363221a7",
+        "bytes_total": 11846,
+        "byte_range_used": [
+          0,
+          11846
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/build-riscv64-spacemit.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/build-riscv64-spacemit.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "ca65ec547329190bc64c8ed6ac9caf68cc7eae1bf2fb4ca2962b41804c23aba4",
+        "bytes_total": 6448,
+        "byte_range_used": [
+          0,
+          6448
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:commands.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/commands.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "33ae3aa2df77e8206b27114d05825a419f9188766be07a90f1e09bab7a81bb78",
+        "bytes_total": 6766,
+        "byte_range_used": [
+          0,
+          6766
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/llguidance.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/llguidance.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "ef304ff3a7f29768f595ed798ab0ddab827e1ebda4df651e50c707811db27257",
+        "bytes_total": 3783,
+        "byte_range_used": [
+          0,
+          3783
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:skills.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/skills.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "7ff4df3a1a4909fa0e0025a6f086c3dbc63d09fdd578bc13f3f4ae30fcfe4627",
+        "bytes_total": 4641,
+        "byte_range_used": [
+          0,
+          4641
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/preset.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/preset.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "332328ffa276184f7ab25c04f65638e520e7c5b1b5ccd4b16f6cb579439196cc",
+        "bytes_total": 2745,
+        "byte_range_used": [
+          0,
+          2745
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:custom-tools.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/custom-tools.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "0a5df35e96df711324244d91fc3d16001bca81cea5b91f86207a8fc55f1209fc",
+        "bytes_total": 4930,
+        "byte_range_used": [
+          0,
+          4930
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "llamacpp:docs/install.md",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/c812c543f8ab480661bd10b9546515b608b4747f/docs/install.md",
+        "repo": "ggml-org/llama.cpp",
+        "commit": "c812c543f8ab480661bd10b9546515b608b4747f",
+        "licence": "MIT",
+        "licence_url": "https://github.com/ggml-org/llama.cpp/blob/c812c543f8ab480661bd10b9546515b608b4747f/LICENSE",
+        "sha256": "19433277c58afad13c0ad60a85b0fbc38c7ea9afc54d6f42675e28e1a288564f",
+        "bytes_total": 1830,
+        "byte_range_used": [
+          0,
+          1830
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:formatters.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/formatters.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "fc636b6c30bb44e10dd4d3ed63ba3d22caf2b9d58da9b7855e844c5af1968a42",
+        "bytes_total": 10050,
+        "byte_range_used": [
+          0,
+          10050
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:gitlab.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/gitlab.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "4c450fe55d675a23031440988e3225aa8cf92d332c907f04b9820496d0cfe284",
+        "bytes_total": 6534,
+        "byte_range_used": [
+          0,
+          6534
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:ecosystem.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/ecosystem.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "66b701834e727d5d5c34ade87df5860ad70a912189035bd62bd0eb3baca10d27",
+        "bytes_total": 11076,
+        "byte_range_used": [
+          0,
+          11076
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:models.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/models.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "2c8f7c813c7e80e55d71801d8f0b3ce23884f2c279dc4a1bac122e79198f2482",
+        "bytes_total": 5530,
+        "byte_range_used": [
+          0,
+          5530
+        ],
+        "note": "verbatim, whole file"
+      },
+      {
+        "id": "opencode:share.mdx",
+        "kind": "fetched",
+        "url": "https://raw.githubusercontent.com/anomalyco/opencode/7534d23551f665e65080809975b4ca5c7d63807b/packages/web/src/content/docs/share.mdx",
+        "repo": "anomalyco/opencode",
+        "commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+        "licence": "MIT",
+        "licence_url": "https://github.com/anomalyco/opencode/blob/7534d23551f665e65080809975b4ca5c7d63807b/LICENSE",
+        "sha256": "c9f9aa1d348c3da5a2e2591004983558b66d7bb56a2bdad9313e5d01d62dd11d",
+        "bytes_total": 2925,
+        "byte_range_used": [
+          0,
+          2925
+        ],
+        "note": "verbatim, whole file"
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "B5_temporal_money",
+  "suite": "B_review",
+  "title": "Planted-bug review: subscription billing, DST-aware scheduling and accruals",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1300,
+  "entrypoint": "src/billing.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}"
+  }
+}

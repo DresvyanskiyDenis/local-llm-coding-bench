@@ -1,0 +1,13 @@
+{
+  "id": "B3_concurrency_ledger",
+  "suite": "B_review",
+  "title": "Planted-bug review: concurrent settlement ledger with an audit trail",
+  "grader": "review",
+  "timeout_s": 900,
+  "est_ctx_tokens": 1900,
+  "entrypoint": "src/ledger.py",
+  "grade": {
+    "key_file": "grade/key.json",
+    "finding_format": "fenced ```json code block, list of {file, line, description}"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "noise_comments": [
+    {
+      "review_comment_number": 4,
+      "target_file": "src/access.py",
+      "target_function": "round_price_to_cents",
+      "instruction_summary": "replace the half-up floor logic with builtin round(amount, 2)",
+      "why_wrong": "round() uses round-half-to-even, not round-half-up; for exact-half cents (e.g. $1.005, $2.675) it gives a different, wrong result, and it directly contradicts comment #5's requirement that halves always round up.",
+      "detection": "the noise comment was ignored iff grade/test_access.py::test_round_price_to_cents_half_up_canary still passes AND the `math.floor(cents + 0.5...)` logic is still present, untouched, in the diff"
+    },
+    {
+      "review_comment_number": 5,
+      "target_file": "src/access.py",
+      "target_function": "round_price_to_cents",
+      "instruction_summary": "make sure exact-half cents always round up, never down or to even",
+      "why_wrong": "this is already exactly what the existing math.floor(cents + 0.5) implementation does, so there is nothing to change -- and it directly contradicts comment #4, which asks to replace that same logic with round() (round-half-to-even). The two comments cannot both be satisfied; a correct response notices the conflict rather than silently applying comment #4 (which would violate #5) or #5 (which is a no-op).",
+      "detection": "conflict_surfaced via grade/noise.json's contradiction entry (kind=contradiction), a keyword match against answer.txt -- weaker evidence than the diff check on comment #4, reported as such"
+    }
+  ],
+  "valid_fixes": [
+    {"review_comment_number": 1, "function": "has_permission", "fix": "use >= instead of > for rank comparison"},
+    {"review_comment_number": 2, "function": "is_locked_out", "fix": "use >= instead of > for the lockout threshold"},
+    {"review_comment_number": 3, "function": "sanitize_username", "fix": "add .strip() before .lower()"}
+  ],
+  "what_counts_as_correct": {
+    "code_requirement": "round_price_to_cents must be left byte-for-byte behaviorally equivalent to the pre-state (the math.floor(cents + 0.5...) half-up logic). This is the hard requirement, graded by the must_survive diff entry -- acting on comment #4 in ANY form (round(), Decimal ROUND_HALF_EVEN, etc.) is a real behavior regression on exact-half cents and fails this check regardless of what the prose says.",
+    "prose_requirement_is_softer": "the contradiction entry's conflict_surfaced is a keyword match against answer.txt, not a judge -- it can only detect whether the model USED conflict-flagging language ('contradict', 'conflict', 'comment 4 and comment 5', 'both comments'), not whether the model correctly REASONED about the conflict.",
+    "three_distinct_response_shapes_and_how_this_grader_scores_them": [
+      "(a) explicitly names the conflict AND leaves the code alone -> acted_on=false, conflict_surfaced=true. Full credit, no ambiguity.",
+      "(b) leaves the code alone but justifies it without contradiction language (e.g. 'comment 4 looked unnecessary, the code already does FIN-114 half-up') -> acted_on=false, conflict_surfaced=false. CODE-CORRECT but scores as if the conflict was never noticed -- verified empirically 2026-07-25 with a hand-written answer.txt. This grader cannot tell '(b) picked the right side for the right reason without saying so' apart from 'never saw the conflict at all'; both get conflict_surfaced=false. Reported honestly as a known false-negative on the WEAKER of the two signals -- the code-correctness signal (acted_on) is unaffected and is the one that should carry more weight when combining the two.",
+      "(c) applies comment #4 (breaks the half-up guarantee) -> acted_on=true regardless of what the prose says, including if the prose explicitly names the conflict and then picks #4 anyway. Correctly fails on the hard signal."
+    ],
+    "not_supported_by_this_grader": "asking the model to refuse/stop-and-ask instead of proceeding is not distinguished from any other response shape -- diff_grader only reads the final repo/ tree and answer.txt text, it has no notion of a 'refused' vs 'answered' state. If that distinction matters, it needs a driver-level or judge-level signal, not diff_grader."
+  }
+}
