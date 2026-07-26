@@ -15,10 +15,31 @@ scores ONLY the round-1 task ids, so the round-1 composite stays byte-for-byte r
 round-2 task directories land in eval/results/. Nothing about adding a task can move a round-1
 number; if it does, this script is wrong.
 
-Design property #2 — the composite formula is verbatim from docs/methodology.md §4 and is NOT
-re-weighted this round. The new round-2 axes (bcb_hard_pass@1, ifeval_prompt_strict) are
-reported ALONGSIDE, UNWEIGHTED. Re-weighting waits for evidence of correlation
-(see validate_correlation.py).
+Design property #2 — TWO weight sets are supported explicitly, side by side, neither one silently
+replacing the other:
+
+  - `round1` — verbatim from docs/methodology.md §4 as originally published. `composite` /
+    `terms` / `missing_terms` on every row are ALWAYS this weighting, unconditionally, so the
+    Phase 6 gate (`build_gate`, below) and anything reading the legacy field names (e.g.
+    `validate_correlation.py`) keep working byte-for-byte forever, regardless of `--weights`.
+  - `round2` — tool_malformed 0.25 -> 0.10 (bimodal, not saturated, in round-1 data: a tight
+    2.4-5.5% cluster where the ordinal differences are ~noise, alongside 8.7/10.5/17.9-19.3/
+    27.8-32.5% outliers 2-10x worse that a small weight already punishes decisively), the freed
+    0.15 split +0.10 B_recall (round-1's healthiest, least-saturated axis: 0.111-0.611) and +0.05
+    C_edit (narrower spread: 0.803-0.909). Emitted on every row as `composite_round2_weights` /
+    `terms_round2_weights` / `missing_terms_round2_weights`, ADDITIONAL to the round-1 fields,
+    never overwriting them.
+
+Both weight sets are validated to sum to 1.00 at import time (`_validate_weight_sets`) and raise
+immediately if they don't -- a silently-unbalanced weighting would corrupt every composite below
+it without any visible symptom.
+
+The round-2-weighted composite is NOT the same quantity as the round-1 leaderboard composite --
+see `ROUND2_COMPARABILITY_NOTE` below, repeated next to every place the number is rendered.
+
+The new round-2 axes (bcb_hard_pass@1, ifeval_prompt_strict) are reported ALONGSIDE, UNWEIGHTED,
+independent of either weight set. Folding them in waits for evidence of correlation (see
+validate_correlation.py).
 
 Every component term is emitted per config, not just the composite, so a disagreement with the
 hand-written table is diagnosable rather than mysterious.
@@ -67,6 +88,20 @@ ROUND1_TASKS: frozenset[str] = frozenset(
 # not found on disk and drop out.
 ROUND2_TASKS: frozenset[str] = frozenset(
     {
+        # A_coding -- lane-1 (in-harness, pytest_grader.py) wrappers of BigCodeBench-Hard,
+        # see eval/tasks/A_coding/BCB_PAIRING.json. Same unit-file shape as A1-A4. Confirmed
+        # on disk as real task dirs 2026-07-26; previously missing from this set, which would
+        # have silently dropped these 10 tasks' units out of --round 2 / --round all forever.
+        "A5_bcb854_permutation_factorials",
+        "A6_bcb928_bigram_frequency_table",
+        "A7_bcb458_json_doubling_dataframe",
+        "A8_bcb870_tuple_position_means",
+        "A9_bcb513_fitness_column_stats",
+        "A10_bcb1077_timezone_mean_gap",
+        "A11_bcb969_minmax_cumsum",
+        "A12_bcb532_duplicate_histogram_norm",
+        "A13_bcb139_numeric_column_histograms",
+        "A14_bcb955_underscore_word_frequency",
         # B_review
         "B3_concurrency_ledger",
         "B4_io_encoding",
@@ -85,23 +120,88 @@ ROUND2_TASKS: frozenset[str] = frozenset(
 )
 
 # --------------------------------------------------------------------------------------------
-# The composite. VERBATIM from docs/methodology.md §4.
+# The composite -- TWO weight sets, both computed on every row, neither one silently redefined.
 #
-#   Overall = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit
-#           + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137)   -> x100
+#   round1 (docs/methodology.md §4, as published):
+#     Overall = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit
+#             + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137)   -> x100
+#
+#   round2 (docs/methodology.md §6.11 -- tool_malformed 0.25->0.10, +0.10 B_recall, +0.05 C_edit):
+#     Overall = 0.35*A_coding + 0.10*(1 - tool_malformed%) + 0.20*C_edit
+#             + 0.20*B_recall + 0.10*(D_text/10) + 0.05*(decode/137)   -> x100
 # --------------------------------------------------------------------------------------------
-WEIGHTS: dict[str, float] = {
-    "a_coding": 0.35,
-    "tool_reliability": 0.25,
-    "c_edit": 0.15,
-    "b_recall": 0.10,
-    "d_text": 0.10,
-    "decode": 0.05,
+WEIGHT_SETS: dict[str, dict[str, float]] = {
+    "round1": {
+        "a_coding": 0.35,
+        "tool_reliability": 0.25,
+        "c_edit": 0.15,
+        "b_recall": 0.10,
+        "d_text": 0.10,
+        "decode": 0.05,
+    },
+    "round2": {
+        "a_coding": 0.35,
+        "tool_reliability": 0.10,
+        "c_edit": 0.20,
+        "b_recall": 0.20,
+        "d_text": 0.10,
+        "decode": 0.05,
+    },
 }
-FORMULA = (
-    "0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit "
-    "+ 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100"
+FORMULAS: dict[str, str] = {
+    "round1": (
+        "0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit "
+        "+ 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100"
+    ),
+    "round2": (
+        "0.35*A_coding + 0.10*(1 - tool_malformed%) + 0.20*C_edit "
+        "+ 0.20*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100"
+    ),
+}
+
+ROUND2_REWEIGHT_REASON = (
+    "tool_malformed drops 0.25->0.10 because the round-1 distribution is BIMODAL, not "
+    "saturated: ten configs cluster at 2.4-5.5% malformed, where the ordinal differences are "
+    "~3 vs ~5 malformed calls out of ~100 -- noise, not signal -- while ornith (8.7%), gpt-oss "
+    "(10.5%), northmini (17.9-19.3%) and qwen (27.8-32.5%) are 2-10x worse and already get "
+    "punished decisively even at a small weight. A quarter of the score should not ride on "
+    "noise inside the tight cluster. The freed 0.15 follows spread: B_recall ran 0.111-0.611 "
+    "in round 1 (the healthiest, least-saturated axis) -> +0.10; C_edit ran 0.803-0.909 "
+    "(narrow, but not as saturated as A_coding was) -> +0.05."
 )
+
+ROUND2_COMPARABILITY_NOTE = (
+    "The round-2-weighted composite is NOT the same quantity as the round-1 leaderboard "
+    "composite and must never be compared to docs/leaderboard.md or eval/results/LEADERBOARD.md "
+    "as if it were. Two independent things changed: (1) the weights themselves "
+    "(tool_malformed 0.25->0.10, B_recall +0.10, C_edit +0.05 -- see ROUND2_REWEIGHT_REASON), "
+    "and (2) for any aggregation that includes round-2 tasks (--round 2 / --round all), "
+    "A_coding itself changed shape -- round-1 A was 4 saturated hand-written tasks "
+    "(0.883-0.994 pass-rate); round-2 A5-A14 wrap BigCodeBench-Hard, so A is now 14 tasks of a "
+    "materially different difficulty. This caveat belongs next to every round-2-weighted number, "
+    "not in a footnote."
+)
+
+
+def _validate_weight_sets() -> None:
+    """Fail loudly and immediately if either weight set does not sum to 1.00 -- an unbalanced
+    weighting silently corrupts every composite computed from it with no visible symptom."""
+    for name, w in WEIGHT_SETS.items():
+        total = sum(w.values())
+        if abs(total - 1.0) > 1e-9:
+            raise ValueError(
+                f"WEIGHT_SETS[{name!r}] sums to {total!r}, not 1.00 -- refusing to compute "
+                f"any composite from unbalanced weights. Fix WEIGHT_SETS[{name!r}]."
+            )
+
+
+_validate_weight_sets()
+
+# Legacy aliases -- some call sites / mental models still say "the" weights / formula; both mean
+# round1, unconditionally, forever (see Design property #2 above).
+WEIGHTS = WEIGHT_SETS["round1"]
+FORMULA = FORMULAS["round1"]
+
 DECODE_NORM_TPS = (
     137.0  # fleet max (gemma-q4 probe median 137.1, rounded), methodology.md §3
 )
@@ -283,7 +383,7 @@ def load_external(
 # --------------------------------------------------------------------------------------------
 # aggregation
 # --------------------------------------------------------------------------------------------
-def aggregate(results: Path, which_round: str) -> dict:
+def aggregate(results: Path, which_round: str, primary_weights: str = "round2") -> dict:
     tasks = task_set(which_round)
     units = load_units(results, tasks)
     d_by_model, d_by_config = load_judged(results, tasks)
@@ -331,35 +431,49 @@ def aggregate(results: Path, which_round: str) -> dict:
         c = _mean3(acc[k]["C"])
         b = _mean3(acc[k]["B"])
         total, malformed = tools[k]
-        raw = (malformed / total) if total else None
-        rounded = round(100 * raw) / 100 if raw is not None else None
+        raw_malformed = (malformed / total) if total else None
+        rounded = (
+            round(100 * raw_malformed) / 100 if raw_malformed is not None else None
+        )
         d_model = _mean3(d_by_model.get(model, []))
         d_cfg = _mean3(d_by_config.get(k, []))
         dec = probe_decode(results, model, quant)
 
-        terms: dict[str, float | None] = {
-            "a_coding": None if a is None else WEIGHTS["a_coding"] * a,
-            "tool_reliability": None
-            if rounded is None
-            else WEIGHTS["tool_reliability"] * (1 - rounded),
-            "c_edit": None if c is None else WEIGHTS["c_edit"] * c,
-            "b_recall": None if b is None else WEIGHTS["b_recall"] * b,
-            "d_text": None
-            if d_model is None
-            else WEIGHTS["d_text"] * (d_model / D_TEXT_SCALE),
-            "decode": None
-            if dec is None
-            else WEIGHTS["decode"] * (dec / DECODE_NORM_TPS),
+        # raw (unweighted) per-axis components -- identical inputs feed both weight sets
+        raw_axes: dict[str, float | None] = {
+            "a_coding": a,
+            "tool_reliability": None if rounded is None else (1 - rounded),
+            "c_edit": c,
+            "b_recall": b,
+            "d_text": None if d_model is None else d_model / D_TEXT_SCALE,
+            "decode": None if dec is None else dec / DECODE_NORM_TPS,
         }
-        missing = [name for name, v in terms.items() if v is None]
-        composite = None if missing else round(100 * sum(terms.values()), 2)
 
-        # diagnostic variant: per-config D instead of model-pooled D
+        def _weighted(
+            weights: dict[str, float], axes: dict[str, float | None] = raw_axes
+        ) -> tuple[dict[str, float | None], list[str], float | None]:
+            terms_: dict[str, float | None] = {}
+            for name, w in weights.items():
+                v = axes[name]
+                terms_[name] = None if v is None else w * v
+            missing_ = [name for name, v in terms_.items() if v is None]
+            composite_ = (
+                None
+                if missing_
+                else round(100 * sum(v for v in terms_.values() if v is not None), 2)
+            )
+            return terms_, missing_, composite_
+
+        terms, missing, composite = _weighted(WEIGHT_SETS["round1"])
+        terms_r2, missing_r2, composite_r2 = _weighted(WEIGHT_SETS["round2"])
+
+        # diagnostic variant: per-config D instead of model-pooled D (round-1 weights only --
+        # this is a D-pooling diagnostic, not a weighting one)
         composite_cfg_d = None
         if not [m for m in missing if m != "d_text"] and d_cfg is not None:
-            alt = dict(terms)
-            alt["d_text"] = WEIGHTS["d_text"] * (d_cfg / D_TEXT_SCALE)
-            composite_cfg_d = round(100 * sum(alt.values()), 2)
+            alt_axes = dict(raw_axes)
+            alt_axes["d_text"] = d_cfg / D_TEXT_SCALE
+            _, _, composite_cfg_d = _weighted(WEIGHT_SETS["round1"], axes=alt_axes)
 
         rows.append(
             {
@@ -371,7 +485,9 @@ def aggregate(results: Path, which_round: str) -> dict:
                 "a_coding": a,
                 "tool_calls_total": total,
                 "tool_calls_malformed": malformed,
-                "tool_malformed_pct_raw": None if raw is None else round(100 * raw, 3),
+                "tool_malformed_pct_raw": None
+                if raw_malformed is None
+                else round(100 * raw_malformed, 3),
                 "tool_malformed_pct_rounded": None
                 if rounded is None
                 else round(100 * rounded),
@@ -382,18 +498,33 @@ def aggregate(results: Path, which_round: str) -> dict:
                 "d_text_model_pooled": d_model,
                 "d_text_config": d_cfg,
                 "decode_tps": dec,
+                # -- round-1 weights (docs/methodology.md §4). UNCHANGED semantics: this is the
+                # field the Phase 6 gate and validate_correlation.py have always read.
                 "terms": {
                     kk: (None if v is None else round(v, 6)) for kk, v in terms.items()
                 },
                 "missing_terms": missing,
                 "composite": composite,
+                "composite_weights_version": "round1",
                 "composite_config_d": composite_cfg_d,
-                # round-2 axes: reported alongside, UNWEIGHTED, absent -> null
+                # -- round-2 weights (docs/methodology.md §6.11). ADDITIONAL, never overwrites
+                # the round-1 fields above. NOT comparable to `composite` -- see
+                # ROUND2_COMPARABILITY_NOTE.
+                "terms_round2_weights": {
+                    kk: (None if v is None else round(v, 6))
+                    for kk, v in terms_r2.items()
+                },
+                "missing_terms_round2_weights": missing_r2,
+                "composite_round2_weights": composite_r2,
+                # round-2 external axes: reported alongside, UNWEIGHTED, absent -> null
                 "bcb_hard_pass@1": bcb.get(k),
                 "ifeval_prompt_strict": ifeval.get(k),
             }
         )
 
+    # The gate ALWAYS reproduces against round-1 weights -- that is the formula the published
+    # leaderboard used. --weights only changes which composite is highlighted in the markdown
+    # render below; it never touches which weighting the gate checks.
     gate = build_gate(rows, which_round)
 
     return {
@@ -402,8 +533,15 @@ def aggregate(results: Path, which_round: str) -> dict:
         "round": which_round,
         "task_set": sorted(tasks),
         "tasks_found_on_disk": sorted({d["task"] for d in units}),
+        # legacy top-level fields -- always round1, unconditionally (see Design property #2)
         "formula": FORMULA,
         "weights": WEIGHTS,
+        # explicit, both weight sets, named and versioned
+        "formulas": FORMULAS,
+        "weight_sets": WEIGHT_SETS,
+        "primary_weights": primary_weights,
+        "round2_reweight_reason": ROUND2_REWEIGHT_REASON,
+        "round2_comparability_note": ROUND2_COMPARABILITY_NOTE,
         "decode_norm_tps": DECODE_NORM_TPS,
         "leaderboard_quant": LEADERBOARD_QUANT,
         "conventions": CONVENTIONS,
@@ -457,6 +595,7 @@ def build_gate(rows: list[dict], which_round: str) -> dict:
     return {
         "applicable": True,
         "source": "docs/leaderboard.md + eval/results/LEADERBOARD.md (identical composites)",
+        "weights_used": "round1",  # always -- this is what the published table was computed with
         "n_models": len(per_model),
         "n_agree_1dp": len(agree),
         "max_abs_delta": round(max(deltas), 3) if deltas else None,
@@ -495,8 +634,11 @@ def render_md(agg: dict) -> str:
     )
     L.append("")
     L.append("```")
-    L.append(f"Overall = {agg['formula']}")
+    L.append(f"Overall (round1 weights, published) = {agg['formulas']['round1']}")
+    L.append(f"Overall (round2 weights)            = {agg['formulas']['round2']}")
     L.append("```")
+    L.append("")
+    L.append(f"> **Non-comparability:** {agg['round2_comparability_note']}")
     L.append("")
 
     gate = agg["gate"]
@@ -526,9 +668,9 @@ def render_md(agg: dict) -> str:
     L.append("")
     L.append(
         "| Config | LB | n | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 "
-        "| **Composite** | comp (per-cfg D) | BCB-Hard | IFEval |"
+        "| **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) | BCB-Hard | IFEval |"
     )
-    L.append("|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|")
+    L.append("|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|")
 
     def _sort_key(r):
         return (
@@ -551,13 +693,71 @@ def render_md(agg: dict) -> str:
             f"| `{r['model']}` {r['quant']} | {star} | {r['n_units']} | {_f(r['a_coding'])} | "
             f"{tools_col} | {rel_col} | {_f(r['c_edit'])} | {_f(r['b_recall'])} | {d_col} | "
             f"{_f(dec, 1)} | {dec_norm_col} | **{_f(r['composite'], 2)}** | "
+            f"**{_f(r['composite_round2_weights'], 2)}†** | "
             f"{_f(r['composite_config_d'], 2)} | {_f(r['bcb_hard_pass@1'])} | "
             f"{_f(r['ifeval_prompt_strict'])} |"
         )
     L.append("")
     L.append(
-        "`*` = the config the published leaderboard uses for this model's headline composite."
+        "`*` = the config the published leaderboard uses for this model's headline composite. "
+        "`†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the "
+        "round-1-weighted composite to its left**; see the caveat at the top of this document "
+        "and the reweighting-impact table below before comparing the two columns as a ranking."
     )
+    L.append("")
+
+    L.append(
+        "## Reweighting impact — round-1 vs round-2 weights, same underlying scores"
+    )
+    L.append("")
+    L.append(
+        "Isolates the weight change from any task-set change: both composites below are "
+        "computed from the *same* per-axis scores (this is `--round "
+        + agg["round"]
+        + "`), "
+        "differing only in which weights combine them. Restricted to each model's headline "
+        "(published-leaderboard) config."
+    )
+    L.append("")
+    headline = [
+        r
+        for r in agg["configs"]
+        if r["is_leaderboard_config"]
+        and r["composite"] is not None
+        and r["composite_round2_weights"] is not None
+    ]
+    r1_rank = sorted(headline, key=lambda r: -r["composite"])
+    r2_rank = sorted(headline, key=lambda r: -r["composite_round2_weights"])
+    r1_pos = {r["model"]: i + 1 for i, r in enumerate(r1_rank)}
+    r2_pos = {r["model"]: i + 1 for i, r in enumerate(r2_rank)}
+    if headline:
+        L.append(
+            "| Rank (R1 wts) | Model | Quant | Composite (R1 wts) | Composite (R2 wts) "
+            "| Rank (R2 wts) | ΔRank |"
+        )
+        L.append("|--:|---|---|--:|--:|--:|:--:|")
+        for r in r1_rank:
+            m = r["model"]
+            d_rank = r1_pos[m] - r2_pos[m]
+            arrow = (
+                "→ 0"
+                if d_rank == 0
+                else (f"↑ {d_rank}" if d_rank > 0 else f"↓ {-d_rank}")
+            )
+            L.append(
+                f"| {r1_pos[m]} | `{m}` | {r['quant']} | {_f(r['composite'], 2)} | "
+                f"{_f(r['composite_round2_weights'], 2)} | {r2_pos[m]} | {arrow} |"
+            )
+        L.append("")
+        ranking_changed = [r["model"] for r in r1_rank] != [r["model"] for r in r2_rank]
+        L.append(
+            f"**Reweighting alone {'DOES' if ranking_changed else 'does NOT'} reorder the "
+            f"fleet.**"
+        )
+    else:
+        L.append("No headline configs have both composites computable.")
+    L.append("")
+    L.append(f"> **Why the reweight:** {agg['round2_reweight_reason']}")
     L.append("")
 
     incomplete = [r for r in agg["configs"] if r["missing_terms"]]
@@ -628,13 +828,24 @@ def main() -> int:
         action="store_true",
         help="exit 1 if the round-1 gate does not reproduce the published leaderboard",
     )
+    ap.add_argument(
+        "--weights",
+        choices=["round1", "round2"],
+        default="round2",
+        help=(
+            "which weight set is recorded as `primary_weights` for this report (both are "
+            "always computed and emitted on every row as `composite` [round1, unconditional] "
+            "and `composite_round2_weights` [round2] -- this flag never changes which "
+            "weighting the gate checks, only which one this metadata field names as primary)"
+        ),
+    )
     a = ap.parse_args()
 
     if not a.results.is_dir():
         print(f"error: results dir not found: {a.results}", file=sys.stderr)
         return 2
 
-    agg = aggregate(a.results, a.round)
+    agg = aggregate(a.results, a.round, primary_weights=a.weights)
 
     suffix = "" if a.round == "1" else f"__round{a.round}"
     out_json = a.json or (a.results / f"AGGREGATE{suffix}.json")

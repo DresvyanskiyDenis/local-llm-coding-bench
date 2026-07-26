@@ -168,6 +168,12 @@ Overall = 0.35·A_coding               (writes correct code)
         → ×100
 ```
 
+> This is the **round-1** weighting, as published — `docs/leaderboard.md` and every number in this
+> section were computed with it, and `eval/harness/aggregate.py` keeps it computable byte-for-byte
+> forever (see the gate in [§6.11](#611-composite-reweighting-round-2--formula-why-and-non-comparability)).
+> Round 2 rebalances these weights; **[§6.11](#611-composite-reweighting-round-2--formula-why-and-non-comparability)
+> has the round-2 formula, why it changed, and why the two are not comparable.**
+
 Rationale: for an agentic driver the two things that matter most are **correct code** (A, 35%)
 and **clean tool-calling** (25%); surgical edits (C, 15%) come next; review recall and prose
 (10% each) are secondary; raw decode speed is a 5% tiebreaker. Each model's **q4** quant is used
@@ -341,23 +347,28 @@ within the token budget," not "it ignored every instruction." Scoring a truncate
 it were the answer would silently corrupt every downstream number; discarding it and counting the
 discard is the conservative choice.
 
-### 6.6 Composite — unchanged; new axes reported alongside
+### 6.6 Composite — internal weights rebalanced; external axes still unweighted alongside
 
-**The composite formula in §4 is not modified by round 2.** BigCodeBench Hard and IFEval are new,
-**unweighted** axes reported next to the existing composite, not folded into it:
+Two separate questions, kept separate:
 
-```
-Overall = 0.35·A_coding + 0.25·(1 − tool_malformed%) + 0.15·C_edit
-        + 0.10·B_recall + 0.10·(D_text/10) + 0.05·(decode/137)      → ×100   [unchanged]
+1. **Should BigCodeBench Hard / IFEval be folded into the composite?** No, not yet. They are new,
+   **unweighted** axes reported next to the composite, not folded into it:
 
-+ bcb_hard_pass@1        (reported, unweighted, within-fleet only — §6.3)
-+ ifeval_prompt_strict   (reported, unweighted — §6.4)
-```
+   ```
+   + bcb_hard_pass@1        (reported, unweighted, within-fleet only — §6.3)
+   + ifeval_prompt_strict   (reported, unweighted — §6.4)
+   ```
 
-Re-weighting the composite to include either axis is deliberately deferred until the rank
-correlation (§6.7) between the composite and the external rankings is known — folding an axis in
-before checking whether it agrees with or diverges from the existing ranking would beg the
-question the round exists to answer.
+   Re-weighting the composite to include either axis is deliberately deferred until the rank
+   correlation (§6.7) between the composite and the external rankings is known — folding an axis
+   in before checking whether it agrees with or diverges from the existing ranking would beg the
+   question the round exists to answer.
+
+2. **Are the round-1 *internal* weights (A/tool/C/B/D/decode) still right?** No — they are
+   rebalanced this round. §6.11 below is the correction to this section's earlier claim that "the
+   composite formula in §4 is not modified by round 2": it is. The rebalancing only touches how
+   the six existing axes combine; it does not fold in either external axis, so point 1 above still
+   holds unchanged.
 
 ### 6.7 Validation — rank correlation (the scientific claim of this round)
 
@@ -444,3 +455,94 @@ a sizing decision (the full 541-prompt IFEval suite runs ~44 h across 15 configs
 subsampling call before an overnight run fits) — is tracked in
 [`eval/ROUND2_STATUS.md`](../eval/ROUND2_STATUS.md), not here: this document describes method,
 that one describes progress.
+
+### 6.11 Composite reweighting (round 2) — formula, why, and non-comparability
+
+**This section corrects §6.6's earlier claim.** The composite's *internal* weights (how
+A_coding/tool_reliability/C_edit/B_recall/D_text/decode combine) are rebalanced this round. The
+external axes (BigCodeBench Hard, IFEval) are still not folded in — that part of §6.6 stands.
+
+```
+round1 (as published, docs/leaderboard.md):
+  Overall = 0.35·A_coding + 0.25·(1 − tool_malformed%) + 0.15·C_edit
+          + 0.10·B_recall + 0.10·(D_text/10) + 0.05·(decode/137)      → ×100
+
+round2 (this section):
+  Overall = 0.35·A_coding + 0.10·(1 − tool_malformed%) + 0.20·C_edit
+          + 0.20·B_recall + 0.10·(D_text/10) + 0.05·(decode/137)      → ×100
+```
+
+`tool_malformed` drops 0.25 → 0.10; the freed 0.15 moves +0.10 to `B_recall` and +0.05 to
+`C_edit`. Both weight sets sum to exactly 1.00 (`eval/harness/aggregate.py` validates this at
+import time and raises immediately if either ever drifts out of balance).
+
+**Why `tool_malformed` drops — the round-1 data is bimodal, not saturated.** Sorted, the 15
+round-1 configs' malformed-tool-call rate is:
+
+```
+2.42  2.47  2.94  2.94  3.08  3.49  3.67  4.60   <- ten configs, a tight 2.4-4.6% cluster
+8.70                                              <- ornith
+10.53                                             <- gpt-oss
+17.86 19.32                                       <- northmini (q5, q4)
+27.78 32.48                                       <- qwen (q5, q4)                    (%)
+```
+
+Two different phenomena were being priced by the same 25% weight. Inside the ten-config cluster,
+the spread is ~3 vs ~5 malformed calls out of roughly 100 — noise at that sample size, not a real
+capability difference, yet it was carrying a quarter of every score. The four outliers
+(`ornith`, `gpt-oss`, `northmini`, `qwen`) are 2–10× worse than the cluster and get punished
+decisively even at a much smaller weight — a 22-point gap (qwen's 32% vs the cluster's ~3%) still
+dominates the term at 0.10 just as it did at 0.25. Dropping the weight to 0.10 removes the
+noise-carries-a-quarter-of-the-score problem without softening the penalty on the configs that are
+actually broken here.
+
+**Why the freed 0.15 goes where it goes — weight follows spread.** `B_recall` ran 0.111–0.611 in
+round 1 — the widest, healthiest, least-saturated axis in the whole suite (§6.1) — so it earns the
+larger share, +0.10. `C_edit` ran 0.803–0.909 — narrower, but with more real separation than
+`A_coding` had before BigCodeBench Hard replaced it (§6.3) — so it gets the smaller share, +0.05.
+
+**Non-comparability — read this next to every round-2-weighted number, not in a footnote.** The
+round-2 composite is **not the same quantity** as the round-1 composite and must not be compared to
+`docs/leaderboard.md` / `eval/results/LEADERBOARD.md` as if reproducing the same metric. Two
+independent changes compound:
+
+1. **The weights themselves** (this section) — a config's round-1-weighted and round-2-weighted
+   composite differ even when computed from *identical* underlying per-axis scores.
+2. **`A_coding` changed shape too, for any aggregation that includes round-2 tasks.** Round-1 `A`
+   was 4 saturated hand-written tasks (0.883–0.994 pass-rate, §6.1). Round-2 adds `A5`–`A14`
+   wrapping BigCodeBench-Hard tasks (§6.3), so `A_coding` under `--round 2` / `--round all` is 14
+   tasks of materially different, less-saturated difficulty — not a like-for-like extension of the
+   same axis.
+
+**Both weightings stay explicitly computable, forever.** `eval/harness/aggregate.py` computes both
+on every row from the same per-axis scores: `composite` (round-1 weights, unconditional — the
+field the Phase 6 gate and `validate_correlation.py` have always read, never silently redefined)
+and `composite_round2_weights` (round-2 weights, additional). The gate that reproduces
+`docs/leaderboard.md` always checks the round-1-weighted field, regardless of which weight set a
+given report highlights as primary — the published leaderboard was computed with round-1 weights
+and the gate exists to keep that number honest. Verified 2026-07-26: **9/9 models reproduce to 1
+decimal place, max |Δ| 0.050, rank order identical** (`eval/results/AGGREGATE.json` → `gate`).
+This is what licenses reusing the round-1 unit results as-is under the new weighting rather than
+re-running them: the gate proves the round-1-weighted composite the harness computes today is
+still byte-for-byte the published one, so nothing about round-1 data integrity is in question —
+only which weights combine it.
+
+**Open question — not yet decided.** `tool_malformed%` is computed across *all* units of a config
+in the selected task set (`eval/harness/aggregate.py`'s `CONVENTIONS["tool_malformed_pct"]`), so
+including round-2 tasks in the aggregation changes what it's measured over. Whether a
+round-2-inclusive aggregation (`--round 2` / `--round all`) should recompute `tool_malformed%` over
+old+new tasks or hold it at its round-1 value is **not yet decided** — this is a comparability
+judgement, not a technical one, and it is Denis's call (`eval/ROUND2_STATUS.md`, "Needs Denis" #4).
+Recomputing gives a more reliable estimate over roughly three times the data but makes the
+round-2-inclusive composite no longer the same quantity as round 1's on this axis too, on top of
+the two non-comparability reasons above; holding it at the round-1 value stays strictly comparable
+on this one axis at the cost of ignoring the new tasks' evidence. Nothing in this document or in
+`aggregate.py` should be read as having settled this either way.
+
+**Reweighting alone reorders the fleet.** Holding the round-1 task set fixed and only swapping
+weights (i.e. no `A_coding`-shape effect, isolating change 1 above), `qwen` moves from 7th to 2nd
+(its malformed-tool tax now costs 10% of the score instead of 25%) and `gemma` drops from 2nd to
+6th (a cleaner-tools config loses relative ground once tools is worth less and `B_recall`/`C_edit`
+— axes where `gemma` doesn't lead — are worth more); `ornith`, `opus`, `katdev`, and `gpt-oss` hold
+their round-1 rank. See the generated reweighting-impact table in
+[`eval/results/AGGREGATE.md`](../eval/results/AGGREGATE.md) for the full per-model before/after.

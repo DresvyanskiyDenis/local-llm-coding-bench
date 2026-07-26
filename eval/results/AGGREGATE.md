@@ -1,10 +1,13 @@
 # AGGREGATE — round 1
 
-*Generated 2026-07-25T20:21:05.210686+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
+*Generated 2026-07-26T20:41:35.044024+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
 
 ```
-Overall = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100
+Overall (round1 weights, published) = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100
+Overall (round2 weights)            = 0.35*A_coding + 0.10*(1 - tool_malformed%) + 0.20*C_edit + 0.20*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100
 ```
+
+> **Non-comparability:** The round-2-weighted composite is NOT the same quantity as the round-1 leaderboard composite and must never be compared to docs/leaderboard.md or eval/results/LEADERBOARD.md as if it were. Two independent things changed: (1) the weights themselves (tool_malformed 0.25->0.10, B_recall +0.10, C_edit +0.05 -- see ROUND2_REWEIGHT_REASON), and (2) for any aggregation that includes round-2 tasks (--round 2 / --round all), A_coding itself changed shape -- round-1 A was 4 saturated hand-written tasks (0.883-0.994 pass-rate); round-2 A5-A14 wrap BigCodeBench-Hard, so A is now 14 tasks of a materially different difficulty. This caveat belongs next to every round-2-weighted number, not in a footnote.
 
 ## Gate — does this reproduce the hand-written leaderboard?
 
@@ -24,29 +27,51 @@ Overall = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_reca
 
 ## Per-config components
 
-| Config | LB | n | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 | **Composite** | comp (per-cfg D) | BCB-Hard | IFEval |
-|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| `ornith` q4 | * | 30 | 0.987 | 9% (8.70%) | 0.91 | 0.863 | 0.556 | 0.983 | 74.4 | 0.543 | **88.35** | 88.35 | — | — |
-| `gemma` q4 | * | 30 | 0.911 | 3% (3.08%) | 0.97 | 0.863 | 0.333 | 0.967 | 137.1 | 1.001 | **87.08** | 87.08 | — | — |
-| `qwopus` q5 | * | 30 | 0.994 | 3% (3.49%) | 0.97 | 0.863 | 0.389 | 0.883 | 63.5 | 0.464 | **87.03** | 87.03 | — | — |
-| `gemma` q5 |  | 30 | 0.911 | 2% (2.47%) | 0.98 | 0.863 | 0.445 | 0.967 | 92.2 | 0.673 | **86.81** | 86.81 | — | — |
-| `opus` q4 | * | 30 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | 85.76 | — | — |
-| `opus` q5 |  | 30 | 0.923 | 3% (2.94%) | 0.97 | 0.818 | 0.611 | 0.867 | 68.4 | 0.499 | **86.10** | 86.93 | — | — |
-| `glm` q4 | * | 30 | 0.916 | 3% (2.94%) | 0.97 | 0.879 | 0.445 | 0.883 | 58.0 | 0.423 | **84.89** | 84.89 | — | — |
-| `glm` q5 |  | 30 | 0.880 | 4% (3.67%) | 0.96 | 0.909 | 0.445 | 0.883 | 65.3 | 0.477 | **84.10** | 84.10 | — | — |
-| `northmini` q4 | * | 30 | 0.942 | 19% (19.32%) | 0.81 | 0.879 | 0.556 | 0.958 | 57.9 | 0.423 | **83.66** | 83.58 | — | — |
-| `qwen` q5 |  | 30 | 0.970 | 28% (27.78%) | 0.72 | 0.863 | 0.556 | 0.975 | 92.6 | 0.676 | **83.58** | 83.67 | — | — |
-| `qwen` q4 | * | 30 | 0.991 | 32% (32.48%) | 0.68 | 0.894 | 0.500 | 0.975 | 86.8 | 0.634 | **83.01** | 82.93 | — | — |
-| `katdev` iq4 | * | 30 | 0.946 | 5% (4.60%) | 0.95 | 0.863 | 0.278 | 0.908 | 14.2 | 0.104 | **82.19** | 82.10 | — | — |
-| `katdev` q4 |  | 30 | 0.885 | 2% (2.42%) | 0.98 | 0.863 | 0.333 | 0.908 | 13.4 | 0.098 | **81.32** | 81.41 | — | — |
-| `northmini` q5 |  | 30 | 0.898 | 18% (17.86%) | 0.82 | 0.803 | 0.444 | 0.958 | 55.3 | 0.404 | **80.02** | 80.10 | — | — |
-| `gpt-oss` mxfp4 | * | 30 | 0.883 | 11% (10.53%) | 0.89 | 0.863 | 0.111 | 0.883 | 30.1 | 0.220 | **77.14** | 77.14 | — | — |
+| Config | LB | n | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 | **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) | BCB-Hard | IFEval |
+|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `ornith` q4 | * | 30 | 0.987 | 9% (8.70%) | 0.91 | 0.863 | 0.556 | 0.983 | 74.4 | 0.543 | **88.35** | **84.57†** | 88.35 | — | — |
+| `gemma` q4 | * | 30 | 0.911 | 3% (3.08%) | 0.97 | 0.863 | 0.333 | 0.967 | 137.1 | 1.001 | **87.08** | **80.18†** | 87.08 | — | — |
+| `qwopus` q5 | * | 30 | 0.994 | 3% (3.49%) | 0.97 | 0.863 | 0.389 | 0.883 | 63.5 | 0.464 | **87.03** | **80.68†** | 87.03 | — | — |
+| `gemma` q5 |  | 30 | 0.911 | 2% (2.47%) | 0.98 | 0.863 | 0.445 | 0.967 | 92.2 | 0.673 | **86.81** | **80.88†** | 86.81 | — | — |
+| `opus` q4 | * | 30 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | **81.11†** | 85.76 | 0.300 | 0.250 |
+| `opus` q5 |  | 30 | 0.923 | 3% (2.94%) | 0.97 | 0.818 | 0.611 | 0.867 | 68.4 | 0.499 | **86.10** | **81.75†** | 86.93 | — | — |
+| `glm` q4 | * | 30 | 0.916 | 3% (2.94%) | 0.97 | 0.879 | 0.445 | 0.883 | 58.0 | 0.423 | **84.89** | **79.19†** | 84.89 | — | — |
+| `glm` q5 |  | 30 | 0.880 | 4% (3.67%) | 0.96 | 0.909 | 0.445 | 0.883 | 65.3 | 0.477 | **84.10** | **78.70†** | 84.10 | — | — |
+| `northmini` q4 | * | 30 | 0.942 | 19% (19.32%) | 0.81 | 0.879 | 0.556 | 0.958 | 57.9 | 0.423 | **83.66** | **81.47†** | 83.58 | — | — |
+| `qwen` q5 |  | 30 | 0.970 | 28% (27.78%) | 0.72 | 0.863 | 0.556 | 0.975 | 92.6 | 0.676 | **83.58** | **82.66†** | 83.67 | — | — |
+| `qwen` q4 | * | 30 | 0.991 | 32% (32.48%) | 0.68 | 0.894 | 0.500 | 0.975 | 86.8 | 0.634 | **83.01** | **82.28†** | 82.93 | — | — |
+| `katdev` iq4 | * | 30 | 0.946 | 5% (4.60%) | 0.95 | 0.863 | 0.278 | 0.908 | 14.2 | 0.104 | **82.19** | **75.03†** | 82.10 | — | — |
+| `katdev` q4 |  | 30 | 0.885 | 2% (2.42%) | 0.98 | 0.863 | 0.333 | 0.908 | 13.4 | 0.098 | **81.32** | **74.27†** | 81.41 | — | — |
+| `northmini` q5 |  | 30 | 0.898 | 18% (17.86%) | 0.82 | 0.803 | 0.444 | 0.958 | 55.3 | 0.404 | **80.02** | **76.17†** | 80.10 | — | — |
+| `gpt-oss` mxfp4 | * | 30 | 0.883 | 11% (10.53%) | 0.89 | 0.863 | 0.111 | 0.883 | 30.1 | 0.220 | **77.14** | **69.22†** | 77.14 | — | — |
 
-`*` = the config the published leaderboard uses for this model's headline composite.
+`*` = the config the published leaderboard uses for this model's headline composite. `†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the round-1-weighted composite to its left**; see the caveat at the top of this document and the reweighting-impact table below before comparing the two columns as a ranking.
+
+## Reweighting impact — round-1 vs round-2 weights, same underlying scores
+
+Isolates the weight change from any task-set change: both composites below are computed from the *same* per-axis scores (this is `--round 1`), differing only in which weights combine them. Restricted to each model's headline (published-leaderboard) config.
+
+| Rank (R1 wts) | Model | Quant | Composite (R1 wts) | Composite (R2 wts) | Rank (R2 wts) | ΔRank |
+|--:|---|---|--:|--:|--:|:--:|
+| 1 | `ornith` | q4 | 88.35 | 84.57 | 1 | → 0 |
+| 2 | `gemma` | q4 | 87.08 | 80.18 | 6 | ↓ 4 |
+| 3 | `qwopus` | q5 | 87.03 | 80.68 | 5 | ↓ 2 |
+| 4 | `opus` | q4 | 86.60 | 81.11 | 4 | → 0 |
+| 5 | `glm` | q4 | 84.89 | 79.19 | 7 | ↓ 2 |
+| 6 | `northmini` | q4 | 83.66 | 81.47 | 3 | ↑ 3 |
+| 7 | `qwen` | q4 | 83.01 | 82.28 | 2 | ↑ 5 |
+| 8 | `katdev` | iq4 | 82.19 | 75.03 | 8 | → 0 |
+| 9 | `gpt-oss` | mxfp4 | 77.14 | 69.22 | 9 | → 0 |
+
+**Reweighting alone DOES reorder the fleet.**
+
+> **Why the reweight:** tool_malformed drops 0.25->0.10 because the round-1 distribution is BIMODAL, not saturated: ten configs cluster at 2.4-5.5% malformed, where the ordinal differences are ~3 vs ~5 malformed calls out of ~100 -- noise, not signal -- while ornith (8.7%), gpt-oss (10.5%), northmini (17.9-19.3%) and qwen (27.8-32.5%) are 2-10x worse and already get punished decisively even at a small weight. A quarter of the score should not ride on noise inside the tight cluster. The freed 0.15 follows spread: B_recall ran 0.111-0.611 in round 1 (the healthiest, least-saturated axis) -> +0.10; C_edit ran 0.803-0.909 (narrow, but not as saturated as A_coding was) -> +0.05.
 
 ## Round-2 axes (reported alongside, UNWEIGHTED)
 
-No `bcb__*.json` / `ifeval__*.json` result files on disk yet — both axes null.
+| Config | bcb_hard_pass@1 | ifeval_prompt_strict |
+|---|--:|--:|
+| `opus__q4` | 0.300 | 0.250 |
 
 > bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation.
 

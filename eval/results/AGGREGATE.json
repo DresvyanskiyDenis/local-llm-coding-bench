@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_ts": "2026-07-25T20:21:05.210686+00:00",
+  "generated_ts": "2026-07-26T20:44:11.060884+00:00",
   "round": "1",
   "task_set": [
     "A1_events_sessionize",
@@ -35,6 +35,31 @@
     "d_text": 0.1,
     "decode": 0.05
   },
+  "formulas": {
+    "round1": "0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100",
+    "round2": "0.35*A_coding + 0.10*(1 - tool_malformed%) + 0.20*C_edit + 0.20*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100"
+  },
+  "weight_sets": {
+    "round1": {
+      "a_coding": 0.35,
+      "tool_reliability": 0.25,
+      "c_edit": 0.15,
+      "b_recall": 0.1,
+      "d_text": 0.1,
+      "decode": 0.05
+    },
+    "round2": {
+      "a_coding": 0.35,
+      "tool_reliability": 0.1,
+      "c_edit": 0.2,
+      "b_recall": 0.2,
+      "d_text": 0.1,
+      "decode": 0.05
+    }
+  },
+  "primary_weights": "round2",
+  "round2_reweight_reason": "tool_malformed drops 0.25->0.10 because the round-1 distribution is BIMODAL, not saturated: ten configs cluster at 2.4-5.5% malformed, where the ordinal differences are ~3 vs ~5 malformed calls out of ~100 -- noise, not signal -- while ornith (8.7%), gpt-oss (10.5%), northmini (17.9-19.3%) and qwen (27.8-32.5%) are 2-10x worse and already get punished decisively even at a small weight. A quarter of the score should not ride on noise inside the tight cluster. The freed 0.15 follows spread: B_recall ran 0.111-0.611 in round 1 (the healthiest, least-saturated axis) -> +0.10; C_edit ran 0.803-0.909 (narrow, but not as saturated as A_coding was) -> +0.05.",
+  "round2_comparability_note": "The round-2-weighted composite is NOT the same quantity as the round-1 leaderboard composite and must never be compared to docs/leaderboard.md or eval/results/LEADERBOARD.md as if it were. Two independent things changed: (1) the weights themselves (tool_malformed 0.25->0.10, B_recall +0.10, C_edit +0.05 -- see ROUND2_REWEIGHT_REASON), and (2) for any aggregation that includes round-2 tasks (--round 2 / --round all), A_coding itself changed shape -- round-1 A was 4 saturated hand-written tasks (0.883-0.994 pass-rate); round-2 A5-A14 wrap BigCodeBench-Hard, so A is now 14 tasks of a materially different difficulty. This caveat belongs next to every round-2-weighted number, not in a footnote.",
   "decode_norm_tps": 137.0,
   "leaderboard_quant": {
     "opus": "q4",
@@ -92,7 +117,18 @@
       },
       "missing_terms": [],
       "composite": 87.08,
+      "composite_weights_version": "round1",
       "composite_config_d": 87.08,
+      "terms_round2_weights": {
+        "a_coding": 0.31885,
+        "tool_reliability": 0.097,
+        "c_edit": 0.1726,
+        "b_recall": 0.0666,
+        "d_text": 0.09667,
+        "decode": 0.050036
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 80.18,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -129,7 +165,18 @@
       },
       "missing_terms": [],
       "composite": 86.81,
+      "composite_weights_version": "round1",
       "composite_config_d": 86.81,
+      "terms_round2_weights": {
+        "a_coding": 0.31885,
+        "tool_reliability": 0.098,
+        "c_edit": 0.1726,
+        "b_recall": 0.089,
+        "d_text": 0.09667,
+        "decode": 0.03365
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 80.88,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -166,7 +213,18 @@
       },
       "missing_terms": [],
       "composite": 84.89,
+      "composite_weights_version": "round1",
       "composite_config_d": 84.89,
+      "terms_round2_weights": {
+        "a_coding": 0.3206,
+        "tool_reliability": 0.097,
+        "c_edit": 0.1758,
+        "b_recall": 0.089,
+        "d_text": 0.08833,
+        "decode": 0.021168
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 79.19,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -203,7 +261,18 @@
       },
       "missing_terms": [],
       "composite": 84.1,
+      "composite_weights_version": "round1",
       "composite_config_d": 84.1,
+      "terms_round2_weights": {
+        "a_coding": 0.308,
+        "tool_reliability": 0.096,
+        "c_edit": 0.1818,
+        "b_recall": 0.089,
+        "d_text": 0.08833,
+        "decode": 0.023832
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 78.7,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -240,7 +309,18 @@
       },
       "missing_terms": [],
       "composite": 77.14,
+      "composite_weights_version": "round1",
       "composite_config_d": 77.14,
+      "terms_round2_weights": {
+        "a_coding": 0.30905,
+        "tool_reliability": 0.089,
+        "c_edit": 0.1726,
+        "b_recall": 0.0222,
+        "d_text": 0.08833,
+        "decode": 0.010985
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 69.22,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -277,7 +357,18 @@
       },
       "missing_terms": [],
       "composite": 82.19,
+      "composite_weights_version": "round1",
       "composite_config_d": 82.1,
+      "terms_round2_weights": {
+        "a_coding": 0.3311,
+        "tool_reliability": 0.095,
+        "c_edit": 0.1726,
+        "b_recall": 0.0556,
+        "d_text": 0.09083,
+        "decode": 0.005182
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 75.03,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -314,7 +405,18 @@
       },
       "missing_terms": [],
       "composite": 81.32,
+      "composite_weights_version": "round1",
       "composite_config_d": 81.41,
+      "terms_round2_weights": {
+        "a_coding": 0.30975,
+        "tool_reliability": 0.098,
+        "c_edit": 0.1726,
+        "b_recall": 0.0666,
+        "d_text": 0.09083,
+        "decode": 0.004891
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 74.27,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -351,7 +453,18 @@
       },
       "missing_terms": [],
       "composite": 83.66,
+      "composite_weights_version": "round1",
       "composite_config_d": 83.58,
+      "terms_round2_weights": {
+        "a_coding": 0.3297,
+        "tool_reliability": 0.081,
+        "c_edit": 0.1758,
+        "b_recall": 0.1112,
+        "d_text": 0.09583,
+        "decode": 0.021131
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 81.47,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -388,7 +501,18 @@
       },
       "missing_terms": [],
       "composite": 80.02,
+      "composite_weights_version": "round1",
       "composite_config_d": 80.1,
+      "terms_round2_weights": {
+        "a_coding": 0.3143,
+        "tool_reliability": 0.082,
+        "c_edit": 0.1606,
+        "b_recall": 0.0888,
+        "d_text": 0.09583,
+        "decode": 0.020182
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 76.17,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -425,9 +549,20 @@
       },
       "missing_terms": [],
       "composite": 86.6,
+      "composite_weights_version": "round1",
       "composite_config_d": 85.76,
-      "bcb_hard_pass@1": null,
-      "ifeval_prompt_strict": null
+      "terms_round2_weights": {
+        "a_coding": 0.3416,
+        "tool_reliability": 0.095,
+        "c_edit": 0.1726,
+        "b_recall": 0.089,
+        "d_text": 0.08667,
+        "decode": 0.026241
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 81.11,
+      "bcb_hard_pass@1": 0.3,
+      "ifeval_prompt_strict": 0.25
     },
     {
       "model": "opus",
@@ -462,7 +597,18 @@
       },
       "missing_terms": [],
       "composite": 86.1,
+      "composite_weights_version": "round1",
       "composite_config_d": 86.93,
+      "terms_round2_weights": {
+        "a_coding": 0.32305,
+        "tool_reliability": 0.097,
+        "c_edit": 0.1636,
+        "b_recall": 0.1222,
+        "d_text": 0.08667,
+        "decode": 0.024964
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 81.75,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -499,7 +645,18 @@
       },
       "missing_terms": [],
       "composite": 88.35,
+      "composite_weights_version": "round1",
       "composite_config_d": 88.35,
+      "terms_round2_weights": {
+        "a_coding": 0.34545,
+        "tool_reliability": 0.091,
+        "c_edit": 0.1726,
+        "b_recall": 0.1112,
+        "d_text": 0.09833,
+        "decode": 0.027153
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 84.57,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -536,7 +693,18 @@
       },
       "missing_terms": [],
       "composite": 83.01,
+      "composite_weights_version": "round1",
       "composite_config_d": 82.93,
+      "terms_round2_weights": {
+        "a_coding": 0.34685,
+        "tool_reliability": 0.068,
+        "c_edit": 0.1788,
+        "b_recall": 0.1,
+        "d_text": 0.0975,
+        "decode": 0.031679
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 82.28,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -573,7 +741,18 @@
       },
       "missing_terms": [],
       "composite": 83.58,
+      "composite_weights_version": "round1",
       "composite_config_d": 83.67,
+      "terms_round2_weights": {
+        "a_coding": 0.3395,
+        "tool_reliability": 0.072,
+        "c_edit": 0.1726,
+        "b_recall": 0.1112,
+        "d_text": 0.0975,
+        "decode": 0.033796
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 82.66,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     },
@@ -610,19 +789,35 @@
       },
       "missing_terms": [],
       "composite": 87.03,
+      "composite_weights_version": "round1",
       "composite_config_d": 87.03,
+      "terms_round2_weights": {
+        "a_coding": 0.3479,
+        "tool_reliability": 0.097,
+        "c_edit": 0.1726,
+        "b_recall": 0.0778,
+        "d_text": 0.08833,
+        "decode": 0.023175
+      },
+      "missing_terms_round2_weights": [],
+      "composite_round2_weights": 80.68,
       "bcb_hard_pass@1": null,
       "ifeval_prompt_strict": null
     }
   ],
   "external_axes_unweighted": {
-    "bcb_hard_pass@1": {},
-    "ifeval_prompt_strict": {},
+    "bcb_hard_pass@1": {
+      "opus__q4": 0.3
+    },
+    "ifeval_prompt_strict": {
+      "opus__q4": 0.25
+    },
     "note": "bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation."
   },
   "gate": {
     "applicable": true,
     "source": "docs/leaderboard.md + eval/results/LEADERBOARD.md (identical composites)",
+    "weights_used": "round1",
     "n_models": 9,
     "n_agree_1dp": 9,
     "max_abs_delta": 0.05,
