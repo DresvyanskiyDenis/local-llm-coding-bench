@@ -98,6 +98,44 @@ parameters and the proxy forced the neutral block onto the upstream request.
 *Record-keeping note:* the probe ran against `qwen4`, not `opus4` as originally briefed. The finding
 is a property of the serving stack rather than of one model, but it has not been re-probed per model.
 
+### A second leak shape — untagged prose — that the probe could not have found
+
+Discovered 2026-07-26 while verifying the IFEval adapter. This one **invalidates the Phase 1 gate
+number** and reaches BigCodeBench too.
+
+The gate run reported `n_finish_length: 15` of 20 next to `n_empty_after_strip: 0`. Those two
+numbers cannot both be right if truncated reasoning is being stripped: fifteen responses hit the
+token ceiling and not one came back empty. Reading the raw generations explains it — **13 of the 15
+are unterminated reasoning prose carrying no `<think>` tag at all**. One opens `"Thinking Process:
+
+1. **Analyze the Request:** * Topic: …"` and never reaches an answer. `REASONING_TAG_RE` and
+`OPEN_REASONING_TAG_RE` are both tag-anchored, so they never fire, and the monologue is scored as
+the model's reply.
+
+The phase-0 probe ran against `qwen4`, which *does* tag its reasoning. A probe of a tagging config
+cannot discover a non-tagging shape — which is exactly why the record-keeping note above (probed
+one model, generalised to the stack) was load-bearing and wrong.
+
+What this costs:
+
+- **`opus/q4`'s `prompt_level_strict: 0.25` is not trustworthy.** It is not merely low; on the 15
+  truncated prompts it may be measuring whether the model finished thinking inside the budget.
+- **`eval_proxy.py` has the identical gap** — its `strip_reasoning()` is tag-anchored the same way
+  (`<think>`, harmony `<|channel|>analysis`). So BigCodeBench is exposed too: untagged prose reaches
+  the sanitizer instead of code and lands as a fail, indistinguishable from a wrong answer.
+
+Two things are suggestive but not proof: all 5 responses in that run that finished with
+`finish_reason: "stop"` had zero reasoning preamble, and the cap has since moved 1280 → 4096. More
+budget may turn truncated-mid-monologue into ordinary clean stops. One config, 20 prompts — not a
+basis for concluding it.
+
+**Deliberately not fixed.** A heuristic for untagged prose would fire on legitimately structured
+answers: the vendored checker scores headings, numbered lists and markdown structure directly
+(`detectable_format:*`, `length_constraints:*`), so guessing here corrupts a different set of
+prompts to save this one. `test_strip_reasoning.py`'s ninth case reproduces the exact string and
+asserts the current pass-through, so the gap is provable rather than inferred (9/9 pass, including
+the unclosed-`<think>`-strips-to-EMPTY case).
+
 ## Measured wall-clock
 
 ### IFEval — measured, and it does not fit
@@ -206,18 +244,32 @@ axis in round 1) gains most and the narrow C (0.803–0.909) gains least:
 
 ## Needs Denis
 
-1. **IFEval run size.** At full 541 prompts the suite costs ~44 h across 15 configs. A seeded
-   stratified subsample recorded as `n_prompts` vs `n_prompts_available` would fit the night, but
-   choosing the size is a judgement about how much per-instruction-type resolution to trade away —
-   541 prompts span 25 instruction types, and a subsample small enough to fit 8 h leaves some types
-   at single-digit n, which turns `by_instruction_type` into noise. A sizing table is being measured
-   rather than guessed.
+0. **The untagged reasoning leak — decide this before trusting any external-lane number.** See
+   "A second leak shape" above. Neither stripper catches reasoning that arrives without a `<think>`
+   tag, and on the one config measured that is 13 of 15 truncated responses. Three ways forward,
+   and it is your call because each trades a different thing away:
+   - *Per-model-family leak probe* before trusting any config's numbers — cheap, honest, but means
+     the external lane produces a per-config trust flag rather than one clean table.
+   - *A cross-file design* covering `run_ifeval.py` and `eval_proxy.py` together — the real fix, but
+     it is not a one-liner and it must not be adapter-local, or the two lanes diverge silently.
+   - *Ship with the gap documented* and treat affected configs' numbers as lower bounds.
 
-2. **IFEval token cap.** The gate run truncated **15 of 20** responses at `max_tokens 1280`. Given
-   the confirmed reasoning leak, `prompt_level_strict: 0.25` may be measuring "did it finish
-   thinking in time" rather than instruction-following. A 4096-token re-run on the truncated slice
-   is being measured to size the effect. Raising the cap and shrinking the sample pull against each
-   other — that trade is item 1.
+   What must NOT happen is a heuristic on prose shape. It would fire on legitimately structured
+   answers — the IFEval checker scores headings and numbered lists directly, and BigCodeBench
+   solutions carry prose in docstrings — so it corrupts a different set of items to save this one.
+
+1. **IFEval run size.** At full 541 prompts the suite costs ~44 h across 15 configs. `--sample N`
+   now exists: seeded, stratified by primary instruction type, with `n_prompts` vs
+   `n_prompts_available` recorded so a subsampled score can never be mistaken for a full-set one.
+   The remaining decision is **N**, and it is a judgement about how much per-instruction-type
+   resolution to trade away — 541 prompts span 25 instruction types, and a subsample small enough
+   to fit 8 h leaves some types at single-digit n, which turns `by_instruction_type` into noise.
+
+2. **IFEval token cap — moved to 4096, on evidence, and it needs your ratification.** The gate run
+   truncated **15 of 20** responses at `max_tokens 1280`, and the 13 untagged-prose cases above are
+   what that budget was spent on. 4096 is the value the round-2 brief already intended; the adapter
+   now defaults to it ahead of a measurement existing. Raising the cap and shrinking the sample pull
+   against each other — that trade is item 1.
 
 3. **Pairwise judge budget — measured in the unit that actually binds.** The judge runs on a Pro
    subscription, so the `total_cost_usd` that `claude -p` reports ($0.070/call) is a notional API
@@ -245,8 +297,9 @@ axis in round 1) gains most and the narrow C (0.803–0.909) gains least:
    authorisation. The cache makes the remainder resumable. Any partial Bradley-Terry fit is labelled
    partial wherever it appears.
 
-4. **`tool_malformed%` carries weight 0.25 and is measured across all runs, so adding 11 tasks
-   changes it.** Two defensible options, and it is your call because it is a comparability
+4. **`tool_malformed%` is measured across all runs, so adding 21 tasks changes it.** The weight is
+   now 0.10 (decided, implemented — see the composite section), which lowers the stakes but does not
+   settle this. Two defensible options, and it is your call because it is a comparability
    judgement, not a technical one:
    - *Keep the round-1 value* and report the new tasks' malformed rate separately — the composite
      stays strictly comparable to round 1, at the cost of ignoring better evidence.
