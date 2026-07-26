@@ -117,32 +117,51 @@ see *Needs Denis*.
 
 _pending — Phase 2 gate in flight._
 
-## What actually has to be re-run — 11 tasks, not 21
+## What actually has to be re-run — 855 units, not 1305
 
 Round 1's results are **complete and reusable**: all 10 original tasks have 45 unit results each
 (15 configs × 3 reps). Phase 3 proved the graders re-grade round-1 fixtures **byte-identically**,
 which is precisely what licenses reusing them — had that gate come back red, everything would need
 re-running.
 
-So the round-2 in-harness run is **the 11 new tasks × 15 configs**, not all 21. The mechanism is
-already there: the per-task reps/configs override in `planned_units()` — the one permitted change to
-`orchestrate.py`.
+So the round-2 in-harness run is **the 21 new tasks, and only those**. This is not a plan, it is
+what the code does: `planned_units()` yields 1305 units over 15 configs, `process_config()` filters
+to the units whose result file does not yet exist, and that leaves **855 pending** — precisely the
+450 round-1 units skipped. Measured 2026-07-26 by driving `planned_units()` and `result_path()`
+directly, not by reading the source and hoping:
+
+| suite | pending units | why that count |
+|---|--:|---|
+| A_coding | 450 | 10 new tasks × 15 configs × 3 reps |
+| B_review | 180 | 4 new tasks × 15 × 3 |
+| C_edit | 135 | 3 new tasks × 15 × 3 |
+| D_text | 90 | D6 at 3 reps (45) + D3/D4/D5 at **1 rep each** (15 each) |
+| **total** | **855** | of 1305 planned; 450 round-1 units reused |
+
+The reps asymmetry in D is deliberate and is the one permitted change to `orchestrate.py`: the
+per-task `reps` override in `planned_units()` pins the long-context ladder to one rep, because a
+100K-context unit costs far more than a short one. It is also the confound that nearly went
+unnoticed — D3 originally had no `reps` key and would have silently run 3 reps against D4/D5's 1,
+making the context-length ladder uninterpretable.
 
 The new tasks sit **inside** the existing suites rather than beside them, so the suite scores
 genuinely strengthen:
 
-| suite | round 1 | round 2 | composite weight |
+| suite | round 1 | round 2 | composite weight (round 2) |
 |---|---|---|---|
-| A_coding | 4 | **4 — unchanged** | 0.35 |
-| B_review | 2 | **6** | 0.10 |
-| C_edit | 2 | **5** | 0.15 |
+| A_coding | 4 | **14** (4 hand-written + 10 BCB-Hard wrapped) | 0.35 |
+| B_review | 2 | **6** | 0.20 |
+| C_edit | 2 | **5** | 0.20 |
 | D_text | 2 | **6** | 0.10 |
 
-**A is the exception, and it explains why the external lane exists.** A is saturated at 0.883–0.994
-— every config is at the ceiling, so it no longer separates anything, and adding four harder
-hand-written tasks would just be guessing where the ceiling is. **BigCodeBench Hard is the
-strengthened A**: 148 genuinely hard tasks in place of 4 saturated ones. It is not a parallel
-curiosity; it replaces an axis that stopped working. IFEval is a straightforwardly new axis —
+**A was the problem, and fixing it is what changed this round's shape.** A is saturated at
+0.883–0.994 — every config sits at the ceiling, so it separates nothing, and inventing four harder
+hand-written tasks would just be guessing where the ceiling is. Denis's objection to the first plan
+was exact: measuring models on BigCodeBench in a separate lane tells us what the public leaderboard
+already tells us, and tells us nothing about the harness. So **A5–A14 wrap ten BigCodeBench-Hard
+tasks as in-harness tasks** (`eval/tasks/A_coding/BCB_PAIRING.json` records the upstream ids). The
+same upstream tasks then run in both lanes, and the lane difference isolates the harness
+contribution instead of re-measuring the model. IFEval is a straightforwardly new axis —
 instruction-following was never measured here at all.
 
 D is treated twice over: harder tasks (the 30K/60K/100K ladder) *and* a better scoring method
