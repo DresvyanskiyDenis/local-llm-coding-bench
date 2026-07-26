@@ -94,6 +94,71 @@ every model runs to the 4096-token cap. `katdev` (17 t/s, ~10 s TTFT) accounts f
 that on its own. BCB-Hard is therefore **not** a "night 1 alongside IFEval" item at full fleet
 scope without deciding that first.
 
+`--estimate` covers **generation only** and is deliberately conservative: it budgets 2000
+generated tokens for a reasoning config. Measured against `opus/q4` on 2026-07-26 it predicted
+56 min per 148-task config where the real rate gives ~30 min, because that model actually spends
+~600 tokens on a Hard task (peak observed 1268 of the 4096 cap). Treat it as an upper bound per
+config, and read the evaluation cost below — `--estimate` does not model it at all.
+
+#### Measured cost model (2026-07-26, `opus/q4`, 10-task slice, `--parallel 4`)
+
+**Do not divide `evaluate_s` by the task count.** Two effects make that badly wrong, both
+measured by evaluating the same 10 completions four ways:
+
+| run | wall to results |
+|---|---|
+| 8 completing tasks, `--parallel 4` | 50 s |
+| 2 timing-out tasks only, `--parallel 4` | 252 s |
+| all 10, `--parallel 4` | 266 s |
+| all 10, `--parallel 1` | 580 s |
+
+- **The per-task evaluation timeout is 241 s** (`max(240.0, gt_time) + 1`, `eval/__init__.py:182`)
+  — confirmed by the 252 s two-timeout run (241 s + ~11 s startup).
+- Of 569 s of serial work, **482 s (85%) is the 2 timeouts** — 20% of the tasks. The 8 tasks
+  that complete cost **10.9 s each**.
+- Parallel-4 speedup at N=10 is only **2.23× (56% efficiency)**, because the wall is floored by a
+  single 241 s timeout and parallelism cannot split one hung task. At N=148 the pool saturates
+  and throughput governs instead, so the small slice *overstates* per-task cost.
+- `evaluate_s` in the result JSON also carries a **fixed ~120 s grace period** (waiting on the
+  upstream `multiprocessing.Manager` leak, see below) that is per *config*, not per task:
+  389 s reported = 266 s work + 120 s grace.
+
+Projection for a full 148-task config, by timeout rate (the dominant unknown, and a function of
+*model quality* — worse models write more hangs):
+
+| timeout rate | per config | 15 configs |
+|---|---|---|
+| 0% | 10 min | 2.4 h |
+| 10% | 25 min | 6.4 h |
+| **20% (observed)** | **41 min** | **10.3 h** |
+| 30% | 57 min | 14.2 h |
+| 100% (pathological) | 167 min | 41.8 h |
+
+Generation is by contrast **flat**: per-task intervals were 7.6–17.8 s, median 12.0 s,
+max/median 1.48, with no truncation at the 4096 cap. ~30 min per 148-task config for `opus/q4`.
+
+**Full sweep, 148 × 15 configs, 1 rep: ~14–27 h** (generation 8–13 h + evaluation 6–14 h),
+likely ~18–20 h. **It does not fit one night.**
+
+#### If you need it in one night, cap the slice
+
+At ~29–37 s per task per config all-in (fleet-average generation + evaluation at a 20% timeout
+rate), plus ~220 s per config of fixed overhead (model load/unload, grace, startup):
+
+| budget | largest slice, 15 configs |
+|---|---|
+| 6 h | ~32 tasks |
+| **8 h** | **~46–59 tasks — use 48** |
+| 10 h | ~60–75 tasks |
+
+> ⚠️ **A slice is not a sample.** `--limit N` is implemented as `--id-range 0-N`, i.e. the
+> **first N tasks by index**, not a random draw. Nothing guarantees BigCodeBench's id order is
+> uncorrelated with difficulty or library mix, so a 48-task prefix is a biased subset and its
+> pass@1 is not an unbiased estimate of the 148-task number. Within-fleet *ranking* survives
+> (every config sees the identical subset), which is what the Spearman correlation needs;
+> absolute pass@1 does not. Taking a seeded random sample instead would be a code change to
+> `run_generate` — not made here.
+
 ### 5. Real run
 
 `:8888` must belong to `unsloth-serve`, **not** llama-swap:
@@ -140,9 +205,15 @@ configuration mistake.
 
 Each task runs in its own `multiprocessing.Process` with
 `timeout = max(240.0, gt_time) + 1` ≥ **241 s**, then `terminate()` → `kill()`
-(`eval/__init__.py:182-208`). So a runaway allocator can hold memory for at most ~241 s, and
-the kill reclaims it. Time is bounded and the process is killable; only the *rate* and *peak*
-of allocation are not.
+(`eval/__init__.py:182-208`). Confirmed empirically, not just read: evaluating the two hanging
+tasks of the gate slice on their own took 252 s wall (241 s + ~11 s startup). So a runaway
+allocator can hold memory for at most ~241 s, and the kill reclaims it. Time is bounded and the
+process is killable; only the *rate* and *peak* of allocation are not.
+
+**The exposure is therefore 4 × 241 s windows, not an unbounded one** — with `--parallel 4`, at
+most four processes can be allocating without a ceiling at any moment, each for at most ~4
+minutes. That is what makes "safe as-is on an idle box" defensible; it is also exactly what
+stops being true if the box is shared.
 
 > **Do not set `BIGCODEBENCH_TIMEOUT_PER_TASK`.** `max(os.getenv(...), min_time_limit)`
 > compares `str` to `float` → `TypeError: '>' not supported between instances of 'float' and
