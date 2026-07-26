@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.serving-watchdog</string>
+    <!-- Runs serving_watchdog.sh every StartInterval seconds. Real (acting)
+         mode by default — this is what actually restores daily mode on a
+         confirmed dead-man. If you want it to only ever report (never
+         restore), add "--check-only" as a third array element below. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/harness/ops/serving_watchdog.sh</string>
+    </array>
+    <!-- 5 minutes. Comfortably below the ~20-minute grace window the script
+         uses to distinguish a between-config gap from a real dead-man, so a
+         dead-man is caught within one interval of the grace window closing. -->
+    <key>StartInterval</key>
+    <integer>300</integer>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/denisdresvyanskiy/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/harness/ops/serving_watchdog.launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/denisdresvyanskiy/MyProjects/local-llm-coding-bench/eval/harness/ops/serving_watchdog.launchd.log</string>
+</dict>
+</plist>
