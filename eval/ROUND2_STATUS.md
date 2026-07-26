@@ -117,6 +117,37 @@ see *Needs Denis*.
 
 _pending — Phase 2 gate in flight._
 
+## What actually has to be re-run — 11 tasks, not 21
+
+Round 1's results are **complete and reusable**: all 10 original tasks have 45 unit results each
+(15 configs × 3 reps). Phase 3 proved the graders re-grade round-1 fixtures **byte-identically**,
+which is precisely what licenses reusing them — had that gate come back red, everything would need
+re-running.
+
+So the round-2 in-harness run is **the 11 new tasks × 15 configs**, not all 21. The mechanism is
+already there: the per-task reps/configs override in `planned_units()` — the one permitted change to
+`orchestrate.py`.
+
+The new tasks sit **inside** the existing suites rather than beside them, so the suite scores
+genuinely strengthen:
+
+| suite | round 1 | round 2 | composite weight |
+|---|---|---|---|
+| A_coding | 4 | **4 — unchanged** | 0.35 |
+| B_review | 2 | **6** | 0.10 |
+| C_edit | 2 | **5** | 0.15 |
+| D_text | 2 | **6** | 0.10 |
+
+**A is the exception, and it explains why the external lane exists.** A is saturated at 0.883–0.994
+— every config is at the ceiling, so it no longer separates anything, and adding four harder
+hand-written tasks would just be guessing where the ceiling is. **BigCodeBench Hard is the
+strengthened A**: 148 genuinely hard tasks in place of 4 saturated ones. It is not a parallel
+curiosity; it replaces an axis that stopped working. IFEval is a straightforwardly new axis —
+instruction-following was never measured here at all.
+
+D is treated twice over: harder tasks (the 30K/60K/100K ladder) *and* a better scoring method
+(pairwise Bradley-Terry instead of absolute scores that saturated at 8.67–9.83).
+
 ## Needs Denis
 
 1. **IFEval run size.** At full 541 prompts the suite costs ~44 h across 15 configs. A seeded
@@ -158,7 +189,18 @@ _pending — Phase 2 gate in flight._
    authorisation. The cache makes the remainder resumable. Any partial Bradley-Terry fit is labelled
    partial wherever it appears.
 
-4. **Round-1 answers are now tracked — keep it that way.** See the blocker below. The recovered
+4. **`tool_malformed%` carries weight 0.25 and is measured across all runs, so adding 11 tasks
+   changes it.** Two defensible options, and it is your call because it is a comparability
+   judgement, not a technical one:
+   - *Keep the round-1 value* and report the new tasks' malformed rate separately — the composite
+     stays strictly comparable to round 1, at the cost of ignoring better evidence.
+   - *Recompute over old + new* — a more reliable estimate over roughly three times the data, but
+     the composite is then no longer the same quantity as round 1's and must be labelled as such.
+
+   I lean to recomputing and labelling it, since 0.25 is a large weight to leave resting on the
+   smaller sample. Either way it must be stated explicitly wherever the composite appears.
+
+5. **Round-1 answers are now tracked — keep it that way.** See the blocker below. The recovered
    answers live in `eval/results/round1_answers/`, which is **in git on purpose**. If a future
    cleanup gitignores it again, the next round of pairwise judging becomes impossible without
    re-running inference.
