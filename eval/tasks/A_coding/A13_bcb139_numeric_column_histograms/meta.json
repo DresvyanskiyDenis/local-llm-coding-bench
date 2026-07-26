@@ -1,0 +1,17 @@
+{
+  "id": "A13_bcb139_numeric_column_histograms",
+  "suite": "A_coding",
+  "title": "Draw histograms of numeric columns in a DataFrame and return the plots (BigCodeBench-Hard 139)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "matplotlib",
+      "numpy",
+      "pandas"
+    ]
+  }
+}

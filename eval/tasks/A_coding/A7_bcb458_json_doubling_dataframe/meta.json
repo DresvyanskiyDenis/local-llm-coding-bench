@@ -1,0 +1,15 @@
+{
+  "id": "A7_bcb458_json_doubling_dataframe",
+  "suite": "A_coding",
+  "title": "Load a JSON string into a dictionary, normalize the dictionary by doubling the numeri... (BigCodeBench-Hard 458)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 500,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "pandas"
+    ]
+  }
+}

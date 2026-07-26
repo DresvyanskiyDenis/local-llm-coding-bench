@@ -1,0 +1,13 @@
+{
+  "id": "A5_bcb854_permutation_factorials",
+  "suite": "A_coding",
+  "title": "Generate all permutations of a given list of numbers and calculate the sum of the fac... (BigCodeBench-Hard 854)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": []
+  }
+}

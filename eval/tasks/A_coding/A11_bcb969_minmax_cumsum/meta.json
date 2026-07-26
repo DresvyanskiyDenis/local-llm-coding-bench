@@ -1,0 +1,17 @@
+{
+  "id": "A11_bcb969_minmax_cumsum",
+  "suite": "A_coding",
+  "title": "Computes the MinMax-normalized cumulative sum for each numeric column in the given Da... (BigCodeBench-Hard 969)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "numpy",
+      "pandas",
+      "scikit-learn"
+    ]
+  }
+}

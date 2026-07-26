@@ -1,0 +1,16 @@
+{
+  "id": "A8_bcb870_tuple_position_means",
+  "suite": "A_coding",
+  "title": "Calculate the mean of numerical values in each position across tuples in a list (BigCodeBench-Hard 870)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 500,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "numpy",
+      "pandas"
+    ]
+  }
+}

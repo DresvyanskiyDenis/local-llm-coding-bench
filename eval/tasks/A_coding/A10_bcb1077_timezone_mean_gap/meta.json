@@ -1,0 +1,16 @@
+{
+  "id": "A10_bcb1077_timezone_mean_gap",
+  "suite": "A_coding",
+  "title": "Calculates the average time difference in seconds between each consecutive pair of ti... (BigCodeBench-Hard 1077)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "numpy",
+      "pytz"
+    ]
+  }
+}

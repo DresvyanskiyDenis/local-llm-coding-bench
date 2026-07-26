@@ -1,0 +1,13 @@
+{
+  "id": "A6_bcb928_bigram_frequency_table",
+  "suite": "A_coding",
+  "title": "Create a dictionary containing all possible two-letter combinations of the lowercase... (BigCodeBench-Hard 928)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 300,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": []
+  }
+}

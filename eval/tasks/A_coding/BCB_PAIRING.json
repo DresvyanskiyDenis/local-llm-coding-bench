@@ -1,0 +1,171 @@
+{
+  "what": "Lane pairing for the BigCodeBench-derived A_coding tasks. Each entry is ONE upstream task delivered two ways: lane 1 = through OpenCode with tools and multiple turns (eval/tasks/A_coding/<harness_task>, graded by pytest_grader.py); lane 2 = straight at /v1/chat/completions, single turn, no agent (eval/external/bigcodebench/run_bcb.py, graded by BigCodeBench itself). Lane 1 minus lane 2, on the same task and the same assertions, is the harness contribution.",
+  "lane2_note": "Lane 2 must actually cover these ids for a pair to exist. run_bcb.py --limit N maps to --id-range 0-N over the 148-task hard split, so a truncated lane-2 run may not include every id below; pair only on ids present in the lane-2 eval_results.json.",
+  "comparability": "Lane 2's absolute pass@1 is a within-fleet number (relaxed pins, local executor). Lane 1 runs the same upstream assertions but under uv-resolved latest deps inside pytest_grader, so the two executors are NOT byte-identical either. Read the difference as directional evidence about the harness, not as a calibrated delta.",
+  "dataset": "bigcode/bigcodebench-hard",
+  "dataset_split": "v0.1.4",
+  "derived_on": "2026-07-26",
+  "n_pairs": 10,
+  "pairs": [
+    {
+      "harness_task": "A_coding/A5_bcb854_permutation_factorials",
+      "bigcodebench_task_id": "BigCodeBench/854",
+      "entry_point": "task_func",
+      "libs": [
+        "math",
+        "itertools",
+        "functools"
+      ],
+      "requires": [],
+      "n_upstream_tests": 5,
+      "source_record_sha256": "0de1c514468ed7dbf42e990ce6c37617394577e2db4055af838585da390321ec"
+    },
+    {
+      "harness_task": "A_coding/A6_bcb928_bigram_frequency_table",
+      "bigcodebench_task_id": "BigCodeBench/928",
+      "entry_point": "task_func",
+      "libs": [
+        "collections",
+        "itertools",
+        "string"
+      ],
+      "requires": [],
+      "n_upstream_tests": 5,
+      "source_record_sha256": "dbb2f4bb004a1ab3d209a6efb21cbabd4e22ed04b687a462720d842b48426b21"
+    },
+    {
+      "harness_task": "A_coding/A7_bcb458_json_doubling_dataframe",
+      "bigcodebench_task_id": "BigCodeBench/458",
+      "entry_point": "task_func",
+      "libs": [
+        "pandas",
+        "re",
+        "json"
+      ],
+      "requires": [
+        "pandas"
+      ],
+      "n_upstream_tests": 5,
+      "source_record_sha256": "8795155df42f98dfe01e094a67aa89ad6579981b0a87accaf1ad38ed46531afb"
+    },
+    {
+      "harness_task": "A_coding/A8_bcb870_tuple_position_means",
+      "bigcodebench_task_id": "BigCodeBench/870",
+      "entry_point": "task_func",
+      "libs": [
+        "pandas",
+        "numpy",
+        "itertools"
+      ],
+      "requires": [
+        "numpy",
+        "pandas"
+      ],
+      "n_upstream_tests": 5,
+      "source_record_sha256": "735f2ff7a02da3e22ef74ea006585ecc4c2460b95108b5e3fd79b1673a33eed4"
+    },
+    {
+      "harness_task": "A_coding/A9_bcb513_fitness_column_stats",
+      "bigcodebench_task_id": "BigCodeBench/513",
+      "entry_point": "task_func",
+      "libs": [
+        "pandas",
+        "numpy",
+        "matplotlib"
+      ],
+      "requires": [
+        "matplotlib",
+        "numpy",
+        "pandas"
+      ],
+      "n_upstream_tests": 12,
+      "source_record_sha256": "5e7fe87e7cf01533b7dee14ba82be4c8e1fe61ebd0aa70a53efd291bd6e8a9b9"
+    },
+    {
+      "harness_task": "A_coding/A10_bcb1077_timezone_mean_gap",
+      "bigcodebench_task_id": "BigCodeBench/1077",
+      "entry_point": "task_func",
+      "libs": [
+        "pytz",
+        "datetime",
+        "numpy"
+      ],
+      "requires": [
+        "numpy",
+        "pytz"
+      ],
+      "n_upstream_tests": 6,
+      "source_record_sha256": "f68c31f9b4a2263e5fcfd49f3f142c701f8be16088676f5262eba11985e8221e"
+    },
+    {
+      "harness_task": "A_coding/A11_bcb969_minmax_cumsum",
+      "bigcodebench_task_id": "BigCodeBench/969",
+      "entry_point": "task_func",
+      "libs": [
+        "pandas",
+        "numpy",
+        "sklearn"
+      ],
+      "requires": [
+        "numpy",
+        "pandas",
+        "scikit-learn"
+      ],
+      "n_upstream_tests": 7,
+      "source_record_sha256": "c871c5b1f054f449445f4f684d23d7ad6300a845145d8acaf822114c174ad84b"
+    },
+    {
+      "harness_task": "A_coding/A12_bcb532_duplicate_histogram_norm",
+      "bigcodebench_task_id": "BigCodeBench/532",
+      "entry_point": "task_func",
+      "libs": [
+        "numpy",
+        "collections",
+        "matplotlib",
+        "scipy"
+      ],
+      "requires": [
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "scipy"
+      ],
+      "n_upstream_tests": 6,
+      "source_record_sha256": "002993064b80f14db4fa61b9e0cc6a293baafcd2a932437f603dc722d99e6549"
+    },
+    {
+      "harness_task": "A_coding/A13_bcb139_numeric_column_histograms",
+      "bigcodebench_task_id": "BigCodeBench/139",
+      "entry_point": "task_func",
+      "libs": [
+        "pandas",
+        "numpy",
+        "matplotlib"
+      ],
+      "requires": [
+        "matplotlib",
+        "numpy",
+        "pandas"
+      ],
+      "n_upstream_tests": 7,
+      "source_record_sha256": "a17569baab02ddc3dbbe8c55fc2c021920ddb2731101fedefa2b7e700509da41"
+    },
+    {
+      "harness_task": "A_coding/A14_bcb955_underscore_word_frequency",
+      "bigcodebench_task_id": "BigCodeBench/955",
+      "entry_point": "task_func",
+      "libs": [
+        "collections",
+        "numpy",
+        "matplotlib",
+        "re"
+      ],
+      "requires": [
+        "matplotlib",
+        "numpy"
+      ],
+      "n_upstream_tests": 10,
+      "source_record_sha256": "77002ca4d7fde4bd9f7c1b3480443e581e2eb46ee96e77b95b97657ef3859694"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "A9_bcb513_fitness_column_stats",
+  "suite": "A_coding",
+  "title": "Analyze a list of fitness data, calculate the sum, the mean, the minimum, the maximum... (BigCodeBench-Hard 513)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "matplotlib",
+      "numpy",
+      "pandas"
+    ]
+  }
+}

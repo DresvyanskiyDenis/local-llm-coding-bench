@@ -1,0 +1,18 @@
+{
+  "id": "A12_bcb532_duplicate_histogram_norm",
+  "suite": "A_coding",
+  "title": "Identify and count duplicate values in a DataFrame's 'value' column (BigCodeBench-Hard 532)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "matplotlib",
+      "numpy",
+      "pandas",
+      "scipy"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "A14_bcb955_underscore_word_frequency",
+  "suite": "A_coding",
+  "title": "Replace spaces in given words with underscores, then plots the frequency of each uniq... (BigCodeBench-Hard 955)",
+  "grader": "pytest",
+  "timeout_s": 900,
+  "est_ctx_tokens": 400,
+  "entrypoint": "src/solution.py",
+  "grade": {
+    "test_file": "grade/test_solution.py",
+    "requires": [
+      "matplotlib",
+      "numpy"
+    ]
+  }
+}
