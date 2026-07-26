@@ -116,6 +116,27 @@ def _():
     assert stripped is False
 
 
+@case("KNOWN GAP, documented not fixed: untagged reasoning preamble (no <think>/<reasoning> "
+      "wrapper at all) passes straight through unstripped -- see README 'Reasoning leak: a "
+      "second, untagged shape the stripper does not catch'")
+def _():
+    # Not a hypothetical: this is (truncated for brevity) the literal shape of 13/20 responses
+    # in the real opus/q4 gate run (eval/results/ifeval__opus__q4.json, work jsonl
+    # _work/opus__q4.jsonl) that hit finish_reason="length" -- e.g. key 1000, 5491 chars,
+    # never gets past this preamble before the token budget runs out. No <think> tag is ever
+    # emitted, so REASONING_TAG_RE / OPEN_REASONING_TAG_RE (both tag-anchored) never match, and
+    # the raw monologue is scored as if it were the model's answer -- the exact "silent
+    # corruption" scenario, just via a different textual shape than the one this stripper was
+    # built to catch. This test documents the CURRENT (undesired) behaviour so a future change
+    # to strip_reasoning() is provably a fix, not a guess -- it is not asserting this is correct.
+    msg = {"content": "Thinking Process:\n\n1. **Analyze the Request:**\n    * Topic: ...\n"
+                      "2. **Draft:** ...\n(never reaches an answer before max_tokens is hit)"}
+    content, stripped, had_field, truncated = strip_reasoning(msg, "auto")
+    assert content == msg["content"], repr(content)  # passes through verbatim -- the gap
+    assert stripped is False
+    assert truncated is False
+
+
 def main():
     failures = []
     for name, fn in CASES:

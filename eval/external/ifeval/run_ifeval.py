@@ -100,8 +100,31 @@ langdetect.DetectorFactory.seed = 0
 # time build_description returns) — that is upstream vendored behavior, left untouched.
 random.seed(0)
 
+# :8888 direct to the server, NOT :8899 (eval_proxy) — see README.md "Why this bypasses
+# eval_proxy" for the argument (this script sends all six NEUTRAL_SAMPLING keys itself, unlike
+# BigCodeBench's client which cannot).
 API_BASE_DEFAULT = "http://127.0.0.1:8888/v1"
-MAX_TOKENS = 1280
+# Raised from 1280 -> 4096 off the opus/q4 gate run (eval/results/ifeval__opus__q4.json):
+# n_finish_length was 15/20, and inspecting the actual work jsonl (_work/opus__q4.jsonl) shows
+# 13 of those 15 are NOT the tagged <think> truncation this file's stripper is built for — they
+# are untagged reasoning prose ("Thinking Process:\n\n1. **Analyze the Request:**...", up to
+# ~5600 chars) that never reaches an answer within 1280 tokens, so REASONING_TAG_RE/
+# OPEN_REASONING_TAG_RE (which only match <think>/<reasoning>/<thinking> tags) never fire and
+# the raw monologue is scored as the response verbatim — this is exactly the "silent
+# corruption" failure mode, just via a leak shape the current stripper cannot see (see
+# README.md "Reasoning leak: a second, untagged shape the stripper does not catch" — flagged,
+# not fixed here, it needs a cross-adapter decision with eval_proxy.py). Every one of the 5
+# prompts that finished with finish_reason="stop" in that same run had ZERO reasoning
+# preamble — clean answers only — suggesting more budget converts truncated-mid-monologue
+# responses into normal stops rather than the model rambling regardless of the cap. 4096 is
+# the port owner's own planned measurement point (per round-2 brief); this file adopts it as
+# the new default ahead of that data existing, on the strength of the above. UNRESOLVED
+# TRADE-OFF, stated not resolved: 4096 vs 1280 is up to ~3.2x more tokens *for prompts that
+# actually use the extra room* (short "stop" answers are unaffected) — the "s/prompt" rate
+# in the sizing table below was measured AT 1280 and does NOT hold at 4096; expect it to rise,
+# by an unmeasured amount, for exactly the config(s) that lean on reasoning. --sample size and
+# --max-tokens both eat into the same wall-clock budget; raising one tightens the other.
+MAX_TOKENS = 4096
 # §3.5 bite 3: an explicit neutral sampling block, sent verbatim on every request — never
 # relying on server-side per-model defaults (sampler-coder carries --presence-penalty 1.5,
 # sampler-qwen does not; that is a real and uneven distortion for an IF-following measurement).
@@ -193,9 +216,93 @@ def assert_serving_ready(base_url):
 # prompts (reuse evaluation_lib.read_prompt_list — do not reparse the jsonl ourselves)
 # ---------------------------------------------------------------------------
 
-def load_inputs(limit=None):
-    inputs = evaluation_lib.read_prompt_list(str(DATA_PATH))
-    return inputs[:limit] if limit else inputs
+# Fixed, checked-in constant — NOT re-derived from time/PID/etc. A --sample run must draw the
+# identical subset every time it's re-run, so a subsampled score is reproducible the same way
+# the full-suite score already is.
+DEFAULT_SAMPLE_SEED = 20260101
+
+
+def stratified_sample(inputs, n, seed=DEFAULT_SAMPLE_SEED, floor=1):
+    """Seeded, deterministic stratified subsample of size `n`.
+
+    Prompts carry MULTIPLE instruction ids (instruction_id_list), so exact stratification is a
+    set-cover problem, not a groupby. What this does instead, stated plainly rather than left to
+    be reverse-engineered from the code: group prompts by their PRIMARY id
+    (instruction_id_list[0]) only, then allocate a per-group quota that is (a) at least `floor`
+    prompts per group, capped by that group's actual size, when `n` is large enough to give every
+    group its floor (n >= number of groups), and (b) otherwise proportional to each group's share
+    of the full dataset, via largest-remainder apportionment so the quotas sum to exactly `n`
+    (modulo the rare case where every group is already at full capacity — see the bounded loop
+    below; under-allocation, if it ever happens, is reported via the realised counts, never
+    silently padded). Within a group, which prompts land in the quota is decided by a seeded
+    shuffle, so `--sample N` is exactly reproducible for a fixed seed and N.
+
+    A prompt's OTHER (non-primary) instruction ids still ride along into the subsample --
+    grouping/quota logic only looks at the primary id, but `by_instruction_type` accuracy in the
+    final result is computed over ALL instruction ids actually present in the sample, same as an
+    unsampled run. Returns (sampled_inputs_sorted_by_key, realised_n_by_primary_type).
+    """
+    if n >= len(inputs):
+        return list(inputs), {}
+
+    groups = {}
+    for inp in inputs:
+        primary = inp.instruction_id_list[0] if inp.instruction_id_list else "(none)"
+        groups.setdefault(primary, []).append(inp)
+
+    rng = random.Random(seed)
+    for g in groups.values():
+        rng.shuffle(g)  # deterministic per-seed shuffle; "first k" below is then a fair draw
+
+    order = sorted(groups)  # deterministic iteration order, independent of dict insertion order
+    sizes = {g: len(groups[g]) for g in order}
+    total = len(inputs)
+
+    quota = {g: 0 for g in order}
+    if n >= len(order):
+        for g in order:
+            quota[g] = min(floor, sizes[g])
+
+    remaining = n - sum(quota.values())
+    if remaining > 0:
+        shares = {g: max(0.0, (n * sizes[g] / total) - quota[g]) for g in order}
+        capacity = {g: sizes[g] - quota[g] for g in order}
+        for g in order:  # integer part of each group's proportional share first
+            add = min(int(shares[g]), capacity[g])
+            quota[g] += add
+            remaining -= add
+        # leftover distributed by largest fractional remainder, respecting remaining capacity
+        by_frac = sorted(order, key=lambda g: shares[g] - int(shares[g]), reverse=True)
+        i = 0
+        while remaining > 0 and i < len(by_frac) * 4:
+            g = by_frac[i % len(by_frac)]
+            if quota[g] < sizes[g]:
+                quota[g] += 1
+                remaining -= 1
+            i += 1
+        # if `remaining` is still > 0 here, every group is at capacity (n close to len(inputs))
+        # -- the realised total will be a few short of n; that's visible in the output, not hidden
+
+    sampled = [inp for g in order for inp in groups[g][:quota[g]]]
+    sampled.sort(key=lambda inp: inp.key)
+    return sampled, {g: quota[g] for g in order}
+
+
+def select_inputs(limit=None, sample=None, seed=DEFAULT_SAMPLE_SEED):
+    """Single entry point for both generation and scoring so they always see the identical
+    prompt set. --limit and --sample are mutually exclusive (enforced in main()); both None
+    returns the full 541-prompt reference set. Returns
+    (inputs, realised_by_type, seed_used, n_available) — n_available is the full reference
+    set size regardless of --limit/--sample, so callers can always report what fraction of
+    the suite a given run actually covered."""
+    inputs_all = evaluation_lib.read_prompt_list(str(DATA_PATH))
+    n_available = len(inputs_all)
+    if sample is not None:
+        sampled, realised = stratified_sample(inputs_all, sample, seed)
+        return sampled, realised, seed, n_available
+    if limit is not None:
+        return inputs_all[:limit], {}, None, n_available
+    return inputs_all, {}, None, n_available
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +364,7 @@ def generate_one(client, base_url, key, model_id, prompt, strip_mode, max_tokens
     return content, stripped, had_reasoning, truncated, choice.get("finish_reason")
 
 
-def run_generation(config, base_url, key, limit, strip_mode, max_tokens):
+def run_generation(config, base_url, key, limit, sample, seed, strip_mode, max_tokens):
     """Resumable per prompt: each successful/errored attempt is appended immediately, so a
     crash or usage-limit stop loses at most one in-flight prompt — same skip-if-done
     discipline as orchestrate.py's per-unit result files."""
@@ -274,7 +381,7 @@ def run_generation(config, base_url, key, limit, strip_mode, max_tokens):
             except (json.JSONDecodeError, KeyError):
                 continue
 
-    inputs = load_inputs(limit)
+    inputs, _realised, _seed_used, _n_avail = select_inputs(limit, sample, seed)
     pending = [inp for inp in inputs if inp.key not in done_keys]
     label = f"{config['model']}/{config['quant']}"
     if not pending:
@@ -373,8 +480,9 @@ def by_instruction_type(outputs):
     return {iid: round(corrects[iid] / totals[iid], 4) for iid in sorted(totals)}
 
 
-def score_and_build(work_path, model, quant, base_url, strip_mode, max_tokens, limit, diag):
-    inputs_all = load_inputs(limit)
+def score_and_build(work_path, model, quant, base_url, strip_mode, max_tokens, limit, sample,
+                     seed, diag):
+    inputs_all, realised_by_type, seed_used, n_available = select_inputs(limit, sample, seed)
     prompt_to_response = evaluation_lib.read_prompt_to_response_dict(str(work_path))
     inputs = [inp for inp in inputs_all if inp.prompt in prompt_to_response]
     if not inputs:
@@ -389,7 +497,20 @@ def score_and_build(work_path, model, quant, base_url, strip_mode, max_tokens, l
     return {
         "benchmark": "ifeval",
         "model": model, "quant": quant,
+        # n_prompts is the size of THIS run's selected set (full/--limit/--sample); n_prompts_
+        # available is always the full 541-prompt reference set, so a subsampled score can
+        # never be misread as a full-suite one just by looking at n_prompts alone.
         "n_prompts": len(inputs_all),
+        "n_prompts_available": n_available,
+        "sampled": sample is not None,
+        "sample_requested_n": sample,
+        "sample_seed": seed_used,
+        # Per-primary-instruction-type realised count from stratified_sample — NOT accuracy
+        # (that's by_instruction_type below). A type left at n=1 or n=2 by the allocator makes
+        # that type's by_instruction_type entry noise; this is how a reader sees that instead
+        # of inferring it from a suspicious accuracy number. Empty ({}) for a --limit or
+        # full-suite run (no stratification took place).
+        "sample_realised_n_by_type": realised_by_type,
         "n_scored": len(inputs),
         "n_errors": diag["n_errors"],
         # Load-bearing, not decoration (same argument as BCB's n_env_errors): a thinking
@@ -436,13 +557,15 @@ def run_one_config(config, args, log_dir):
 
     try:
         work_path = run_generation(config, args.base_url, orchestrate_api_key(),
-                                    args.limit, args.strip_reasoning, args.max_tokens)
+                                    args.limit, args.sample, args.seed,
+                                    args.strip_reasoning, args.max_tokens)
     finally:
         unload(proc)
 
     diag = diagnostics(work_path)
     result = score_and_build(work_path, config["model"], config["quant"], args.base_url,
-                              args.strip_reasoning, args.max_tokens, args.limit, diag)
+                              args.strip_reasoning, args.max_tokens, args.limit, args.sample,
+                              args.seed, diag)
     result["wall_clock_s"] = round(time.monotonic() - t0, 1)
     atomic_write_json(out_path, result)
     print(f"  [ifeval] {label}: prompt_level_strict={result['prompt_level_strict']} "
@@ -456,7 +579,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", default=None, help="filter configs.json entries by 'model' field")
-    ap.add_argument("--limit", type=int, default=None, help="truncate the 541-prompt list (dev runs)")
+    ap.add_argument("--limit", type=int, default=None,
+                     help="truncate the 541-prompt list to the first N (dev runs; NOT stratified — "
+                          "use --sample for a suite-representative subset)")
+    ap.add_argument("--sample", type=int, default=None,
+                     help="seeded stratified subsample of size N over the primary instruction-type "
+                          "distribution (see stratified_sample() docstring for the allocation rule); "
+                          "mutually exclusive with --limit")
+    ap.add_argument("--seed", type=int, default=DEFAULT_SAMPLE_SEED,
+                     help=f"RNG seed for --sample's within-group shuffle (default {DEFAULT_SAMPLE_SEED}, "
+                          "fixed so a given N reproduces the identical subset every run)")
     ap.add_argument("--out", default=None,
                     help="override the output path; only valid when exactly one config is selected")
     ap.add_argument("--base-url", default=API_BASE_DEFAULT)
@@ -470,6 +602,11 @@ def main():
     ap.add_argument("--quant", default=None, help="quant label for --score-only output naming")
     args = ap.parse_args()
 
+    if args.limit is not None and args.sample is not None:
+        sys.exit("--limit and --sample are mutually exclusive: --limit truncates the raw list "
+                  "(dev smoke test, NOT representative of the type distribution), --sample draws "
+                  "a stratified subset (representative, for a real scored run). Pick one.")
+
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     if args.score_only:
@@ -480,7 +617,8 @@ def main():
         diag = diagnostics(work_path)
         t0 = time.monotonic()
         result = score_and_build(work_path, args.model, args.quant, args.base_url,
-                                  args.strip_reasoning, args.max_tokens, args.limit, diag)
+                                  args.strip_reasoning, args.max_tokens, args.limit, args.sample,
+                                  args.seed, diag)
         result["wall_clock_s"] = round(time.monotonic() - t0, 2)
         atomic_write_json(out_path, result)
         print(f"[ifeval] score-only wrote {out_path}")

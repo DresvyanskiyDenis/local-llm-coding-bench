@@ -71,7 +71,8 @@ uv run eval/external/ifeval/bootstrap_nltk.py
   defaults: `temperature=0, top_p=1, top_k=0, min_p=0, presence_penalty=0, frequency_penalty=0`
   (IMPLEMENTATION_PLAN.md §3.5 bite 3 — per-model server defaults differ across this fleet and a
   penalty of 1.5 on an IF-following measurement would be a real, uneven distortion).
-- `max_tokens=1280`.
+- `max_tokens=4096` (raised from the phase-1 default of `1280` — see "Why the cap moved to
+  4096" below; this is unresolved-but-adopted, not a settled measurement).
 - `--strip-reasoning {auto,on,off}` (default `auto`): strips `<think>…</think>` /
   `<reasoning>…</reasoning>` / `<thinking>…</thinking>` out of `choices[0].message.content`.
   **The leak is confirmed, not hypothetical** — `eval/external/reasoning_leak_probe.json` (a
@@ -94,7 +95,14 @@ uv run eval/external/ifeval/bootstrap_nltk.py
   - Unit coverage: `uv run eval/external/ifeval/test_strip_reasoning.py` — well-formed pair,
     unclosed tag (→ empty), no tags (→ unchanged), tags mid-response, `off` mode, `auto`≡`on`,
     a closed pair followed by a second unclosed tag (keeps the real answer, drops the truncated
-    tail), and a separate `reasoning_content` field (recorded, not required to strip anything).
+    tail), a separate `reasoning_content` field (recorded, not required to strip anything), and
+    the untagged-leak gap documented below (asserts current, imperfect behaviour — not a claim
+    it is correct).
+  - **Verdict on the specific question this test suite exists to answer**: a response cut off
+    mid-`<think>` (unclosed tag, `finish_reason: "length"`) strips to **EMPTY**, not to the
+    partial reasoning text — confirmed by `test_strip_reasoning.py`'s second case, 8/8 (now 9/9)
+    passing. That mechanism is correct. See "Reasoning leak: a second, untagged shape" below for
+    a real, live gap in a *different* leak shape it does not cover.
 - Serve lifecycle (`serve_config` / `unload`) is **imported from `harness/orchestrate.py`**, not
   reimplemented. Requires `eval/harness/ops/serving_mode.sh eval` to have handed `:8888` to the
   eval harness first — `run_ifeval.py` refuses to launch (aborts loudly, names the script to run)
@@ -104,12 +112,143 @@ uv run eval/external/ifeval/bootstrap_nltk.py
   in-flight prompt. `n_errors` in the result JSON counts request failures — without it, a
   transport error is indistinguishable from a model genuinely failing every instruction on that
   prompt (the same argument BigCodeBench's `n_env_errors` makes).
+- **Endpoint is `http://127.0.0.1:8888/v1` — the server directly, NOT `:8899` (`eval_proxy.py`)**.
+  See "Endpoint: why this bypasses `eval_proxy`" below for why that's a deliberate, documented
+  choice and not an oversight.
+
+### Reasoning leak: a second, untagged shape the stripper does not catch
+
+The gate run (`eval/results/ifeval__opus__q4.json`, `opus/q4`, 20 prompts) showed
+`n_finish_length: 15` next to `n_empty_after_strip: 0` — every truncated response came back
+non-empty. Inspecting the actual generations (`_work/opus__q4.jsonl`, gitignored) shows why: for
+this config (`hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF`), **13 of the
+15 length-truncated responses are unterminated reasoning prose with no `<think>` tag at all** —
+e.g. key 1000 (5491 chars) opens `"Thinking Process:\n\n1. **Analyze the Request:**\n    *
+Topic: ..."` and never reaches an answer before the (then-)1280-token budget runs out.
+`REASONING_TAG_RE`/`OPEN_REASONING_TAG_RE` are both tag-anchored (`<think>`/`<reasoning>`/
+`<thinking>`) and never fire on this shape, so **the raw monologue passes straight through and
+is scored as the model's answer** — silent corruption of the 15 affected prompts'
+`prompt_level_strict`/`inst_level_strict`, via a leak shape the phase-0 probe (qwen4, tagged
+`<think>`) never surfaced. `test_strip_reasoning.py`'s last case reproduces this exact string and
+asserts the current (undesired) pass-through behaviour, so it is provable rather than inferred.
+
+Two things worth knowing before drawing conclusions from this:
+- All 5 responses in that same run that finished with `finish_reason: "stop"` had **zero**
+  reasoning preamble — clean answers only. That's suggestive (more token budget may turn
+  truncated-mid-monologue responses into ordinary clean stops rather than the model rambling
+  regardless of cap) but is not proof; it's one config, 20 prompts.
+- `eval_proxy.py` (`:8899`, owned by the port owner / used by BigCodeBench) has the **identical**
+  gap — its `strip_reasoning()` is also tag-anchored (`<think>`, harmony `<|channel|>analysis`)
+  only. This is not an IFEval-only problem; any config that leaks reasoning as untagged prose is
+  unprotected on both paths. Flagging this for the team, not fixing `eval_proxy.py` here — it's
+  out of this round's scope (owned by another agent) and a fix needs to be consistent across
+  both files, not adapter-local.
+
+**Not fixed in this change.** Inventing a detection heuristic for untagged prose (e.g. matching
+on `"Thinking Process:"` or similar headings) risks false-positives against legitimately
+structured answers (the vendored checker scores headings, numbered lists, and markdown
+structure directly — `detectable_format:*`, `length_constraints:*` — so a heuristic strip could
+itself corrupt scoring for a different set of prompts). This needs a decision, not a guess:
+either a per-model-family leak probe (like the phase-0 `<think>` one) before trusting any
+untagged-reasoning config's numbers, or a cross-file (`run_ifeval.py` + `eval_proxy.py`) design
+for it. Treat `opus/q4`'s `prompt_level_strict: 0.25` from the gate run as **not yet
+trustworthy** until this is resolved.
+
+### Why the cap moved to 1280 → 4096
+
+Same gate run, same evidence: 13/20 prompts spent the *entire* 1280-token budget on reasoning
+prose and never reached an answer — `prompt_level_strict: 0.25` may be measuring "did the model
+finish thinking in time" more than instruction-following. `4096` is the value the team already
+planned to measure at (round-2 brief); this file adopts it as the new default ahead of that
+measurement existing, on the strength of the above (key 1005 in the same run got to `## Final
+Answer` at 2592 chars and was *still* cut off — clearly reasoning-budget-starved, not
+content-starved).
+
+**Trade-off, stated not resolved**: the 19.4 s/prompt rate the sizing table below is built on
+was measured **at `max_tokens=1280`**. It does not hold at 4096 — expect it to rise, by an
+unmeasured amount, specifically for reasoning-heavy configs (short, clean-stop answers are
+unaffected either way). `--sample` size and `--max-tokens` compete for the same wall-clock
+budget: raising the cap to fix truncation makes the "44 h doesn't fit" problem below worse, not
+better. Pick a sample size *after* deciding the cap, or re-measure s/prompt at 4096 before
+trusting the table's hour figures.
+
+### Endpoint: why this bypasses `eval_proxy`
+
+`generation.endpoint` is `http://127.0.0.1:8888/v1` — the llama-server directly, not
+`eval_proxy.py` on `:8899`. `eval_proxy` exists because BigCodeBench's client
+(`gen/util/openai_request.py`, `make_auto_request`) hardcodes `top_p=0.95` and accepts only a
+handful of sampling kwargs, so the neutral-sampling override has to happen somewhere the client
+can't reach: the proxy. **That constraint does not apply here.** `run_ifeval.py` builds its own
+request body (`generate_one()`) and sends all six `NEUTRAL_SAMPLING` keys itself, verbatim, on
+every request — there is no client-side limitation for a proxy to work around. Going through
+`:8899` anyway would add a hop, a second reasoning-stripper implementation to keep in sync with
+this file's (see the untagged-leak gap above — the two already disagree on nothing new, but
+they'd need to stay in lockstep by hand), and no behavioural benefit. Bypassing it is a
+deliberate, model-serving-layer decision, not an oversight, and only holds for adapters that set
+every sampling parameter themselves — it does not generalize to BigCodeBench.
+
+## Sampling: `--sample` / `--seed` (for a night that fits)
+
+Measured: 388 s / 20 prompts = **19.4 s/prompt** (`eval/results/ifeval__opus__q4.json`,
+`wall_clock_s: 388.0`, at the phase-1 `max_tokens=1280` — see the trade-off note above, this
+does not hold at 4096). The full suite: 541 × 19.4 s ≈ 2.91 h/config, × 15 configs ≈ **43.7 h** —
+does not fit a night.
+
+`--sample N` draws a **seeded, deterministic stratified subsample** of size N instead of the
+full 541 (mutually exclusive with `--limit`, which just truncates the raw list — not
+representative of the type distribution, dev-smoke-test only).
+
+**What "stratified" means here, stated plainly rather than left in the code** (full detail:
+`stratified_sample()` docstring in `run_ifeval.py`). Prompts carry *multiple* instruction ids
+(`instruction_id_list`), so exact stratification is a set-cover problem, not a groupby. This
+adapter groups prompts by their **primary id** (`instruction_id_list[0]`) only — 25 groups —
+then allocates a per-group quota: a floor of 1 prompt per group (when N is large enough to give
+every group one), then the remainder by each group's proportional share of the full 541,
+apportioned by largest-remainder rounding so quotas sum to exactly N. Which prompts land in a
+group's quota is decided by a seeded shuffle (`random.Random(seed)`, default seed
+`20260101`, fixed and checked in — **not** derived from time/PID), so a given `--sample N`
+reproduces the identical subset on every run. Non-primary instruction ids still ride along —
+`by_instruction_type` in the output is computed over every instruction id actually present in
+the sample, same as an unsampled run; only the *grouping/quota* logic looks at the primary id
+alone.
+
+**The result JSON always carries `n_prompts` alongside `n_prompts_available`** (541, the full
+reference set, regardless of `--sample`/`--limit`), plus `sampled` (bool), `sample_requested_n`,
+`sample_seed`, and `sample_realised_n_by_type` (the **realised count per primary instruction
+type** — not its accuracy, that's still `by_instruction_type`) — so a subsampled score can never
+be mistaken for a full-suite one, and a type left thin (e.g. `n=2`) is visible in the JSON
+rather than something a reader has to infer from a suspicious `by_instruction_type` number.
+
+### Sizing table (arithmetic only — pick N, don't infer it)
+
+All rows at the **measured** 19.4 s/prompt (`max_tokens=1280` — re-measure if the cap moves to
+4096, see above). `min`/`max` per-type are the *actual* realised counts from
+`stratified_sample()` against the real 541-prompt set, default seed, not hand-estimated:
+
+| N | per-config | × 15 configs | min n / type | max n / type |
+|---:|---:|---:|---:|---:|
+| 541 (full suite) | 2.91 h (174.9 min) | **43.7 h** | — (no stratification, everything) | — |
+| 250 | 1.35 h (80.8 min) | 20.2 h | 4 | 18 |
+| **148** | 0.80 h (47.9 min) | **12.0 h** | 2 | 11 |
+| **99** | 0.53 h (32.0 min) | **8.0 h** | 2 | 7 |
+
+`148` and `99` are the exact solutions to `N × 19.4 s × 15 = 12 h` / `8 h` respectively (rounded
+to the nearest whole prompt: 148.45 → 148, 98.97 → 99) — not round numbers chosen for looks.
+Both land with a `min n/type` of 2: several of the 25 instruction types (the smaller groups,
+e.g. `detectable_format:multiple_sections` at 9 prompts total) will have only 2 realised
+examples in either size — visible via `sample_realised_n_by_type` in the output, not hidden.
+**Denis picks the size; this table is the arithmetic, not the decision.**
 
 ## Repro commands
 
 ```bash
-# Live acceptance (one config, 20 prompts) — needs `serving_mode.sh eval` run first
+# Live acceptance (one config, 20 prompts, NOT stratified — dev smoke test) — needs
+# `serving_mode.sh eval` run first
 uv run eval/external/ifeval/run_ifeval.py --only opus --limit 20
+
+# Stratified subsample sized for a night that fits (see the sizing table above for the choice
+# of N) — deterministic, same subset every run at the same N/seed
+uv run eval/external/ifeval/run_ifeval.py --only opus --sample 148
 
 # Full 541-prompt run for one model (both quants, since --only filters on "model" not "quant")
 uv run eval/external/ifeval/run_ifeval.py --only opus
@@ -120,11 +259,13 @@ uv run eval/external/ifeval/run_ifeval.py
 # Offline re-score from a saved generations file — no server, no model, ever re-runnable
 uv run eval/external/ifeval/run_ifeval.py \
   --score-only eval/external/ifeval/fixtures/synthetic_responses.jsonl \
-  --model synthetic --quant test --out /tmp/ifeval_synthetic_test.json
+  --model synthetic --quant test --out "$TMPDIR/ifeval_synthetic_test.json"
 ```
 
 Output → `eval/results/ifeval__<model>__<quant>.json` (schema: see `run_ifeval.py`'s
-`score_and_build()` or IMPLEMENTATION_PLAN.md §5).
+`score_and_build()` or IMPLEMENTATION_PLAN.md §5). Round-2 additions to that schema:
+`n_prompts_available`, `sampled`, `sample_requested_n`, `sample_seed`,
+`sample_realised_n_by_type` (see "Sampling" above).
 
 ## Verification fixture (no model needed)
 
