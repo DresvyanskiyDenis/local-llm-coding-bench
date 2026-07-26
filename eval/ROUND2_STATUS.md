@@ -132,13 +132,31 @@ _pending — Phase 2 gate in flight._
    is being measured to size the effect. Raising the cap and shrinking the sample pull against each
    other — that trade is item 1.
 
-3. **Pairwise judge budget — now measured, not estimated.** One `claude -p` judge call costs
-   **$0.070** (11,465 cache-creation tokens per invocation; the system prompt is re-cached every
-   time). The full D1+D2 round-robin is 210 pairs ≈ **$14.70**. Unattended spend is capped at a
-   reduced but *real* pass (~30 pairs across both tasks, ≈ $2.10) so the order-effect and
-   Bradley-Terry paths run on genuine judgements; the remaining ~180 pairs await your authorisation.
-   The result cache makes the remainder resumable without re-spending. Any partial Bradley-Terry fit
-   is labelled partial wherever it appears.
+3. **Pairwise judge budget — measured in the unit that actually binds.** The judge runs on a Pro
+   subscription, so the `total_cost_usd` that `claude -p` reports ($0.070/call) is a notional API
+   price, not money anyone pays. The scarce resource is the **usage limit**, and the honest measure
+   is tokens:
+
+   | per judge call | tokens |
+   |---|---|
+   | cache creation | 11,465 |
+   | cache read | 3,289 |
+   | output | ~11 |
+
+   The full 210-pair round-robin is therefore ≈ **2.4 M cache-creation tokens**. That is the number
+   to weigh against a 5 h/7 d limit — and it is not hypothetical: this session hit its limit twice
+   in one night, which is what killed the first judge run and every other agent with it.
+
+   **The `cache_creation` ≫ `cache_read` ratio is itself a defect.** Each pair is a fresh `claude -p`
+   process, so the system prompt is re-cached from scratch every single call instead of being read
+   back. A judge that holds one process open, or otherwise shares a cacheable prefix across pairs,
+   would collapse most of that 2.4 M. Worth fixing before authorising the full round-robin —
+   otherwise the remaining ~180 pairs cost far more limit than the work justifies.
+
+   Unattended spend stays capped at a reduced but *real* pass (~30 pairs across both tasks) so the
+   order-effect and Bradley-Terry paths run on genuine judgements; the remaining pairs await your
+   authorisation. The cache makes the remainder resumable. Any partial Bradley-Terry fit is labelled
+   partial wherever it appears.
 
 4. **Round-1 answers are now tracked — keep it that way.** See the blocker below. The recovered
    answers live in `eval/results/round1_answers/`, which is **in git on purpose**. If a future
