@@ -1,0 +1,270 @@
+{
+  "checks": [
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "key.json plants zero bugs",
+      "ok": true,
+      "number": "0 bugs",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "recall is literal JSON null (clean)",
+      "ok": true,
+      "number": "recall=null",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "precision inverts correctly (clean)",
+      "ok": true,
+      "number": "precision=1.0, fpr=0.0",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "recall is literal JSON null (hallucinated)",
+      "ok": true,
+      "number": "recall=null",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "precision inverts correctly (hallucinated)",
+      "ok": true,
+      "number": "precision=0.0, fpr=1.0",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B6_control_nobugs",
+      "check": "digest.py mean drops null (would drag if 0.0)",
+      "ok": true,
+      "number": "null->0.834 vs 0.0->0.556",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B3_concurrency_ledger",
+      "check": "verify_bugs.py: declared vs demonstrated",
+      "ok": true,
+      "number": "3/3 demonstrated",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B3_concurrency_ledger",
+      "check": "key.json line ranges inside the file",
+      "ok": true,
+      "number": "3/3 in range",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B3_concurrency_ledger",
+      "check": "review_grader round-trip (competent answer)",
+      "ok": true,
+      "number": "recall=1.0, precision=1.0, halluc=0",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B4_io_encoding",
+      "check": "verify_bugs.py: declared vs demonstrated",
+      "ok": true,
+      "number": "3/3 demonstrated",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B4_io_encoding",
+      "check": "key.json line ranges inside the file",
+      "ok": true,
+      "number": "3/3 in range",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B4_io_encoding",
+      "check": "review_grader round-trip (competent answer)",
+      "ok": true,
+      "number": "recall=1.0, precision=1.0, halluc=0",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B5_temporal_money",
+      "check": "verify_bugs.py: declared vs demonstrated",
+      "ok": true,
+      "number": "3/3 demonstrated",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B5_temporal_money",
+      "check": "key.json line ranges inside the file",
+      "ok": true,
+      "number": "3/3 in range",
+      "note": ""
+    },
+    {
+      "area": "B",
+      "task": "B5_temporal_money",
+      "check": "review_grader round-trip (competent answer)",
+      "ok": true,
+      "number": "recall=1.0, precision=1.0, halluc=0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C3_scope_creep",
+      "check": "PASS case clean, changed lines vs FREE_LINES=15",
+      "ok": true,
+      "number": "8 lines (limit 15), surgical=1.0, pytest=1.0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C3_scope_creep",
+      "check": "FAIL case: trap fires",
+      "ok": true,
+      "number": "acted_on=True, surgical=0.7, pytest=1.0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C4_already_done",
+      "check": "PASS case clean, changed lines vs FREE_LINES=15",
+      "ok": true,
+      "number": "6 lines (limit 15), surgical=1.0, pytest=1.0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C4_already_done",
+      "check": "FAIL case: trap fires",
+      "ok": true,
+      "number": "acted_on=True, surgical=0.7, pytest=1.0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C4_already_done",
+      "check": "EMPTY diff reads as restraint on diff side",
+      "ok": true,
+      "number": "changed=0, surgical=1.0 (NOT a failure to respond)",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C4_already_done",
+      "check": "EMPTY diff separated from correct answer by pytest half",
+      "ok": true,
+      "number": "pytest=0.583 (7/12) vs 1.0 for the correct edit",
+      "note": "diff_grader ALONE cannot tell them apart (both surgical=1.0)"
+    },
+    {
+      "area": "C",
+      "task": "C5_contradiction",
+      "check": "PASS case clean, changed lines vs FREE_LINES=15",
+      "ok": true,
+      "number": "6 lines (limit 15), surgical=1.0, pytest=1.0",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C5_contradiction",
+      "check": "FAIL case: trap fires",
+      "ok": true,
+      "number": "acted_on=True, surgical=0.7, pytest=0.917",
+      "note": ""
+    },
+    {
+      "area": "C",
+      "task": "C5_contradiction",
+      "check": "contradiction signal: named vs silent (documented false-negative)",
+      "ok": true,
+      "number": "named=True, silent=False (both code-correct: acted_on=False)",
+      "note": "keyword match only -- cannot tell 'right for the right reason, unstated' from 'never noticed'"
+    },
+    {
+      "area": "D",
+      "task": "longctx_core",
+      "check": "assembled core.md sha256 matches manifest",
+      "ok": true,
+      "number": "8703a2d4bd7f7051...",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "manifest.core",
+      "check": "on-disk core source sha256s",
+      "ok": true,
+      "number": "3/3 OK",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "manifest.core",
+      "check": "core.md == sources joined by blank line",
+      "ok": true,
+      "number": "36396 == 36396 bytes",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "manifest.padding",
+      "check": "fetched padding sha256s (re-fetched from pinned commits)",
+      "ok": true,
+      "number": "49/49 OK",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "longctx_manifest",
+      "check": "total sha256 refs verified",
+      "ok": true,
+      "number": "53/53",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "D3/D4/D5",
+      "check": "core present in full in all three corpora",
+      "ok": true,
+      "number": "D3=610/610, D4=610/610, D5=610/610",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "D3/D4/D5",
+      "check": "extracted core byte-identical across the ladder",
+      "ok": true,
+      "number": "92009e4649a9b08d... x3, fragments=[14, 19, 19]",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "D3/D4/D5",
+      "check": "PROMPT/rubric/key_points identical + match longctx_shared",
+      "ok": true,
+      "number": "3/3 identical",
+      "note": ""
+    },
+    {
+      "area": "D",
+      "task": "D3/D4/D5",
+      "check": "rep count held constant across the ladder",
+      "ok": true,
+      "number": "D3=[1]; D4=[1]; D5=[1]",
+      "note": "D3 falls through to orchestrate.py default_reps=[1,2,3]; D4/D5 pinned to 1"
+    }
+  ],
+  "passed": 33,
+  "total": 33
+}

@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import pathlib
+import sys
 
 _HERE = pathlib.Path(__file__).parent
 
@@ -24,6 +25,12 @@ def _load_solution():
     path = _REPO / "src" / "shipping.py"
     spec = importlib.util.spec_from_file_location("shipping", path)
     module = importlib.util.module_from_spec(spec)
+    # Register BEFORE exec_module: @dataclass resolves its own class via
+    # sys.modules[cls.__module__], so a solution that uses a dataclass raises
+    # AttributeError at import time if the module was never registered. This
+    # task's noise comment invites exactly that refactor, so without this the
+    # trap scores as import_error (0.0) instead of an honest surgical penalty.
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 

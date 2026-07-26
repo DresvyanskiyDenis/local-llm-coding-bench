@@ -6,6 +6,7 @@
   "timeout_s": 1800,
   "est_ctx_tokens": 30000,
   "entrypoint": null,
+  "reps": [1],
   "grade": {
     "key_points_file": "grade/key_points.json",
     "rubric_file": "grade/rubric.md"
