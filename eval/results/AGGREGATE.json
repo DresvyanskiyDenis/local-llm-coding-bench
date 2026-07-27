@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_ts": "2026-07-26T20:44:11.060884+00:00",
+  "generated_ts": "2026-07-27T06:10:55.654762+00:00",
   "round": "1",
   "task_set": [
     "A1_events_sessionize",
@@ -76,7 +76,7 @@
     "a_coding": "Unweighted mean of grade.pass_rate over every A_coding unit of the config in the selected task set (12 units in round 1 = 4 tasks x 3 reps), rounded to 3 dp.",
     "c_edit": "Unweighted mean of grade.pytest.pass_rate over C_edit units -- the pytest pass-rate, NOT diff.surgical_score (methodology.md \u00a73 Normalization: 'A/C report pytest pass-rate'). surgical_score is reported as a diagnostic column only.",
     "b_recall": "Unweighted mean of grade.recall over B_review units.",
-    "tool_malformed_pct": "sum(driver.tool_calls.malformed) / sum(driver.tool_calls.total) over ALL units of the config in the selected task set (all four suites, not just A), then ROUNDED TO THE NEAREST WHOLE PERCENT. The rounding is required to reproduce the published table: with the raw rate, ornith computes 88.42 against a published 88.3. methodology.md does not state the rounding -- this is an inferred convention.",
+    "tool_malformed_pct": "sum(driver.tool_calls.malformed) / sum(driver.tool_calls.total) over ALL units of the config in the selected task set (all four suites, not just A), then ROUNDED TO THE NEAREST WHOLE PERCENT. The rounding is required to reproduce the published table: with the raw rate, ornith computes 88.42 against a published 88.3. methodology.md does not state the rounding -- this is an inferred convention. OPEN QUESTION (see eval/ROUND2_STATUS.md 'Needs Denis'), behavior as-implemented TODAY: this is RECOMPUTED FROM SCRATCH per --round selection, never the round-1 value carried forward. --round 1 sums malformed/total over round-1-task units only; --round 2 sums over round-2-task units only (round-1 units EXCLUDED from that sum); --round all sums over round-1 AND round-2 units COMBINED. A config's tool_malformed_pct can therefore differ across --round 1 / 2 / all even with zero new units of its own, because the denominator changes. Whether this is the right policy (vs. e.g. holding the round-1 rate fixed and only reporting round-2-task tool reliability as a separate column) is undecided and belongs to Denis, not to this script.",
     "d_text": "Mean 0-10 judge score from DTEXT_JUDGED.json, POOLED ACROSS BOTH QUANTS OF THE MODEL (12 judged units), divided by 10. methodology.md says the composite uses the q4 quant, but the D term in the published table is model-level: per-config D gives opus 85.8 against a published 86.6. Per-config D is reported alongside as d_text_config and drives the diagnostic composite_config_d column.",
     "decode": "Median decode_tps over all cold_samples + warm_samples of every point in probe__<model>__<quant>.json (same reduction as digest.py), divided by 137. Not task-scoped, so it is identical for --round 1 / 2 / all. gemma-q4's 137.1 makes its term marginally exceed 1.0; the formula is applied verbatim, uncapped.",
     "leaderboard_quant": "q4 for every multi-quant model EXCEPT katdev, which reproduces only from iq4. qwopus (q5), ornith (q4) and gpt-oss (mxfp4) are single-quant.",

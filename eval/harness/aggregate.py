@@ -256,7 +256,16 @@ CONVENTIONS: dict[str, str] = {
         "config in the selected task set (all four suites, not just A), then ROUNDED TO THE "
         "NEAREST WHOLE PERCENT. The rounding is required to reproduce the published table: with "
         "the raw rate, ornith computes 88.42 against a published 88.3. methodology.md does not "
-        "state the rounding -- this is an inferred convention."
+        "state the rounding -- this is an inferred convention. "
+        "OPEN QUESTION (see eval/ROUND2_STATUS.md 'Needs Denis'), behavior as-implemented TODAY: "
+        "this is RECOMPUTED FROM SCRATCH per --round selection, never the round-1 value carried "
+        "forward. --round 1 sums malformed/total over round-1-task units only; --round 2 sums "
+        "over round-2-task units only (round-1 units EXCLUDED from that sum); --round all sums "
+        "over round-1 AND round-2 units COMBINED. A config's tool_malformed_pct can therefore "
+        "differ across --round 1 / 2 / all even with zero new units of its own, because the "
+        "denominator changes. Whether this is the right policy (vs. e.g. holding the round-1 "
+        "rate fixed and only reporting round-2-task tool reliability as a separate column) is "
+        "undecided and belongs to Denis, not to this script."
     ),
     "d_text": (
         "Mean 0-10 judge score from DTEXT_JUDGED.json, POOLED ACROSS BOTH QUANTS OF THE MODEL "
