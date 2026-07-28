@@ -279,6 +279,81 @@ those digest + rollup inputs, not by a single committed scoring binary — the f
 reproducible spec, and every input is a deterministic digest field, so the numbers are auditable and
 re-derivable from `eval/results/`.
 
+### 5d. Reading a mid-run table — `‡`, `⚠`, and what the fraction does not count
+
+`aggregate.py` recomputes the composite from the result files alone and renders a markdown table
+next to the JSON:
+
+```bash
+uv run eval/harness/aggregate.py --round all --out eval/results/AGGREGATE__roundall.md
+```
+
+The JSON lands at `eval/results/AGGREGATE__roundall.json` — the `__round<N>` suffix means
+`--round 2` / `--round all` never overwrite the committed round-1 `AGGREGATE.json`. `--out` has no
+such protection: it overwrites exactly the path you name, so name it to match the round you asked
+for. Pointing a `--round all` run at `AGGREGATE.md` replaces the published round-1 table with a
+31-task one, silently. Run this before the matrix has finished and you will hit two
+markers. Both are deliberate; the argument for them is `docs/methodology.md` §6.12, this is how to
+read them.
+
+**`‡` means "measured over less than the whole thing" — but *which* whole thing depends on the
+column.** In the `cov` column it is tasks: `cov` is how many tasks of the selected task set this
+config has units for, rendered as a fraction with a trailing `‡` when it is short — both composites
+on that row were then computed from exactly those tasks and no others, out of the 31 that
+`--round all` defines. In the **BCB-Hard** and **IFEval** columns the same marker counts
+items of the *benchmark's* full set instead: `0.300 ‡10/148` is a BigCodeBench pass@1 over 10 of the
+148 hard tasks, and `0.250 ‡20/541` is an IFEval score over 20 of 541 prompts (both are the real
+cells in the committed `eval/results/AGGREGATE.md`, from a gate probe). Same symbol, two
+denominators — do not read a `‡` in the external columns as a statement about your task coverage,
+and never compare two `‡` numbers to each other unless the fractions match: two differently-sized
+slices of the same benchmark are not the same measurement.
+
+**`⚠` is strictly stronger than `‡`, and it is the one you must not average away.** `‡` says small
+sample; `⚠` says the sample it *does* cover is contaminated. It is raised on an IFEval cell when
+`n_finish_length > 0` — responses that hit the token ceiling without finishing and were scored
+anyway. In the committed table `opus__q4` reads `0.250 ‡20/541 ⚠` because 15 of its 20 scored
+prompts truncated (`eval/results/ifeval__opus__q4.json`, `n_finish_length: 15`), and for a config
+whose reasoning arrives without a `<think>` tag the stripper cannot fire, so that monologue was
+graded as the answer. A `‡` number gets better when you run more items. A `⚠` number does not — more
+items of the same shape just produce more contaminated ones. The harness only detects this; nothing
+is re-scored, and the underlying leak is an open decision (`eval/ROUND2_STATUS.md`, "Needs Denis"
+#0).
+
+**The trap: `cov` counts tasks, not reps.** A task counts as covered the moment **one** unit file
+for it parsed. Reps are not part of the fraction. So a config that has finished exactly one of the
+three reps on every task reads `cov 31/31` with no `‡` at all — a complete-looking row whose every
+axis is a mean over a third of the intended samples, and §6 below is explicit that a single pass is
+noise. This is the failure mode most likely to bite you mid-run, because the marker you are trained
+to look for is *absent*. `cov` answers "did this task produce anything?", never "did it produce
+enough?". Cross-check rep depth separately — count the `__rep<N>.json` files per task under
+`eval/results/` — before treating an unmarked row as settled. The same caveat applies in the other
+direction: a row can be `‡` on `cov` and still have full 3-rep depth on the tasks it does cover.
+
+**Script against the JSON, not the markdown.** Every marker has a machine-readable original, so
+there is no reason to parse a table. Each config row carries `coverage` with `tasks_with_units`,
+`tasks_in_set`, `fraction`, a `complete` boolean, a `complete`/`PARTIAL` `status`, the
+`missing_tasks` ids and a `by_suite` breakdown, plus a one-line `composite_coverage` sentence
+sitting next to the composite it qualifies. The external lane lives under
+`external_axes_unweighted[<axis>][<model>__<quant>]` with `n_measured`, `n_full_set`,
+`denominator_unit`, `measured_field`, `full_set_source`, `status`, the artifact's `ts` and
+`source_file`, and — for IFEval — `truncation_contamination`. Gate `coverage.complete` and
+`status == "complete"` in your own tooling; the markdown is for humans.
+
+**`UNKNOWN` is not a variant of `complete`.** If an artifact carries no count field for what it
+scored, the status is `UNKNOWN` and the cell renders `‡?/148` rather than being assumed to be a full
+run. `full_set_source` tells you where the denominator itself came from, which is not always the
+artifact: BigCodeBench's writes no available-count field at all, so 148 is a fallback constant, and
+an IFEval artifact written before `n_prompts_available` existed (`schema_version: 1` — the committed
+`ifeval__opus__q4.json` is one) falls back to 541 and says so. Treat `UNKNOWN` as *not* a full-set
+score until it is re-run with a denominator on record.
+
+**What to do about it: read partial rows, do not quote them.** A partial number is genuinely useful
+while the matrix is running — it tells you the pipeline is producing sane values and lets you catch a
+broken config early. It is not a result. Do not put a `‡` or `⚠` row in a comparison table, a
+README, or an issue comment without its fraction attached, and do not compare it against the
+published leaderboard (§6): those numbers are complete-coverage, round-1-weighted, full-3-rep
+figures. Wait for `cov n/n` with no marker, confirm rep depth, and only then compare.
+
 ---
 
 ## 6. Compare to the published results
