@@ -267,8 +267,8 @@
       "check": "live repo copy of docs/replication.md",
       "status": "NOTE",
       "ok": null,
-      "number": "unchanged since pin",
-      "note": "15517 bytes, still identical to the snapshot"
+      "number": "15517 -> 21254 bytes",
+      "note": "docs/replication.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid"
     },
     {
       "area": "D",

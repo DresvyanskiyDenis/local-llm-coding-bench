@@ -39,7 +39,7 @@ Verdicts: **PASS**/**FAIL** are graded. **SKIP** is a check that deliberately di
 | D | `manifest.core` | core.md == sources joined by blank line | PASS | 36396 == 36396 bytes |
 | D | `manifest.core` | live repo copy of docs/methodology.md<br>_docs/methodology.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid_ | NOTE | 14017 -> 40908 bytes |
 | D | `manifest.core` | live repo copy of docs/leaderboard.md<br>_6860 bytes, still identical to the snapshot_ | NOTE | unchanged since pin |
-| D | `manifest.core` | live repo copy of docs/replication.md<br>_15517 bytes, still identical to the snapshot_ | NOTE | unchanged since pin |
+| D | `manifest.core` | live repo copy of docs/replication.md<br>_docs/replication.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid_ | NOTE | 15517 -> 21254 bytes |
 | D | `manifest.padding` | fetched padding sha256s (kind=fetched, NOT on disk)<br>_these 49 refs have no on-disk copy, so only a re-fetch can verify them; NOT verified by this run. To verify: `uv run eval/harness/ops/verify_phase4.py` (no --offline, needs network)_ | SKIP | 0/49 not attempted (--offline) |
 | D | `longctx_manifest` | sha256 refs verified (of those verifiable offline)<br>_the on-disk corpus is fully verified; the fetched padding refs are not_ | PASS | 4/4 offline-verifiable; 49 of 53 not attempted |
 | D | `D3/D4/D5` | core present in full in all three corpora | PASS | D3=610/610, D4=610/610, D5=610/610 |
