@@ -114,13 +114,12 @@ def main():
         result = None
         duration_s = None
         try:
-            proc = subprocess.run(
+            subprocess.run(
                 cmd, cwd=grading_dir, env=full_env, capture_output=True, text=True,
                 timeout=PYTEST_TIMEOUT_S,
             )
         except subprocess.TimeoutExpired:
             failure_class = "timeout"
-            proc = None
 
         if failure_class is None:
             if junit_path.exists():

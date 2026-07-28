@@ -5,10 +5,10 @@
 """review_grader.py — semi-objective planted-bug recall/precision verdict for B_review,
 per CONTRACT.md §2.
 
-Mandated answer.txt format (verified against the landed B1/B2 PROMPT.md, identical
-wording in both, 2026-07-12): a single fenced ```json code block containing a JSON array
-of objects with exactly the keys file/line/description -- no bullet fallback, no
-alternate key names (location/line_end). Findings are always single-line.
+Mandated answer.txt format (verified against all six landed B PROMPT.md, B1-B6 --
+identical wording in all, 2026-07-28): a single fenced ```json code block containing a
+JSON array of objects with exactly the keys file/line/description -- no bullet fallback,
+no alternate key names (location/line_end). Findings are always single-line.
 
 Matching against grade/key.json (schema confirmed live: {"bugs": [{id, location:
 {file, line_start, line_end}, function, description, synonyms:[...], severity}, ...]}):
@@ -75,10 +75,10 @@ def paths_match(a, b):
     return pa == pb
 
 
-def lines_overlap(f_start, f_end, k_start, k_end, tol=0):
+def lines_overlap(f_start, f_end, k_start, k_end):
     if None in (f_start, f_end, k_start, k_end):
         return False
-    return f_start - tol <= k_end and k_start - tol <= f_end
+    return f_start <= k_end and k_start <= f_end
 
 
 def main():

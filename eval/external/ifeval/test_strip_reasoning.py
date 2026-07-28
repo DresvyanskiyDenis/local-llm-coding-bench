@@ -137,6 +137,52 @@ def _():
     assert truncated is False
 
 
+@case("orphan closing </think> with no opening tag -> monologue removed, answer kept")
+def _():
+    # Observed shape (eval_proxy.py's ORPHAN_CLOSE note): the chat template opens the reasoning
+    # block in the prompt prefix, so only the CLOSING tag is ever echoed. A paired-tag-only
+    # regex leaves the whole monologue in place and IFEval scores it as the answer.
+    msg = {"content": "Let me count the words first, then pick a format.</think>Here are 3 bullets."}
+    content, stripped, had_field, truncated = strip_reasoning(msg, "auto")
+    assert content == "Here are 3 bullets.", repr(content)
+    assert stripped is True
+    assert truncated is False
+
+
+@case("COST OF THE ORPHAN-CLOSE SHAPE: ordinary prose containing a bare </think> loses "
+      "everything before it -- IFEval scores free text, so this is a real false positive")
+def _():
+    # ORPHAN_CLOSE_RE is \A-anchored and eats up to the first bare closing tag. In the BCB lane
+    # sanitize()+ast.parse bounds the damage; here the stripped text IS the graded answer, so a
+    # prompt asking the model to discuss reasoning tags gets its opening sentence deleted. This
+    # is the price of catching the observed template-opened shape, pinned so it is a known,
+    # measured trade-off rather than a surprise found in a score.
+    msg = {"content": "Some models emit </think> to close a reasoning block. Never nest them."}
+    content, stripped, had_field, truncated = strip_reasoning(msg, "auto")
+    assert content == "to close a reasoning block. Never nest them.", repr(content)
+    assert stripped is True
+    assert truncated is False
+
+
+@case("gpt-oss harmony analysis channel -> analysis removed; a TRUNCATED harmony monologue "
+      "matches nothing and is NOT flagged truncated (documented gap)")
+def _():
+    closed = {"content": "<|channel|>analysis<|message|>weighing the constraints<|end|>"
+                          "The answer is 408."}
+    content, stripped, had_field, truncated = strip_reasoning(closed, "auto")
+    assert content == "The answer is 408.", repr(content)
+    assert stripped is True
+
+    # No <|end|>, no final-channel marker: the token cap cut the monologue mid-sentence. Nothing
+    # matches, so the monologue is scored verbatim AND `truncated` stays False -- `truncated` is
+    # bound to the unclosed-<think> branch only. Most likely gpt-oss failure at max_tokens 4096.
+    cut = {"content": "<|channel|>analysis<|message|>weighing the constraints, first I should"}
+    content, stripped, had_field, truncated = strip_reasoning(cut, "auto")
+    assert content == cut["content"], repr(content)
+    assert stripped is False
+    assert truncated is False
+
+
 def main():
     failures = []
     for name, fn in CASES:

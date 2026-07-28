@@ -120,7 +120,11 @@ class Proxy(BaseHTTPRequestHandler):
     # class attrs, set from main()
     upstream = "http://127.0.0.1:8888"
     log_path = None
-    do_strip = False
+    # main() overwrites this before serving, so this is only a placeholder — but it is the
+    # placeholder for a MEASURED bias control, so its wrong value fails silently: anything that
+    # reaches Proxy without main() (an import, a future embed) would score reasoning monologues
+    # as answers and nothing in the output would say so. Placeholder points at the safe state.
+    do_strip = True
 
     protocol_version = "HTTP/1.1"
 
@@ -260,7 +264,13 @@ class Proxy(BaseHTTPRequestHandler):
         """SSE pass-through. With --strip-reasoning, delta.content goes through a
         two-state machine (inside/outside a think block) that carries a partial-tag
         buffer across chunks — verified necessary: llama-server splits `<think>` into
-        `<thi` + `nk>` across two deltas, so a per-chunk match never fires."""
+        `<thi` + `nk>` across two deltas, so a per-chunk match never fires.
+
+        LIMIT: this path increments NEITHER STATS["requests"] NOR STATS["stripped"], so the
+        shutdown SUMMARY describes the non-streaming path only. Nothing streams through the
+        proxy today (run_bcb is its only consumer and BCB's client is non-streaming; run_ifeval
+        goes direct to :8888), so the counters were left alone rather than changed untestably —
+        add a streaming consumer and a busy night reports as zero requests and zero strips."""
         state = {"in_think": False, "pending": ""}
         with httpx.Client(timeout=httpx.Timeout(600.0, connect=15.0)) as client:
             with client.stream(method, url, headers=headers, content=raw or None) as r:

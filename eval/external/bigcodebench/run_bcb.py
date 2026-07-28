@@ -166,22 +166,10 @@ def atomic_write_json(path: Path, obj) -> None:
 def assert_not_llama_swap(port: int = 8888) -> None:
     """Abort if :8888 belongs to llama-swap (IMPLEMENTATION_PLAN.md §3.5 bite 1).
 
-    Uses orchestrate's helper when present so there is one definition of "is this llama-swap";
-    falls back to a local lsof+ps check otherwise, because this assert must exist here
-    regardless of what has landed in orchestrate.py.
+    Delegates to orchestrate so there is exactly ONE definition of "is this llama-swap" in the
+    repo: a second, drifting copy here could disagree and let a run kill OpenCode's daily fleet.
     """
-    listeners = None
-    helper = getattr(orchestrate, "llama_swap_listeners", None)
-    if callable(helper):
-        listeners = helper(port)
-    else:
-        listeners = []
-        for pid in orchestrate.lsof_listen_pids(port):
-            cmd = subprocess.run(
-                ["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True
-            ).stdout.strip()
-            if "llama-swap" in cmd:
-                listeners.append((pid, cmd))
+    listeners = orchestrate.llama_swap_listeners(port)
     if listeners:
         pid, cmd = listeners[0]
         raise SystemExit(
@@ -695,7 +683,7 @@ def untagged_reasoning_stats(samples: list[dict]) -> dict:
         if preamble:
             preamble_ids.append(tid)
             max_preamble = max(max_preamble, len(preamble))
-        low = raw[: fence if fence > 0 else 400].lower()
+        low = (raw[:fence] if fence >= 0 else raw[:400]).lower()
         if any(m in low for m in UNTAGGED_REASONING_MARKERS):
             marker_ids.append(tid)
     affected = sorted(set(preamble_ids) | set(unfenced_prose_ids))
@@ -1078,10 +1066,8 @@ def run_config(config: dict, args, upstream_host: str, proxy_url: str) -> dict |
             orchestrate.unload(proc)
 
     # Evaluation is CPU-only and must NOT hold the GPU/RAM: the model is already unloaded.
-    stats_pre = summarize(samples)
-    ok, eval_s, eval_cmd = run_evaluate(
-        samples, stats_pre["task_ids"], bool(args.limit), False
-    )
+    task_ids = sorted({s["task_id"] for s in read_samples(samples) if "task_id" in s})
+    ok, eval_s, eval_cmd = run_evaluate(samples, task_ids, bool(args.limit), False)
     if not ok:
         log(f"  WARNING {tag}: evaluate failed; writing what artifacts exist")
 
@@ -1223,6 +1209,9 @@ def main() -> int:
         preflight(args.dry_run, args.base_url)
 
     configs = json.loads(Path(args.configs).read_text())
+    # The closing projection must scale with the fleet, not with --only: `selected` is narrowed by
+    # the flag, so quoting it would under-report the full-fleet cost of the run being planned.
+    n_fleet = sum(1 for c in configs if not c.get("broken"))
     selected = []
     for c in configs:
         if c.get("broken"):
@@ -1265,8 +1254,8 @@ def main() -> int:
         avg = sum(per_task) / len(per_task)
         log(
             f"  mean {avg:.1f}s/task -> a full {N_HARD_TASKS}-task config ~= "
-            f"{avg * N_HARD_TASKS / 60:.0f} min; 15 configs ~= "
-            f"{avg * N_HARD_TASKS * 15 / 3600:.1f} h"
+            f"{avg * N_HARD_TASKS / 60:.0f} min; {n_fleet} configs ~= "
+            f"{avg * N_HARD_TASKS * n_fleet / 3600:.1f} h"
         )
     return 0
 

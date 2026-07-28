@@ -40,7 +40,7 @@ EVAL_DIR = HARNESS_DIR.parent
 sys.path.insert(0, str(HARNESS_DIR))
 
 from orchestrate import (  # noqa: E402  (path must be set first)
-    api_key, load_configs, serve_config, unload,
+    api_key, load_configs, now_iso, serve_config, unload,
 )
 
 PROMPT = "What is 17 * 24? Think it through."
@@ -125,11 +125,6 @@ def derive_verdict(results):
     }
 
 
-def now_iso():
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--annotate", action="store_true",
@@ -184,7 +179,7 @@ def main():
         results["probes"].append(
             ask(f"http://127.0.0.1:{args.proxy_port}/v1", cfg["opencode_model_id"],
                 "via_eval_proxy", args.max_tokens))
-        results["proxy_log"] = [json.loads(l) for l in proxy_log.read_text().splitlines() if l.strip()]
+        results["proxy_log"] = [json.loads(line) for line in proxy_log.read_text().splitlines() if line.strip()]
         print("\n===== eval_proxy override ledger =====")
         for line in results["proxy_log"]:
             print(json.dumps(line))

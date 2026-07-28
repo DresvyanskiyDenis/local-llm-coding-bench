@@ -105,9 +105,12 @@ def main():
             actual = run_grader("review_grader.py", task_dir, run_dir, out_path)
             expected = json.loads((EXPECTED / expected_rel).read_text())
             tag = "[backward-compat]" if run_dir in BACKWARD_COMPAT_RUN_DIRS else "[new-path]"
-            if run_dir in BACKWARD_COMPAT_RUN_DIRS:
-                backward_compat_checked += 1
             if actual == expected:
+                # Counted only on a match: incrementing above this branch made a MISMATCH
+                # still print "8/8 ... byte-identically", the sentence ROUND2_STATUS.md
+                # quotes verbatim as the round-1 comparability proof.
+                if run_dir in BACKWARD_COMPAT_RUN_DIRS:
+                    backward_compat_checked += 1
                 print(f"PASS {tag} review {task_dir} / {run_dir}")
             else:
                 failures.append((f"review {task_dir} / {run_dir}", expected, actual))
@@ -117,9 +120,9 @@ def main():
             actual = run_grader("diff_grader.py", task_dir, run_dir, out_path)
             expected = json.loads((EXPECTED / expected_rel).read_text())
             tag = "[backward-compat]" if run_dir in BACKWARD_COMPAT_RUN_DIRS else "[new-path]"
-            if run_dir in BACKWARD_COMPAT_RUN_DIRS:
-                backward_compat_checked += 1
             if actual == expected:
+                if run_dir in BACKWARD_COMPAT_RUN_DIRS:
+                    backward_compat_checked += 1
                 print(f"PASS {tag} diff {task_dir} / {run_dir}")
             else:
                 failures.append((f"diff {task_dir} / {run_dir}", expected, actual))

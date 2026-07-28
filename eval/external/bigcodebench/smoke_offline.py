@@ -43,14 +43,6 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 WORK = HERE / "_work" / "smoke"
-NEUTRAL_KEYS = (
-    "temperature",
-    "top_p",
-    "top_k",
-    "min_p",
-    "presence_penalty",
-    "frequency_penalty",
-)
 NEUTRAL_EXPECTED = {
     "temperature": 0,
     "top_p": 1,

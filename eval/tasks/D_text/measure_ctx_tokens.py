@@ -123,7 +123,12 @@ def count(base: str, method, text: str, model: str | None, api_key: str | None) 
     n = usage.get("prompt_tokens")
     if not isinstance(n, int):
         sys.exit(f"FATAL: no usage.prompt_tokens in the response: {usage!r}")
-    # the chat template wraps the text; report the raw delta honestly
+    # `n` includes the chat template's wrapper around the corpus, and it is deliberately NOT
+    # subtracted: the wrapper is per-model and its size would have to be guessed, which would
+    # bake an invented constant into every delta_vs_target_pct and therefore into the re-size
+    # decision this script exists to make. A number that is a few tokens high but traceable to
+    # the server beats a corrected one that is not. main() prints the matching NOTE so the
+    # reader knows this path — not /tokenize — produced the count.
     return n
 
 
@@ -146,7 +151,7 @@ def main() -> int:
     targets = {}
     if REPORT_PATH.is_file():
         report = json.loads(REPORT_PATH.read_text())
-        targets = {t: v for t, v in report.get("tasks", {}).items()}
+        targets = report.get("tasks", {})
 
     rows = {}
     for task in TASKS:

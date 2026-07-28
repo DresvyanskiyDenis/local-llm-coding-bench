@@ -13,9 +13,10 @@ nobody here wrote rank it?
 This is the deliverable of round 2. It computes Spearman rank correlation (rho, p, n) between
 each round-1 internal axis -- including the composite -- and each externally-authored ranking:
 
-  * bcb_hard_pass@1        from eval/results/bcb__<model>__<quant>.json
-  * ifeval_prompt_strict   from eval/results/ifeval__<model>__<quant>.json
-  * dtext_bt_strength      from eval/results/DTEXT_PAIRWISE.json (pairwise-vs-absolute D)
+  * bcb_hard_pass@1        from AGGREGATE.json['external_axes_unweighted'] (coverage metadata included)
+  * ifeval_prompt_strict   from AGGREGATE.json['external_axes_unweighted'] (coverage metadata included)
+  * dtext_bt_strength_D1/D2  from eval/results/DTEXT_PAIRWISE.json, one axis PER TASK and pooled
+    with nothing — see pairwise_axis() for why the two tasks' scales are not commensurable
 
 Most of those files do not exist yet. The script therefore reports "n=0, nothing to correlate
 yet" cleanly and stays correct the day they land -- it is written to be run now and trusted
@@ -30,7 +31,7 @@ conservative (hits + 1) / (draws + 1) estimator. The asymptotic t-approximation 
 alongside, labelled, for reference only. Which method was used is recorded per correlation in
 CORRELATION.json as `p_method`.
 
-COMPARABILITY. Both caveats below are written into CORRELATION.json, not left in someone's head
+COMPARABILITY. The caveats below are written into CORRELATION.json, not left in someone's head
 -- a rank correlation against a public leaderboard is easy to over-read.
 """
 
@@ -49,7 +50,7 @@ import numpy as np
 HARNESS = Path(__file__).resolve().parent
 RESULTS = HARNESS.parent / "results"
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DECODE_NORM_TPS = 137.0
 D_TEXT_SCALE = 10.0
 
@@ -295,28 +296,71 @@ def internal_axes(agg: dict, which_configs: str) -> dict[str, dict[str, float | 
     return axes
 
 
-def external_axis(results: Path, pattern: str, key: str) -> dict[str, float]:
-    out: dict[str, float] = {}
-    for p in sorted(results.glob(pattern)):
-        try:
-            d = json.loads(p.read_text())
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            print(f"warn: unparseable {p.name}: {e}", file=sys.stderr)
-            continue
-        model, quant, v = d.get("model"), d.get("quant"), d.get(key)
-        if model and quant and isinstance(v, (int, float)) and not isinstance(v, bool):
-            out[f"{model}__{quant}"] = float(v)
-    return out
+def external_axis(agg: dict, axis: str) -> tuple[dict[str, float], str | None]:
+    """One external axis + its coverage caveat, read from AGGREGATE.json.
+
+    NOT re-globbed from bcb__*/ifeval__*: aggregate.load_external() already parsed exactly those
+    files and computed what a bare float cannot carry — n_measured/n_full_set, PARTIAL status, and
+    IFEval truncation contamination. Re-reading the raw files here would silently discard all of
+    it (in the shipped artifact ifeval opus__q4 is 20/541 PARTIAL and contamination-flagged).
+
+    PARTIAL entries are KEPT, deliberately. Excluding them looks safer and is not: if round 2
+    sweeps all 15 configs over one --limit slice — the obvious cheap sweep — every entry is
+    PARTIAL and the whole correlation set collapses to n=0. What actually breaks a rank
+    correlation is a HETEROGENEOUS n_measured, since slice scores over DIFFERENT slices are not
+    comparable even by rank, so that is what the caveat reports.
+    """
+    entries = (agg.get("external_axes_unweighted") or {}).get(axis) or {}
+    # `value` is aggregate's _num(...) and may be None. Without this filter a None reaches
+    # np.asarray(..., dtype=float) as nan and rho comes back nan with no complaint — the `shared`
+    # filter downstream screens only the INTERNAL value, never this one.
+    vals = {
+        k: float(e["value"])
+        for k, e in entries.items()
+        if isinstance(e, dict) and e.get("value") is not None
+    }
+    if not vals:
+        return (
+            {},
+            f"No configs under AGGREGATE.json['external_axes_unweighted']['{axis}'] yet.",
+        )
+
+    caveats: list[str] = []
+    measured = sorted({str(entries[k].get("n_measured")) for k in vals})
+    if len(measured) > 1:
+        caveats.append(
+            f"n_measured is heterogeneous across configs ({', '.join(measured)}): "
+            "these are slice scores over DIFFERENT slices and are not comparable, rank included."
+        )
+    flagged = sorted(
+        k
+        for k in vals
+        if (entries[k].get("truncation_contamination") or {}).get("flagged")
+    )
+    if flagged:
+        caveats.append(
+            f"truncation-contaminated (scored prose that hit the token ceiling): {', '.join(flagged)}."
+        )
+    return vals, " ".join(caveats) or None
 
 
-def pairwise_axis(results: Path) -> tuple[dict[str, float], str | None]:
-    """Bradley-Terry strengths from DTEXT_PAIRWISE.json, produced by pairwise_judge.py.
+DTEXT_BT_PATH = "tasks.<task>.bt_strengths.<config>.strength"
+# pairwise_judge.py fits a separate Bradley-Terry model per D_text task (its ROUND1_D_TASKS).
+# Mirrored here so an absent DTEXT_PAIRWISE.json still reports both axes at n=0 with a reason,
+# instead of making the deliverable disappear from the report entirely.
+DTEXT_BT_TASKS = ("D1_summarize_mtp", "D2_dedup_approaches")
 
-    That file is authored by a separate script, so the exact key names are read tolerantly and a
-    parse failure is reported rather than raised. Accepted shapes:
-      {"bradley_terry": [{"model":..,"quant":..,"strength":..}, ...]}
-      {"configs": {"opus__q4": {"strength": ..}, ...}}
-      {"strengths": {"opus__q4": 1.23, ...}}
+
+def pairwise_axis(results: Path) -> tuple[dict[str, dict[str, float]], str | None]:
+    """Per-task Bradley-Terry strengths from DTEXT_PAIRWISE.json, as {task: {config: strength}}.
+
+    ONE AXIS PER TASK, pooled with nothing. OBSERVED 2026-07-28 on the shipped artifact: the two
+    tasks are not on a common scale (D1's top strength is 552.96, D2's 495.73) because
+    pairwise_judge's per-task normalisation skips whenever any strength is exactly 0 — and both
+    tasks have one (D1 katdev__q4, D2 glm__q4). Averaging across tasks would therefore
+    average incommensurable numbers, and a geometric mean raises `math domain error` outright on
+    those zeros. Which pooling rule is correct is an OPEN OWNER DECISION; until it is made,
+    pooling nothing is the only honest reading.
     """
     p = results / "DTEXT_PAIRWISE.json"
     if not p.exists():
@@ -326,41 +370,24 @@ def pairwise_axis(results: Path) -> tuple[dict[str, float], str | None]:
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
         return {}, f"DTEXT_PAIRWISE.json unparseable: {e}"
 
-    strength_keys = ("strength", "bt_strength", "bt", "score", "rating")
-
-    def _val(obj) -> float | None:
-        if isinstance(obj, (int, float)) and not isinstance(obj, bool):
-            return float(obj)
-        if isinstance(obj, dict):
-            for k in strength_keys:
-                v = obj.get(k)
-                if isinstance(v, (int, float)) and not isinstance(v, bool):
-                    return float(v)
-        return None
-
-    out: dict[str, float] = {}
-    for container in ("bradley_terry", "configs", "strengths", "ranking", "results"):
-        node = d.get(container)
-        if isinstance(node, list):
-            for item in node:
-                if not isinstance(item, dict):
-                    continue
-                m, q = item.get("model"), item.get("quant")
-                key = f"{m}__{q}" if m and q else item.get("config") or item.get("key")
-                v = _val(item)
-                if key and v is not None:
-                    out[key] = v
-        elif isinstance(node, dict):
-            for key, item in node.items():
-                v = _val(item)
-                if v is not None:
-                    out[key] = v
-        if out:
-            return out, f"parsed from DTEXT_PAIRWISE.json['{container}']"
-    return {}, (
-        "DTEXT_PAIRWISE.json present but no Bradley-Terry strengths found under any of "
-        "bradley_terry / configs / strengths / ranking / results — check the schema."
-    )
+    out: dict[str, dict[str, float]] = {}
+    for task, node in (d.get("tasks") or {}).items():
+        strengths = (node or {}).get("bt_strengths") or {}
+        vals = {
+            cfg: float(e["strength"])
+            for cfg, e in strengths.items()
+            if isinstance(e, dict)
+            and isinstance(e.get("strength"), (int, float))
+            and not isinstance(e["strength"], bool)
+        }
+        if vals:
+            out[task] = vals
+    if not out:
+        return {}, (
+            f"DTEXT_PAIRWISE.json present but no strengths at `{DTEXT_BT_PATH}` — "
+            "check the schema against pairwise_judge.py."
+        )
+    return out, None
 
 
 # --------------------------------------------------------------------------------------------
@@ -372,30 +399,43 @@ def correlate(results: Path, which_configs: str, agg_path: Path, **spear_kw) -> 
     agg = json.loads(agg_path.read_text())
     internal = internal_axes(agg, which_configs)
 
-    bcb = external_axis(results, "bcb__*.json", "pass@1")
-    ife = external_axis(results, "ifeval__*.json", "prompt_level_strict")
-    bt, bt_note = pairwise_axis(results)
+    bcb, bcb_note = external_axis(agg, "bcb_hard_pass@1")
+    ife, ife_note = external_axis(agg, "ifeval_prompt_strict")
+    bt_tasks, bt_note = pairwise_axis(results)
 
-    externals = {
+    # `aggregate_generated_ts` rides along with the two AGGREGATE-sourced axes because sourcing
+    # them from AGGREGATE.json means a stale aggregate now silently supplies stale external
+    # numbers. Aborting on that would kill legitimate runs on a timing technicality, so this is
+    # the deliberately weaker choice: make the staleness visible inside the artifact instead.
+    externals: dict[str, dict] = {
         "bcb_hard_pass@1": {
             "values": bcb,
-            "source": "eval/results/bcb__<model>__<quant>.json",
+            "source": "eval/results/AGGREGATE.json['external_axes_unweighted']['bcb_hard_pass@1']",
             "authored_by": "BigCodeBench 0.2.5 (external), relaxed-pin local executor",
-            "note": None if bcb else "No bcb__*.json result files on disk yet.",
+            "aggregate_generated_ts": agg.get("generated_ts"),
+            "note": bcb_note,
         },
         "ifeval_prompt_strict": {
             "values": ife,
-            "source": "eval/results/ifeval__<model>__<quant>.json",
+            "source": "eval/results/AGGREGATE.json['external_axes_unweighted']['ifeval_prompt_strict']",
             "authored_by": "google-research instruction_following_eval (external, vendored unmodified)",
-            "note": None if ife else "No ifeval__*.json result files on disk yet.",
-        },
-        "dtext_bt_strength": {
-            "values": bt,
-            "source": "eval/results/DTEXT_PAIRWISE.json",
-            "authored_by": "pairwise judge (Bradley-Terry over judged D_text pairs)",
-            "note": bt_note,
+            "aggregate_generated_ts": agg.get("generated_ts"),
+            "note": ife_note,
         },
     }
+    for task in sorted(set(DTEXT_BT_TASKS) | set(bt_tasks)):
+        vals = bt_tasks.get(task, {})
+        externals[f"dtext_bt_strength_{task.split('_')[0]}"] = {
+            "values": vals,
+            "source": f"eval/results/DTEXT_PAIRWISE.json → tasks.{task}.bt_strengths.<config>.strength",
+            "authored_by": "pairwise judge (Bradley-Terry over judged D_text pairs)",
+            "note": None
+            if vals
+            else (
+                bt_note
+                or f"no strengths under `tasks.{task}.bt_strengths` in DTEXT_PAIRWISE.json."
+            ),
+        }
 
     correlations = []
     for ext_name, ext in externals.items():
@@ -405,27 +445,15 @@ def correlate(results: Path, which_configs: str, agg_path: Path, **spear_kw) -> 
             shared = sorted(k for k in ev if iv.get(k) is not None)
             xs = [iv[k] for k in shared]
             ys = [ev[k] for k in shared]
-            res = (
-                spearman(xs, ys, **spear_kw)
-                if len(shared) >= 3
-                else {
-                    "n": len(shared),
-                    "rho": None,
-                    "p_value": None,
-                    "p_method": None,
-                    "p_method_short": None,
-                    "p_asymptotic_t": None,
-                    "n_ties_x": None,
-                    "n_ties_y": None,
-                    "note": (
-                        f"n={len(shared)}: nothing to correlate yet — "
-                        + (
-                            ext["note"]
-                            or "not enough configs covered by both rankings."
-                        )
-                    ),
-                }
-            )
+            # spearman() owns the n<3 guard — it returns before .mean(), rankdata and the
+            # permutation loop, so n=0/1/2 is safe. A second hand-built copy of that row here
+            # had already drifted from it (it emitted n_ties_* as None where spearman() emits
+            # ints); only the note, which needs this axis's reason, is overridden.
+            res = spearman(xs, ys, **spear_kw)
+            if res["n"] < 3:
+                res["note"] = f"n={res['n']}: nothing to correlate yet — " + (
+                    ext["note"] or "not enough configs covered by both rankings."
+                )
             correlations.append(
                 {
                     "internal_axis": axis,
@@ -449,6 +477,9 @@ def correlate(results: Path, which_configs: str, agg_path: Path, **spear_kw) -> 
             "p_value": "Two-sided permutation test on |rho|; exact when n! <= max_exact, else "
             "Monte-Carlo with a fixed seed. See p_method per correlation.",
             "p_asymptotic_t": "Student-t approximation, REFERENCE ONLY — unreliable at n <= 15.",
+            "n_ties_x / n_ties_y": "n minus the number of DISTINCT values on that axis — neither "
+            "tie pairs nor tie groups (e.g. d_text has 7 distinct values across the 15 round-1 "
+            "configs, so n_ties_x = 8).",
         },
         "caveats": CAVEATS,
         "external_rankings": {
