@@ -10,12 +10,51 @@ Gate definitions are [`IMPLEMENTATION_PLAN.md` §9](IMPLEMENTATION_PLAN.md#9-exe
 | # | Phase | Gate | Status |
 |---|---|---|---|
 | 0 | vendor + venvs + env_health + reasoning leak | sha256s recorded, `env_health.json` written, leak answer recorded | ✅ green |
-| 1 | IFEval adapter | `--limit 20` scores one config, four metrics populated | 🟠 runs, but two numbers need Denis — see below |
-| 2 | BigCodeBench adapter | `--limit 10` gives `pass@1` with `n_env_errors == 0`, wall-clock recorded | 🟡 in flight |
+| 1 | IFEval adapter | `--limit 20` scores one config, four metrics populated | ✅ green — but the number it produced is **not trustworthy**, see below |
+| 2 | BigCodeBench adapter | `--limit 10` gives `pass@1` with `n_env_errors == 0`, wall-clock recorded | ✅ green — on the third attempt |
 | 3 | grader changes | round-1 fixtures re-grade byte-identically; control returns `recall: null` | ✅ green |
-| 5 | pairwise judge | runs end-to-end on round-1 D answers; order effect estimated | 🟠 unblocked by a recovery — see below |
+| 5 | pairwise judge | runs end-to-end on round-1 D answers; order effect estimated | ✅ green — 76 real judgements, order effect corrected |
 | 6 | `aggregate.py` | reproduces the **existing** `docs/leaderboard.md` composite from result files | ✅ green |
-| 4 | 11 new task dirs | each B bug proven by `verify_bugs.py`; C ref solutions pass; D token counts measured | 🟡 in flight |
+| 4 | 21 new task dirs | each B bug proven by `verify_bugs.py`; C ref solutions pass; D token counts measured | ✅ green — 33/33 checks |
+
+All seven phases are green. That is a statement about the **pipeline**, not about the numbers it has
+produced so far: Phase 1's gate ran and scored, and the score it produced is contaminated by the
+untagged reasoning leak below. A green gate means the machinery works, not that the measurement is
+believable — those are different claims and this document keeps them apart.
+
+### Phase 1 — green, with a caveat that outweighs it
+
+`--limit 20` scores `opus/q4` end to end: strict/loose at both prompt and instruction level, four
+metrics populated, `n_errors: 0`. `--sample N` adds seeded stratified subsampling by primary
+instruction type, and `n_prompts` vs `n_prompts_available` is recorded so a subsampled score can
+never be read as a full-set one.
+
+The number it produced — `prompt_level_strict: 0.25` — should not be quoted. See
+"A second leak shape" below: 13 of the 15 truncated responses are untagged reasoning prose scored as
+if they were answers.
+
+### Phase 2 — green, with evidence, on the third attempt
+
+The first two artifacts were not real runs. Both reported `generate_s` of 8.0 and 23.6 for ten
+BigCodeBench-Hard tasks against a local 35B — impossible — with `n_proxy_requests: 0` and
+`sampling_injected: {}`, while still claiming `reasoning_stripped: true`. `--resume` was picking up
+completions generated the day before, before the proxy was in the path, and grading those.
+
+What makes the third one different is checkable rather than asserted: `n_proxy_requests: 10`,
+`sampling_injected` carrying the six neutral values, 10 of 10 responses stripped, `generate_s: 142.4`,
+and a `completions_provenance` field that states where the scored completions came from. `pass@1` is
+0.3 — **the same as the cached run**, which is worth recording: the earlier number was right for the
+wrong reason, and that is the kind of coincidence that keeps a bad process alive.
+
+### Phase 5 — green, and the metric it reports was wrong until it was checked
+
+76 real judgements, `n_backend_errors: 0`. The order-effect metric read 0.109, which would have
+triggered the plan's swap-and-rejudge remedy across the whole design. It was a numerator bug — the
+denominator counted all decisive games while the numerator required an unrelated bookkeeping
+condition — and no cached verdict was ever wrong. Corrected: D1 0.326 (95% CI [0.209, 0.470], n=46,
+a real moderate second-position preference), D2 0.467 (CI [0.302, 0.639], n=30, not distinguishable
+from no bias). An identity control (the same answer text as both A and B → TIE) rules out a
+hardcoded position mapping.
 
 ### Phase 0 — green, with evidence
 

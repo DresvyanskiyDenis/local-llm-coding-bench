@@ -48,21 +48,40 @@ Top 3 for **"a local agentic-coding driver in OpenCode"** (composite of correctn
 Round 1 measured one thing: the model driven through OpenCode — agentic, tool-using, multi-turn.
 Round 2 adds a second, deliberately separate measurement rather than blending it into the first.
 
-- **Lane 1 — in-harness** (round 1's A/B/C/D suites, now being expanded by bug/noise/context
-  kind). Still runs through OpenCode. Measures the model **plus** the harness — tool-call
-  formatting, context handling, and compaction behaviour all count.
+- **Lane 1 — in-harness** (round 1's A/B/C/D suites, expanded from 10 tasks to 31). Still runs
+  through OpenCode. Measures the model **plus** the harness — tool-call formatting, context
+  handling, and compaction behaviour all count.
 - **Lane 2 — external** ([BigCodeBench Hard](https://github.com/bigcode-project/bigcodebench),
   [IFEval](https://arxiv.org/abs/2311.07911)): single-turn, straight to
   `/v1/chat/completions`, no agent, no tools. Measures the model alone, graded by verifiers
   vendored **unmodified** from their upstream projects — code nobody in this repo wrote.
 
-A model can be strong in one lane and weak in the other; that gap is reported as a finding, not
-explained away. Both external benchmarks land as **new axes reported alongside** the existing
-composite — the composite formula itself is unchanged this round. BigCodeBench Hard here runs
-local with relaxed dependency pins (the official path is a Docker image with no arm64 manifest, or
-a remote Gradio executor that uploads solutions to a third party) — 148/148 hard tasks resolve
-locally with 0 blocked, but the resulting `pass@1` is a **within-fleet** number, not comparable to
-the public BigCodeBench leaderboard.
+**Ten BigCodeBench-Hard tasks run in both lanes.** That is the point of the pairing, not a
+duplication: measuring a model on BigCodeBench in a separate lane mostly reproduces what the public
+leaderboard already says, so the same upstream tasks are wrapped as in-harness tasks `A5`–`A14`
+(`eval/tasks/A_coding/BCB_PAIRING.json` records the upstream ids) and the **difference between the
+two lanes isolates the harness contribution**. A model can be strong in one lane and weak in the
+other; that gap is the finding.
+
+Round 1's `A_coding` is why. It saturated at 0.883–0.994 pass-rate — every config at the ceiling,
+separating nothing — and inventing harder hand-written tasks would have been guessing where the
+ceiling is.
+
+Both external benchmarks land as **new axes reported alongside** the composite, unweighted, until
+there is evidence of correlation. **The composite's internal weights did change this round**
+(`tool_malformed` 0.25→0.10, `B_recall` +0.10, `C_edit` +0.05; methodology §6.11) — both weightings
+stay computable on every row, and the round-1 weighting still reproduces the published leaderboard
+9/9, which is what licenses reusing round 1's units instead of re-running them.
+
+BigCodeBench Hard here runs local with relaxed dependency pins (the official path is a Docker image
+with no arm64 manifest, or a remote Gradio executor that uploads solutions to a third party) —
+148/148 hard tasks resolve locally with 0 blocked, but the resulting `pass@1` is a **within-fleet**
+number, not comparable to the public BigCodeBench leaderboard.
+
+Scope of the round-2 run: **855 units pending of 1305 planned** (15 configs × 31 tasks × reps).
+The 450 round-1 units are skipped mechanically — `process_config()` filters to units whose result
+file does not exist — and that reuse is licensed by Phase 3's gate, which proves the graders
+re-grade round-1 fixtures byte-identically.
 
 Full method: [`docs/methodology.md`](docs/methodology.md) §6. Live build/run status:
 [`eval/ROUND2_STATUS.md`](eval/ROUND2_STATUS.md). Per-benchmark setup and repro commands:
