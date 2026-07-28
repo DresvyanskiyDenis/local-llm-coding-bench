@@ -15,7 +15,7 @@ Gate definitions are [`IMPLEMENTATION_PLAN.md` §9](IMPLEMENTATION_PLAN.md#9-exe
 | 3 | grader changes | round-1 fixtures re-grade byte-identically; control returns `recall: null` | ✅ green |
 | 5 | pairwise judge | runs end-to-end on round-1 D answers; order effect estimated | ✅ green — 76 real judgements, order effect corrected |
 | 6 | `aggregate.py` | reproduces the **existing** `docs/leaderboard.md` composite from result files | ✅ green |
-| 4 | 21 new task dirs | each B bug proven by `verify_bugs.py`; C ref solutions pass; D token counts measured | ✅ green — 33/33 checks |
+| 4 | 21 new task dirs | each B bug proven by `verify_bugs.py`; C ref solutions pass; D token counts measured | ✅ green — 32 passed, 0 failed, 1 skipped |
 
 All seven phases are green. That is a statement about the **pipeline**, not about the numbers it has
 produced so far: Phase 1's gate ran and scored, and the score it produced is contaminated by the
@@ -76,6 +76,30 @@ coding fleet down silently in the middle of an overnight run.
 fixtures re-grade byte-identically** against round 1. The new no-bug control returns `recall: null`,
 and `digest.py:23-25` filters non-numerics out of the mean, so a `null` drops out of the B average
 instead of dragging it to zero. That was verified by reading the code, not assumed.
+
+### Phase 4 — green, after the verifier was corrected rather than the corpus
+
+`verify_phase4.py --offline` reads **32 passed, 0 failed, 1 skipped, 3 notes**
+(`eval/results/PHASE4_VERIFICATION.md`). It read 29/33 for a while, and the four failures were the
+verifier's fault, not the task set's.
+
+The D long-context corpus embeds a snapshot of three repo docs as they stood when it was assembled
+(commit `020e776`). The verifier compared those pinned sha256s against the **live** files — so this
+round's own additions to `docs/methodology.md` (14,017 → 34,937 bytes) failed a gate that is
+supposed to protect a frozen artifact. Refreshing the corpus would have been the wrong repair twice
+over: D3/D4/D5's measured token counts (32,609 / 64,027 / 105,076) were taken against exactly this
+text, and `docs/methodology.md` now describes this benchmark — re-assembling would bury the graders'
+own rubric inside the haystack D3/D4/D5 ask a model to search.
+
+What changed: each core source is verified against the bytes **embedded in `core.md`** at its
+recorded offset, so it stays a real sha256 gate on the frozen corpus; live-file drift is reported
+per source as a NOTE (drifted / unchanged / absent); and `longctx_manifest.json` now records the pin
+(`snapshot`, `pinned_at_commit`, `pinned_utc`, `pin_policy`) so the next reader does not "fix" it.
+
+The 1 skipped check is the 49 fetched padding refs, which have no on-disk copy and can only be
+verified by re-fetching. `--offline` cannot, so they are SKIP and are **out of the denominator** — a
+check that did not run is not a check that failed — and the report names them in a "Not verified by
+this run" section rather than folding them into a headline number.
 
 ### Phase 6 — green, with evidence
 
