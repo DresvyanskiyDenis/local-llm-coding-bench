@@ -479,6 +479,7 @@ footer{border-top:1px solid var(--hair);padding:32px 0 60px;margin-top:44px}
       <p class="s-eyebrow">How "#1" is decided</p>
       <h2 class="s-title" id="ranking-h">Overall ranking — and the exact formula behind it</h2>
       <p class="s-lede">An opinionated but explicit weighting for <b>a local agentic-coding driver in OpenCode</b> — using the q4 quant unless noted, decode normalized to the fleet max of 137&nbsp;t/s.</p>
+      <p class="table-note">Three qualifications on “the q4 quant”: <code>katdev</code> is the exception and reproduces only from <b>iq4</b>; the <b>D_text</b> term is model-level, pooled across <i>both</i> quants rather than taken per-config; and <code>tool_malformed%</code> is rounded to the nearest whole percent before it enters the formula — a reconstruction, not a documented rule (<code>eval/harness/aggregate.py</code> labels the rounding an inferred convention).</p>
 
       <div class="formula-box">
         <code>Overall <span class="op">=</span> <span class="term">0.35</span>·A_coding <span class="op">+</span> <span class="term">0.25</span>·(1 − tool_malformed%) <span class="op">+</span> <span class="term">0.15</span>·C_edit <span class="op">+</span> <span class="term">0.10</span>·B_recall <span class="op">+</span> <span class="term">0.10</span>·(D_text/10) <span class="op">+</span> <span class="term">0.05</span>·(decode/137)  <span class="op">&rarr; ×100</span></code>

@@ -1,7 +1,19 @@
 # Local-Model Agentic Eval — Master Plan (contract)
 
-**Status:** benchmark RUNNING (resumable) as of 2026-07-15 — done: opus/glm/gemma/gpt-oss/northmini; **qwen27 BROKEN** (smoke-failed both quants, skipped); **katdev** partial → resuming @ unit 8; **qwopus** + **ornith** onboarded 2026-07-14/15, queued next · **Owner:** Opus (orchestrator) · **Created:** 2026-07-12
-**This file is the single source of truth.** Subagents and future sessions read it before acting. Update it when the design changes, not the other way round.
+**Status:** round 1 COMPLETE — 450 graded units over **15 non-broken configs** / 9 working models (`qwen27` q5 + q4 are `broken: true` and skipped). Round 2 is BUILT on `feature/round2-expansion` and **not yet run**; its live build state is [`ROUND2_STATUS.md`](ROUND2_STATUS.md) · **Owner:** Opus (orchestrator) · **Created:** 2026-07-12
+*(Superseded status line, mid-round-1 as of 2026-07-15, kept as record: benchmark RUNNING (resumable) — done: opus/glm/gemma/gpt-oss/northmini; **qwen27 BROKEN** (smoke-failed both quants, skipped); **katdev** partial → resuming @ unit 8; **qwopus** + **ornith** onboarded 2026-07-14/15, queued next.)*
+
+**This file is the 2026-07-12 build contract, and it stays authoritative for the config matrix (§2)** — `harness/CONTRACT.md` §5 specifies `configs.json` as generated from §2 (plus `~/bin/unsloth-serve`), and the machine-readable shipped form of that matrix is `harness/configs.json`. Everything else it used to be the single source of truth for has since moved to a document that owns it:
+
+| Domain | Owner now |
+|---|---|
+| Config matrix / roster (human-readable) | **this file, §2** — shipped form: `harness/configs.json` |
+| Hard interfaces: task / grader / driver / result schemas | [`harness/CONTRACT.md`](harness/CONTRACT.md) |
+| How the published run was scored + the honest gaps | [`../docs/methodology.md`](../docs/methodology.md) |
+| How to reproduce the run end to end | [`../docs/replication.md`](../docs/replication.md) |
+| Round 2 — what gets built, where and how | [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) |
+
+Everything below is the plan as written on 2026-07-12, plus its own in-run updates (§2 and §5 carry notes dated 2026-07-14 / 2026-07-15). Where the shipped harness later contradicted it, the original text is **kept** and annotated in place — this file is a record, not a live spec.
 
 ---
 
@@ -41,6 +53,8 @@ Q4↔Q5 A/B on **every model that has both quants**. gpt-oss has only native MXF
 | 11 | *(reserve)* | Seed-OSS-36B (512K ctx, slower) / Nemotron-Cascade-2-30B-A3B (arch-check first) | — | — | optional — add only on Denis's word, each +time |
 
 **Config count ≈ 19** (both quants everywhere except gpt-oss/qwopus/ornith single, KAT-Dev's Q4/IQ4 pair). With qwopus + ornith: 11 models × 2 quants − 1 gpt-oss − 1 qwopus − 1 ornith single = **18**, plus KAT-Dev IQ4 = **19 total**.
+
+> **SUPERSEDED — the ≈19 above is the ex-ante planning figure of 2026-07-12.** It counts 11 model rows including the reserve slot (#11), which was never added, and both quants of `qwen27`, which smoke-failed and was dropped. **Shipped:** `harness/configs.json` holds **17** entries, of which **15** are non-broken (`qwen27` q5 and q4 carry `"broken": true`). Those 15 are the configs the 450-unit round-1 corpus was produced on.
 
 ### Serving caveats — ACTUAL, from Stage 0 (local-llm-engineer, 2026-07-12)
 Downloads (~170 GB) in progress; serve cases + opencode.json ids added (backups `*.bak-20260712`). Nothing load-verified yet — every "fits ~X GB" is computed. Must-verify before dry-run: (1) all downloads `EXIT=0` (partial `.incomplete` blob = load fail); (2) Gemma-4 first load — does Studio wire the separate MTP head + accept `--reasoning on`; (3) qwen27q4 at `-c 90112` ≈ 29.8 GB — watch `memory_pressure`, drop to 81920 if OOM; (4) qwen27/katdev smoke → well-formed `tool_calls` JSON, not XML leak (the whole point of froggeric's fixed Jinja + bartowski's template); (5) MTP acceptance on **Metal** is disputed (CUDA 2.7× ≠ Metal) — measure it (metric #3), don't assume.
@@ -100,6 +114,7 @@ Each task = self-contained dir under `eval/tasks/<suite>/<task-id>/` with: `PROM
 
 **Three roles:**
 - **Python engine `eval/harness/orchestrate.py`** (runs backgrounded) — the rails. Loops `(model, quant)`; `unsloth-serve` + load-wait + **zombie-check** + serve-verify (`curl /v1/models`); runs probe + smoke + `opencode run` over each task × rep + objective graders; samples RAM; unloads; **atomic checkpoint per unit**; per-task timeouts so a stuck model can't hang the run. Deterministic + idempotent.
+  - *(**SUPERSEDED — readiness probe.** The `curl /v1/models` serve-verify above is the 2026-07-12 plan, not what shipped: Studio answers `GET /v1/models` the instant it binds `:8888`, before the weights are loaded, so `harness/orchestrate.py::wait_for_ready` polls a **1-token `POST /v1/chat/completions`** until it returns 200. Original wording kept as the record of the contract as written.)*
 - **Sonnet subagent — one per model** — invoked for judgement/mess: interpret ambiguous output, decide `broken`/retry, **assemble sharded GGUFs** ("склеить"), and write the model's Silicon-Bench card + narrative from saved artifacts (keeps Opus context clean). Not needed on the happy path.
 - **Opus (me)** — single judge of subjective (text) tasks from saved outputs; final synthesis, leaderboard, Silicon-Bench (`index.html`) update, team report; owns GO / pause decisions.
 
@@ -114,7 +129,7 @@ Each task = self-contained dir under `eval/tasks/<suite>/<task-id>/` with: `PROM
 ## 7. Schedule (funnel, 3× everywhere it works)
 
 - **Stage 0 — downloads (background, overlapped):** Gemma-4 (Q5+Q4), 2 exotics (Q5+Q4), Q4 for glm & north-mini (~170 GB total, 398 GB free). Stage 1 starts immediately on already-downloaded configs. **Gotcha:** `hf download` 1.11.0 **restarts** (does not resume) an interrupted file after a kill; a subagent's background tasks can be reaped at ~40 min → for the remaining large files run `hf download` from a plain terminal via `nohup` (no session task-lifetime cap). On-disk as of 2026-07-12: glm4, northmini4, gemma(Q5), katdev(Q4) verified; qwen27 Q5/Q4, katdev-IQ4, gemma4 Q4, aux MTP/mmproj still landing.
-- **Stage 1 — screening, 1× quality on all ~14 configs:** smoke + **speed probe 3×** + 1× the task suite. ~35–40 min/config. Output: works/broken, rough quality rank, RSS/RAM, first Q4-vs-Q5 read, broken-list.
+- **Stage 1 — screening, 1× quality on all ~14 configs:** (*~14 is the ex-ante 2026-07-12 figure; shipped = 15 non-broken of 17 in `harness/configs.json`, see the §2 note*) smoke + **speed probe 3×** + 1× the task suite. ~35–40 min/config. Output: works/broken, rough quality rank, RSS/RAM, first Q4-vs-Q5 read, broken-list.
 - **Stage 2 — depth, +2 reps → 3× quality on every non-broken config:** remaining 2 reps of the suite + full 80K probe. Output: variance/CIs, stable pass-rate, final Q4↔Q5 verdict.
 - **Stage 3 — synthesis (Opus):** subjective text judging, leaderboard, `index.html` update, `team-report/`, field-log note.
 - **Est. ~28–32 h at full 3× everywhere.** Resumable → runs overnight, pause, finish next day.

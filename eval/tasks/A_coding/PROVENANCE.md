@@ -266,6 +266,8 @@ Not fixed, deliberately, on three grounds:
    (all-or-nothing). Any pairing must binarise lane 1 first.
 4. **Selection is unvalidated** (see above). Expect 2–3 of the ten to turn out saturated or
    unpassable.
-5. **`aggregate.py` does not score these yet.** Its `ROUND1_TASKS` / `ROUND2_TASKS` sets are
-   hard-coded on purpose, which is what keeps the round-1 composite byte-reproducible. Adding
-   `A5`–`A14` to `ROUND2_TASKS` is a separate, deliberate edit — not done here.
+5. **`aggregate.py` scores these under `--round 2` / `--round all`.** Its `ROUND1_TASKS` /
+   `ROUND2_TASKS` sets are hard-coded on purpose, which is what keeps the round-1 composite
+   byte-reproducible. All ten of `A5`–`A14` were added to `ROUND2_TASKS` in `7c05c6c`
+   (2026-07-26), as a separate, deliberate edit — the sets are not auto-discovered from disk, so
+   a task dir that exists but is not named there is scored by nothing.

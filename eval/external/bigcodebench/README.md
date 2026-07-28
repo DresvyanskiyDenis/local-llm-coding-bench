@@ -269,10 +269,50 @@ it enforced is copied into every result file under `generation.sampling_injected
   "n_empty_raw_completions": 0,// the server itself returned nothing (serving problem, not model)
   "n_sanitizer_dropped": 0,    // sanitizer blanked a non-empty raw response
   "n_env_errors": 0,           // tasks whose own ground truth fails in this environment
-  "executor": { "mode": "local", "pins": "relaxed", "rlimits": "disabled: ..." },
-  "comparability": "within-fleet only; ... NOT comparable to the public BigCodeBench leaderboard"
+  "gt_pass_rate": 1.0,         // ground truth pass rate over THIS RUN'S SLICE only
+  "gt_pass_rate_scope": "THIS RUN'S SLICE ONLY (10 task(s)) — ...",
+  "untagged_reasoning": { "n_with_prose_before_code_fence": 0, "method": "structural: ...", ... },
+  "generation": {
+    "sampling_injected": { ... },      // what the proxy forced; see PROVENANCE.md
+    "completions_provenance": "this-run — ...",   // or "PARTIAL — ..." / "STALE — ..."
+    "reasoning_stripped": { "verdict": "enabled and observed on the TAGGED shapes: ...", ... }
+  },
+  "executor": { "mode": "local", "pins": "relaxed", "rlimits": "disabled: ...",
+                "gt_pass_rate_ceiling": 0.9054,   // ALL 148 tasks — the lane-wide ceiling
+                "gt_pass_rate_ceiling_scope": "ALL 148 BigCodeBench-hard tasks ..." },
+  "comparability": "within-fleet only; ... NOT comparable to the public BigCodeBench leaderboard",
+  "schema_version": 3
 }
 ```
+
+**Check `generation.completions_provenance` first — before the score.** It is the field that
+states in words whether the completions being scored were produced by *this* run through
+`eval_proxy`. It reads `this-run` (all of them were), `PARTIAL — only N of M ...` (the rest were
+reused from disk, under whatever sampling was in force then), or `STALE — 0 requests reached
+eval_proxy in this run`. On anything but `this-run`, `sampling_injected` and
+`reasoning_stripped` describe a proxy that some of the scored completions never passed through,
+and nothing else in the file says so outright — the raw counts it is derived from,
+`generation.n_proxy_requests` against `n_completed`, are all you would otherwise have.
+`run_bcb.py` defaults to regenerating from
+scratch — it moves any earlier samples file aside — so `this-run` is the normal reading; passing
+**`run_bcb.py --resume`** is what makes the reused-completions verdicts possible, and it exists
+to finish a crashed long run. (That is this script's own `--resume`, not the upstream
+`--resume` under "Known upstream behaviours" below, which stays on BigCodeBench's command line
+either way.)
+
+The other schema-3 fields, briefly:
+
+- **`generation.reasoning_stripped`** — what the proxy *observed*, not what was asked for. Its
+  `verdict` distinguishes "enabled and observed" from stripping that was requested but never
+  exercised; `shapes_covered` lists the four tagged wrappers it removes and `shape_not_covered`
+  names the one it cannot.
+- **`untagged_reasoning`** — measured exposure to exactly that uncovered shape: reasoning prose
+  with no delimiter at all. Detection only, structural (text before the first code fence in
+  `raw_solution`); no completion is ever modified.
+- **`gt_pass_rate` vs `executor.gt_pass_rate_ceiling`** — two different denominators, which is
+  why each carries a `..._scope` string. The first is over the tasks *this run* evaluated; the
+  second is over all 148, from `env_health.json`, and is the lane-wide ceiling. On a `--limit`
+  run they are not interchangeable.
 
 `n_no_program` and `n_env_errors` are **load-bearing**: without them a truncation bug or a
 missing `numba` is indistinguishable from a model that genuinely failed the task. All of them are

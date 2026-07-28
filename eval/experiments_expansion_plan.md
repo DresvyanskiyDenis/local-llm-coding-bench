@@ -268,6 +268,16 @@ IFEval, and its `Task`/`Solver`/`Scorer` abstraction is where the existing B/C/D
 re-hosted alongside the public benchmarks. `lm-evaluation-harness` is the faster path to a
 first IFEval number if inspect-ai wiring stalls.
 
+> **SUPERSEDED — neither harness was adopted.** IFEval shipped instead as a standalone adapter,
+> [`external/ifeval/`](external/ifeval/README.md), which vendors google-research's
+> `instruction_following_eval` unmodified and posts straight to `127.0.0.1:8888/v1`; its
+> *"Why not `lm-evaluation-harness`"* section records the reason (`lm-eval` declares `torch` as a
+> core dependency, which this eval stack deliberately avoids). **`inspect-ai` was simply not
+> adopted — it was never evaluated on record**, and no other file in this repo mentions it, so do
+> not read this paragraph as a rejection with reasoning behind it. The same applies to pre-flight
+> check #2 above. What was actually built is in
+> [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+
 ---
 
 ## Deferred and not selected

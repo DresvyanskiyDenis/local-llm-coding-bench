@@ -68,7 +68,8 @@ llama-swap survived the attempt. This is the failure that would otherwise have t
 coding fleet down silently in the middle of an overnight run.
 
 `orchestrate.py` remains additive-only: `--dry-run` reports **10 PASS / 0 PENDING / 0 FAIL**, and
-`planned_units()` still yields 30 units for stages `[1,2]`, 10 for stage `[1]`, reps `[1,2,3]`.
+`planned_units()` yielded 30 units for stages `[1,2]`, 10 for stage `[1]`, reps `[1,2,3]` — that
+count was taken against the round-1 task set, before Phase 4 added the 21 new task dirs.
 
 ### Phase 3 — green, with evidence
 
@@ -248,9 +249,20 @@ the unclosed-`<think>`-strips-to-EMPTY case).
 makes it worse. A seeded stratified subsample is the obvious lever, but its size is Denis's call —
 see *Needs Denis*.
 
-### BigCodeBench
+### BigCodeBench — measured on the gate slice, and the slice does not extrapolate
 
-_pending — Phase 2 gate in flight._
+| quantity | value |
+|---|---|
+| gate run | opus q4, `--limit 10`, `--parallel 4`, `max_new_tokens 4096` |
+| wall-clock | 548.9 s (generation 143.9 s, evaluation 389.1 s, the rest startup) |
+| result | `pass@1` 0.3, `n_env_errors: 0` |
+| **full fleet** | see [`external/bigcodebench/README.md`](external/bigcodebench/README.md) |
+
+Read from `eval/results/bcb__opus__q4.json`, not from the prose above. Multiplying this 10-task
+slice by 15 gives a wrong number in both directions: the reported `evaluate_s` carries a fixed
+~120 s per-*config* grace period and is dominated by a 241 s per-task timeout that parallelism
+cannot split, while at 148 tasks the pool saturates and throughput governs instead. The measured
+cost model and the 148 × 15 projection live in `eval/external/bigcodebench/README.md`.
 
 ## What actually has to be re-run — 855 units, not 1305
 
@@ -337,7 +349,11 @@ axis in round 1) gains most and the narrow C (0.803–0.909) gains least:
 0.35·A + 0.10·(1 − tool_malformed%) + 0.20·C + 0.20·B_recall + 0.10·(D/10) + 0.05·(decode/137)
 ```
 
-*Awaiting Denis's confirmation of the split; the two weight decisions themselves are settled.*
+*The split above is now implemented as the default: `aggregate.py`'s `--weights` defaults to
+`round2`, and `WEIGHT_SETS["round2"]` carries C 0.20 / B_recall 0.20. That is not approval — the
+agent that proposed the redistribution is the one that implemented it. What is outstanding is
+Denis's sign-off on **publishing** a composite under this split. The two weight decisions
+themselves are settled.*
 
 ## Needs Denis
 
@@ -403,7 +419,7 @@ axis in round 1) gains most and the narrow C (0.803–0.909) gains least:
    - *Recompute over old + new* — a more reliable estimate over roughly three times the data, but
      the composite is then no longer the same quantity as round 1's and must be labelled as such.
 
-   I lean to recomputing and labelling it, since 0.25 is a large weight to leave resting on the
+   I lean to recomputing and labelling it, since even 0.10 is a real weight to leave resting on the
    smaller sample. Either way it must be stated explicitly wherever the composite appears.
 
 5. **Round-1 answers are now tracked — keep it that way.** See the blocker below. The recovered
@@ -430,7 +446,19 @@ is what happened. The guard is not a substitute for someone owning the restore, 
 dies mid-run owns nothing. Worth a watchdog before the real 15-config night: eval mode should not be
 a state the machine can be left parked in.
 
-## Open finding — the pairwise judge's order effect is implausibly extreme
+## Partly resolved — the 0.109 was a numerator bug; a moderate D1 order effect is real
+
+*Annotated 2026-07-28; the section below is kept as the record of what was seen, and its figures
+are the broken metric's output. Fixed in `8d79fb4` (2026-07-26): the first-position win rate
+required an unrelated bookkeeping condition in its numerator while the denominator counted every
+decisive game, so roughly half the games were dropped from the numerator only and an unbiased judge
+scored ~0.25. Recomputed over the same cache at zero new spend, the real figures are D1 **0.326**
+(95% CI [0.209, 0.470], n=46, `significant_bias: true`) and D2 **0.467** (CI [0.302, 0.639], n=30,
+`significant_bias: false`) — `eval/results/DTEXT_PAIRWISE.json`. So the label-mapping hypothesis
+below is dead, but a genuine moderate preference for the second-shown answer on D1 is not: it is in
+the ordinary 0.55–0.70 range for LLM judges, seen from the other side. The remedy it triggers is
+still open — `pairwise_judge.py` records the plan's swap-and-rejudge pass as "not yet run by
+default this session".*
 
 The re-run works mechanically: **76 real judgements** of the 210-pair design, `n_backend_errors: 0`,
 `n_unparseable: 0`, fully cache-resumable, and the partial run is labelled unmissably. Separating
@@ -451,7 +479,13 @@ preference — presentation order randomised per pair while the returned A/B ver
 against the pre-shuffle order would invert results exactly like this.
 
 **No Bradley-Terry strength from this run is readable until that is resolved**, and judging more
-pairs first would only buy a more confident wrong answer. Diagnosis in progress: same pair re-judged
+pairs first would only buy a more confident wrong answer. *[2026-07-28: the conclusion survives the
+correction above, the reason does not. The strengths are still unreadable, because this partial
+run's win graph is not strongly connected — a Bradley-Terry fit on it has no finite MLE, so MM has
+no fixed point to reach and returns wherever it drifted at `max_iter`. Nothing in such a fit is
+converged, not merely the offending config. See the comment above `bt_mm()` in
+`eval/harness/pairwise_judge.py`, and `fit_has_no_finite_mle()`, which detects the condition and
+prints the warning into the rendered report.]* Diagnosis in progress: same pair re-judged
 in both orders, an identity control (both sides the same text — a sane judge returns TIE), and a
 read of the fully rendered prompt to confirm the A/B labels match the answers actually sent.
 

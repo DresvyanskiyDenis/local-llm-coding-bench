@@ -21,7 +21,7 @@ Top 3 for **"a local agentic-coding driver in OpenCode"** (composite of correctn
 
 - **9 working models** benchmarked (both Q4 and Q5 quants where they exist).
 - **One machine:** MacBook Pro **M4 Max, 36 GB** unified memory — a real laptop, not a cluster.
-- **~450 graded test units** across **4 suites** (10 tasks × 3 repetitions), plus a clean speed probe.
+- **~450 graded test units** across **4 suites** — the **round-1 published set**, 10 tasks × 3 repetitions — plus a clean speed probe.
 - **Fully local:** no code ever leaves the machine — no cloud API, no per-token cost.
 - Driven through the **real stack**: an OpenAI-compatible local server + an OpenCode agent client.
 
@@ -33,6 +33,23 @@ Top 3 for **"a local agentic-coding driver in OpenCode"** (composite of correctn
 | **B — Review** | Find planted bugs, avoid hallucinating | Recall + precision vs a key |
 | **C — Surgical edit** | Apply valid review fixes, ignore a noise comment | Hidden `pytest` + diff discipline |
 | **D — Text** | Summarize + design/brainstorm | Single offline judge, rubric |
+
+## Round 2 (in progress) — two lanes, external benchmarks
+
+Everything above is round 1. Round 1 measured one thing: the model driven through OpenCode — agentic, tool-using, multi-turn. Round 2 adds a second, deliberately separate measurement rather than blending it into the first.
+
+- **Lane 1 — in-harness:** round 1's A/B/C/D suites, expanded from 10 tasks to **31**, still driven through OpenCode. Measures the model **plus** the harness — tool-call formatting, context handling, and compaction behaviour all count.
+- **Lane 2 — external:** [BigCodeBench Hard](https://github.com/bigcode-project/bigcodebench) and [IFEval](https://arxiv.org/abs/2311.07911), single-turn straight to `/v1/chat/completions`, no agent and no tools, graded by verifiers vendored **unmodified** from upstream. Measures the model alone.
+
+**Ten BigCodeBench-Hard tasks run in both lanes** — wrapped as in-harness tasks `A5`–`A14` — so the difference between the two lanes isolates the harness contribution. Round 1's `A_coding` is why: it saturated at 0.883–0.994 pass-rate and separated nothing.
+
+Both external benchmarks land as **new axes reported alongside** the composite, unweighted, until there is evidence of correlation. **The composite's internal weights did change this round** (`tool_malformed` 0.25→0.10, `B_recall` +0.10, `C_edit` +0.05) — both weightings stay computable on every row, and the round-1 weighting still reproduces the published leaderboard 9/9, which is what licenses reusing round 1's units instead of re-running them.
+
+Every reported number carries the denominator it was measured over: an external axis renders as `0.300 ‡10/148` when it is a slice rather than a full-set score, with a `⚠` when the slice is contaminated as well as partial.
+
+Scope of the round-2 run: **855 units pending of 1305 planned** (15 configs × 31 tasks × reps). The 450 round-1 units are skipped mechanically rather than re-run.
+
+Full method → [Methodology §6](methodology.md). Live build/run status → [`eval/ROUND2_STATUS.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/ROUND2_STATUS.md).
 
 ## Start here
 

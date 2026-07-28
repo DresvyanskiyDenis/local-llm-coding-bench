@@ -41,8 +41,10 @@ eval/
 All harness scripts are **uv inline-script style** (PEP 723 header like `speed_probe.py`),
 run via `uv run <script>`. Python ≥3.11. No project-level venv.
 
-`<unit>` filename = `<model>__<quant>__<suite>__<task>__rep<N>` (serve-name for model,
-`q4`/`q5`/`mxfp4`/`iq4` for quant). Same string is the `unit_id` field everywhere.
+`<unit>` filename = `<model>__<quant>__<suite>__<task>__rep<N>` (the config's **`model`** field —
+NOT `serve_name`, which differs on every q4 lane: `model: "qwen"` + `serve_name: "qwen4"` yields
+`qwen__q4__…`; see `orchestrate.py::unit_id_for`; `q4`/`q5`/`mxfp4`/`iq4` for quant). Same string
+is the `unit_id` field everywhere.
 
 ---
 
@@ -76,25 +78,34 @@ Every task is a self-contained dir: `tasks/<suite>/<task-id>/` with:
 ```
 
 ### Suite requirements (Python, pytest-first)
-- **A_coding** — 3 tasks + **1 HumanEval+-style** task (4 total). Model implements from a
+- **A_coding** — 14 tasks. Round 1: 3 tasks + **1 HumanEval+-style** task (4 total); round 2
+  added `A5`–`A14`, BigCodeBench-derived. Model implements from a
   spec/stub. Grader = `pytest`. Themes: a pandas/polars data-transform, a data-validation
   function, a small pure-Python algorithm; the HumanEval+-style one is a classic function
   with a strong hidden test set. Each `grade/` has a `test_*.py` that imports the model's
   `entrypoint`. Tests must be deterministic (fixed seeds, no network, no clock).
-- **B_review** — 2 tasks. `repo/` has a module with a **known planted-bug key**. Model is
+- **B_review** — 6 tasks (`B6_control_nobugs` is the exception: it plants nothing — see §2).
+  `repo/` has a module with a **known planted-bug key**. Model is
   asked (in PROMPT.md) to review and list bugs as a specific machine-parseable format (see
   review_grader §2). `grade/key.json` lists each planted bug with: `id`, `location` (file +
   line range), `synonyms` (accepted phrasings), `severity`. Grader scores recall + precision.
-- **C_edit** — 2 tasks. `repo/` has working-ish code + `REVIEW.md` with review comments,
-  **exactly one of which is a deliberate wrong/noise comment** (documented in `grade/meta`).
+- **C_edit** — 5 tasks. `repo/` has working-ish code + `REVIEW.md` with review comments,
+  **at least one of which is a deliberate wrong/noise comment** (documented in `grade/meta`).
   Model applies the valid fixes and should NOT act on the noise comment. Grader = `diff_pytest`:
   re-run hidden pytest (correctness) AND check the noise comment was ignored (diff inspection).
-- **D_text** — 2 tasks: (1) summarize a real long tech doc in `source/` → key-point recall;
-  (2) "give 3 approaches to X with tradeoffs" → rubric. Grader = `judge` (Opus, offline, not
+  (Round 1 authored exactly one; the `{"noise": [...]}` wrapper blessed in §2 made several legal
+  and `C5_contradiction` ships two, so the authoring rule here is deliberately relaxed to "at
+  least one" rather than left contradicting §2.)
+- **D_text** — 6 tasks. Round 1: (1) summarize a real long tech doc in `source/` → key-point
+  recall; (2) "give 3 approaches to X with tradeoffs" → rubric. Round 2 added the long-context
+  probes `D3`/`D4`/`D5` and `D6_pr_describe`. Grader = `judge` (Opus, offline, not
   automated here). `grade/rubric.md` + `grade/key_points.json` for the summary. Driver just
   saves the model's answer; scoring is Opus's Stage-3 job.
 
-Keep every task **small (<~30K ctx)** so per-config context caps never bite.
+Keep every task **small (<~30K ctx)** so per-config context caps never bite. The only exception
+is the round-2 long-context probe series, which exists precisely to push against those caps:
+`est_ctx_tokens` is 32,609 for `D3_longctx_30k`, 64,027 for `D4_longctx_60k` and 105,076 for
+`D5_longctx_100k`.
 Author reference solutions and RUN the pytest against them so tests are known-green on truth.
 
 ---
@@ -114,7 +125,8 @@ uv run graders/<g>.py --task <taskdir> --run <rundir> --out <path.json>
 
 ### pytest_grader.py  → verdict schema
 Copies the task's `grade/test_*.py` next to the model's `<rundir>/repo/`, runs
-`pytest -q --json` (use `pytest` + parse, or `--tb=short` and count), deterministically.
+`pytest -q --tb=short --junitxml=<tmp>/junit.xml` and parses that JUnit XML with stdlib
+`xml.etree.ElementTree` — deliberately, so no pytest-json plugin is needed — deterministically.
 ```json
 {
   "grader": "pytest",
@@ -125,6 +137,12 @@ Copies the task's `grade/test_*.py` next to the model's `<rundir>/repo/`, runs
   "detail": "1 failed: test_empty_input"
 }
 ```
+`meta.grade.requires` (a list of third-party packages; non-empty in 9 of the 31 task `meta.json`,
+all of them A_coding tasks needing pandas/numpy/matplotlib/scipy/scikit-learn/pytz) switches the
+grader from running pytest under its own interpreter (`sys.executable -m pytest`) to an ephemeral
+`uv run --no-project --with pytest --with <pkg> … -- pytest`. Either path is capped at
+`PYTEST_TIMEOUT_S` (120s in `pytest_grader.py`); exceeding it yields `failure_class: "timeout"`
+with no collected results.
 
 ### review_grader.py  → verdict schema
 Parses the model's answer (`<rundir>/answer.txt`) for bug findings in the format PROMPT.md
@@ -305,8 +323,11 @@ uv run orchestrate.py --resume [--stage 1|2] [--only <model>] [--dry-run]
 Outer loop over `configs.json`; for each config:
 1. **Skip-if-done:** for every planned unit `(config, suite, task, rep)`, if
    `results/<unit>.json` exists → skip. If ALL its units exist → don't even serve it.
-2. **Serve:** `~/bin/unsloth-serve <serve_name>` (background); **wait-for-ready** by polling
-   `GET :8888/v1/models`; **zombie-check** (Studio silent :8889 rebind / 502 parent-zombie —
+2. **Serve:** `~/bin/unsloth-serve <serve_name>` (background); **wait-for-ready** by polling a
+   1-token `POST :8888/v1/chat/completions` until it returns 200 — **not** `GET :8888/v1/models`,
+   which answers the instant Studio binds the port but before the weights are loaded; requests
+   fired into that gap 400 and falsely marked both qwen quants broken on 2026-07-12 (see
+   `orchestrate.py::wait_for_ready`); **zombie-check** (Studio silent :8889 rebind / 502 parent-zombie —
    see `setup/UNSLOTH-CHEATSHEET.md`); abort this config cleanly if it
    won't come up (mark units `broken`, continue).
 3. **Speed probe:** `uv run speed_probe.py --model <id> --max-ctx <probe_max_ctx> --rounds 3

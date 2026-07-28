@@ -20,7 +20,7 @@ API key defaults to `$UNSLOTH_STUDIO_API_KEY`, falling back to a literal dev key
 ## Mapping to the leaderboard
 
 The `overall tools:` line maps directly onto a model's `caps.tools` field in
-`index.html`: all scenarios pass → `pass`; a minority fail → `partial`;
+[`setup/index.html`](../setup/index.html): all scenarios pass → `pass`; a minority fail → `partial`;
 a majority fail → `fail`. `median tok/s` feeds the card's `tps` field.
 
 ## Serving mode (round 2)

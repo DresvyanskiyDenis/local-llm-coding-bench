@@ -23,8 +23,11 @@ models are graded on the same client, tasks, tools, and graders a user would act
 Every task is a self-contained directory `eval/tasks/<suite>/<task-id>/` containing `PROMPT.md`
 (the only instruction the model sees), a starting `repo/` (or `source/` for text), a hidden
 `grade/` never shown to the model, and a `meta.json` declaring the grader. Domain is locked to
-**Python, self-contained, deterministically gradeable — no live Spark/Databricks**. Every task
-is kept small (<~30K context tokens) so per-config context caps never bite.
+**Python, self-contained, deterministically gradeable — no live Spark/Databricks**. Every
+A_coding / B_review / C_edit task is kept small (<~30K context tokens) so per-config context caps
+never bite; the round-2 long-context `D_text` tasks are the deliberate exception — their
+`meta.json` declares `est_ctx_tokens` 32,609 (`D3_longctx_30k`), 64,027 (`D4_longctx_60k`) and
+105,076 (`D5_longctx_100k`). See §6.8 and §6.13.
 
 ### A_coding — from-scratch implementation (objective, functional tests)
 Model implements a spec/stub in `repo/src/solution.py`; a hidden `pytest` suite decides the
@@ -46,7 +49,8 @@ bugs in a mandated machine-parseable format. Measures recall (found/planted) and
 `repo/` holds working-ish code plus a `REVIEW.md` of review comments, **exactly one of which is
 a deliberate noise/wrong comment**. The model applies the valid fixes and must NOT act on the
 noise. Measures correctness (hidden pytest) AND surgical discipline (did it touch only what was
-asked, did it correctly ignore the noise). 2 tasks:
+asked, did it correctly ignore the noise). 2 round-1 tasks (round 2 adds three more, carrying
+three further noise kinds — see §6.8):
 - `C1_inventory` — apply valid fixes to inventory helpers, ignore the noise comment
 - `C2_text_utils` — same pattern on text-utility code
 
@@ -134,10 +138,11 @@ Two graders run and merge. `pytest_grader` re-runs the hidden test suite for cor
 as A). `diff_grader` diffs the original task `repo/` against the model's edited `repo/` (difflib
 — repos are plain trees, not git) and reports `files_touched`, `lines_added/removed`,
 `touched_expected_only` (checked against `meta.json`'s `entrypoint`), **`noise_comment_acted_on`**
-(checked against `grade/noise.json` — both C tasks use the "required pattern must survive" kind,
-so acting-on == correct code went missing), and a heuristic **`surgical_score`** (1.0 minus
-penalties for unexpected files and for changed lines beyond a 15-line free allowance, minus 0.3
-if the noise comment was wrongly followed).
+(checked against `grade/noise.json` — the two round-1 C tasks use the "required pattern must
+survive" kind, so acting-on == correct code went missing; round 2 adds three further kinds, see
+§6.8), and a heuristic **`surgical_score`** (1.0 minus penalties for unexpected files and for
+changed lines beyond a 15-line free allowance, minus 0.3 if the noise comment was wrongly
+followed).
 
 ### D_text → `judge` (single offline judge, Opus, 0–10)
 The driver only saves the model's answer; **no automated grader**. In Stage 3 a single judge
@@ -177,9 +182,17 @@ Overall = 0.35·A_coding               (writes correct code)
 Rationale: for an agentic driver the two things that matter most are **correct code** (A, 35%)
 and **clean tool-calling** (25%); surgical edits (C, 15%) come next; review recall and prose
 (10% each) are secondary; raw decode speed is a 5% tiebreaker. Each model's **q4** quant is used
-(single quant where only one was tested); decode normalized to the fleet-max 137 t/s. This
-produced the headline ranking (ornith 88.3 → gemma 87.1 → qwopus 87.0 → opus 86.6 → … →
-gpt-oss 77.1).
+(single quant where only one was tested) with three qualifications `aggregate.py` actually
+implements: `katdev` is the exception in `LEADERBOARD_QUANT` and reproduces only from **iq4**
+(`is_leaderboard_config` is true on `katdev/iq4`, false on `katdev/q4`); the **D_text** term is
+model-level, **pooled across both quants** (12 judged units for a two-quant model, 6 for a
+single-quant one) rather than taken per-config — a per-config D gives `opus` 85.8 against the
+published 86.6; and `tool_malformed%` enters the formula **rounded to the nearest whole
+percent**. The rounding is a *reconstruction*, not a documented rule — `aggregate.py` labels it
+an inferred convention, required because with the raw rate `ornith` computes 88.42 against a
+published 88.3. Decode normalized to the fleet-max
+137 t/s. This produced the headline ranking (ornith 88.3 → gemma 87.1 → qwopus 87.0 →
+opus 86.6 → … → gpt-oss 77.1).
 
 **"No weak axis"** is the property the composite rewards and the reason the top model wins: a
 model with no low score on any dimension (coding, tools, edits, review, prose, speed) beats a
@@ -233,9 +246,10 @@ the board — equal-or-better pass-rate at lower RAM — so Q4 is the recommende
 - **Not measured:** MTP speculative-decode acceptance rate (#3 — the probe never captured the
   timings; the field is null fleet-wide, do not infer it from decode t/s); the 80K probe point
   (skipped, curves are 4-point); quality degradation over long context (#10) and auto-compaction
-  survival (#13) — all A/B/C/D tasks stay <30K ctx, below OpenCode's ~74K compaction trigger, so
-  neither was exercised. These are task-set / probe-instrumentation gaps, stated as gaps rather
-  than estimated.
+  survival (#13) — every round-1 task stays <30K ctx, below OpenCode's ~74K compaction trigger, so
+  neither was exercised. Both remain gaps: the round-2 long-context `D_text` tasks (§6.8) were
+  built to attack #10, but no unit for them exists on disk yet. These are task-set /
+  probe-instrumentation gaps, stated as gaps rather than estimated.
 - **`qwen27`** remains broken (serve/template, not the sanitizer): smoke-failed both quants →
   0 units, excluded from the ranking.
 
@@ -402,9 +416,10 @@ bugs with a machine-checkable key, scored for recall *and* precision; a delibera
 instruction graded for non-compliance rather than compliance) and are kept, expanded by *kind*
 rather than by count, so results can report which specific failure modes local models miss:
 
-- **B_review** gains four task directories covering eight bug classes (off-by-one,
-  concurrency/race, resource leak, swallowed exception, encoding/unicode, float precision,
-  timezone/DST, mutable default argument) plus a **no-bug control** (`B6_control_nobugs`) — a file
+- **B_review** gains four task directories: three carrying planted bugs across eight bug classes
+  (off-by-one, concurrency/race, resource leak, swallowed exception, encoding/unicode, float
+  precision, timezone/DST, mutable default argument) — `B3_concurrency_ledger`, `B4_io_encoding`,
+  `B5_temporal_money`, three bugs each — and a **no-bug control** (`B6_control_nobugs`) — a file
   with zero planted bugs, so precision is measured with a clean false-positive rate instead of only
   on files already known to contain bugs. `review_grader.py`'s control path reports recall as
   `null` (undefined, not `0.0`) and precision as `1 − (findings > 0)`.
@@ -620,3 +635,39 @@ unsafe to quote.
 `composite` field the Phase 6 gate and `validate_correlation.py` read is untouched, and the gate
 recorded in `eval/results/AGGREGATE.json` still reads 9/9 models agreeing to one decimal place, max
 |Δ| 0.050, rank order identical.
+
+### 6.13 Long-context D tasks vs. served context windows — an unresolved sizing decision
+
+The round-2 long-context `D_text` tasks (§6.8) are the only tasks in the tree whose declared
+`est_ctx_tokens` approaches or exceeds a served context window, and `katdev` is the config pair
+this bites. From `eval/harness/configs.json`, `katdev/q4` serves `real_ctx` **65,536** and
+`katdev/iq4` serves **81,920**; the other 13 scored configs all serve **131,072** — comfortably
+above every D task. (`qwen27` is served at 65,536 on q5 / 90,112 on q4 but smoke-failed both
+quants and contributes 0 units, so it does not enter this.)
+
+| Task | `est_ctx_tokens` | vs. `katdev/q4` (65,536) | vs. `katdev/iq4` (81,920) |
+|---|--:|---|---|
+| `D3_longctx_30k` | 32,609 | fits | fits |
+| `D4_longctx_60k` | 64,027 | **1,509 tokens under the cap** | fits |
+| `D5_longctx_100k` | 105,076 | **over by 39,540** | **over by 23,156** |
+
+`D5` therefore cannot fit either `katdev` config at all. `D4`'s 1,509-token margin against
+`katdev/q4` is the raw document only — OpenCode's system prompt, tool schemas and the task
+`PROMPT.md` are added on top of it. That overhead has not been measured anywhere in this repo, so
+whether `D4` fits `katdev/q4` in practice is untested; a 1,509-token margin is thin enough that it
+should not be assumed.
+
+Two ways to handle it, and this document does not pick one — it is a scoring-surface decision:
+
+1. **Restrict the tasks per config.** `meta.json` already supports an optional per-task `configs`
+   key (`task_applies_to_config`, `eval/harness/orchestrate.py`) which limits a task to the listed
+   models or serve names; a task with no such key runs on all configs, which is every `meta.json`
+   in the tree today. Adding it would keep `katdev` out of the affected long-context rows — at the
+   cost of a task set that is no longer identical across configs, so those D rows would carry
+   partial coverage (§6.12) by construction.
+2. **Run them anyway and expect truncated `katdev` rows.** The numbers stay comparable in the sense
+   that every config ran the same task, but `katdev`'s long-context scores would measure the
+   context cap rather than the model, and must be read that way.
+
+Nothing has been changed in the task tree for this — no `configs` key has been added anywhere.
+This section records the situation and the choice; the choice is Denis's.

@@ -47,7 +47,7 @@ The `setup/` folder ships the full team installer (Unsloth Studio = patched `lla
 `~/bin/unsloth-serve` launcher, an OpenCode config, and the shell env with the API key).
 
 ```bash
-cd setup/team-setup       # (or wherever setup/ places install.sh — see setup/README.md)
+cd setup
 ./install.sh              # interactive; answer y to each step
 ```
 
@@ -166,8 +166,11 @@ uv run orchestrate.py --dry-run     # must show 0 FAIL before any real launch
 - Omitting `--stage` runs stage 1 then stage 2 (the full 3×).
 
 Suites and tasks are auto-discovered from `eval/tasks/{A_coding,B_review,C_edit,D_text}/*/meta.json`.
-The published set is **10 tasks** (A×4, B×2, C×2, D×2) → 10 tasks × 3 reps = **30 units per
-model×quant**.
+The **round-1 published set** was **10 tasks** (A×4, B×2, C×2, D×2) → 10 tasks × 3 reps = **30 units
+per model×quant**. The task tree now holds **31 tasks** (A×14, B×6, C×5, D×6), and a task's own
+`reps` key overrides the stage schedule outright: the three long-context D tasks (`D3`/`D4`/`D5`)
+carry `reps: [1]`, so the round-2 count is 28 × 3 + 3 × 1 = **87 units per model×quant** — matching
+the 1305 planned units (15 configs × 87) in `README.md`, not 31 × 3.
 
 ### 4d. The run commands
 
@@ -188,7 +191,9 @@ uv run orchestrate.py --resume --agent build             # opencode --agent name
 validate-only mode). Resumability is a hard guarantee: a unit is "done" iff
 `eval/results/<unit>.json` exists, so re-running the same command just skips completed units and
 picks up where it stopped. Kill the process anytime (Ctrl-C / SIGTERM) — you lose at most the
-in-flight unit; per-task `timeout_s` (900 s in the tasks) stops a hung model from stalling the run.
+in-flight unit; per-task `timeout_s` (600 s to 5400 s across the tasks — 900 s throughout A/B/C and
+for `D6`, 600 s for `D1`/`D2`, and 1800/3600/5400 s for `D3`/`D4`/`D5`) stops a hung model from
+stalling the run.
 
 Per config, the engine: clears `:8888` → `unsloth-serve <serve_name>` → waits for a real 200 from
 `/v1/chat/completions` (zombie/rebind-checked) → 3× speed probe → smoke → each `(suite, task, rep)`
@@ -208,8 +213,13 @@ uv run ops/spawn.py ornith          # detaches run_model.sh ornith → own sessi
 # then writes eval/results/DONE__<model>.marker
 ```
 
-`ops/run_queue.sh` chains every remaining model strictly serially (one in RAM at a time), digesting
-each as it finishes and skipping any that fails — the self-driving path for the whole fleet.
+For the whole fleet, repeat that `ops/spawn.py <model>` call one model at a time (one in RAM at a
+time), digesting each as it finishes — that loop is the generalizable path.
+
+`ops/run_queue.sh` chains models strictly serially the same way, but it is a **retained round-1
+artifact, not a usable entry point**: it blocks forever on `eval/results/DONE__glm.marker` (no
+`DONE__*.marker` file exists anywhere in the repo) and its model list is one specific night's
+hardcoded remainder. It is kept as a record of how the overnight matrix was actually driven.
 
 ### 4f. Where results land
 

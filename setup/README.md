@@ -17,7 +17,7 @@ model is ever loaded at a time. No per-token cost, no code leaving your machine.
 ## Quick start — most people need only this
 
 ```bash
-cd team-setup
+cd setup                     # or team-setup/ if you unpacked the handout zip
 ./install.sh                 # interactive — say y to each step
 ```
 
@@ -109,7 +109,7 @@ safe.
 ## Files in this folder
 
 ```
-team-setup/
+setup/                     ← or team-setup/ if you unpacked the handout zip
 ├── README.md              ← you are here (quick start + overview)
 ├── install.sh             ← automated installer (heavily commented)
 ├── INSTALL.md             ← full manual instructions (super-detailed)

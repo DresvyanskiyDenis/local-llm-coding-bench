@@ -99,8 +99,6 @@ Full method: [`docs/methodology.md`](docs/methodology.md) §6. Live build/run st
 
 ```
 local-llm-coding-bench/
-├── LEADERBOARD.md      ← full ranking + per-suite breakdown (start here)
-├── METHODOLOGY.md      ← method, task set, known gaps
 ├── eval/
 │   ├── harness/        ← resumable orchestrator, speed probe, graders, driver
 │   ├── tasks/          ← the self-contained A/B/C/D task dirs
@@ -108,7 +106,11 @@ local-llm-coding-bench/
 │   └── results/        ← raw per-unit JSON + append-only manifest
 ├── bench/              ← lightweight smoke test for a serving endpoint
 ├── setup/              ← stand up the identical local serving stack on your Mac
-└── docs/               ← setup guide and supporting notes
+└── docs/               ← the published documentation site — the two headline documents live here
+    ├── leaderboard.md  ← full ranking + per-suite breakdown (start here)
+    ├── methodology.md  ← method, task set, known gaps
+    ├── replication.md  ← how to re-run the benchmark end-to-end
+    └── setup.md        ← setup guide and supporting notes
 ```
 
 ---

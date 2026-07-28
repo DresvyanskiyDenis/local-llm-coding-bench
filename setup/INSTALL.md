@@ -166,11 +166,15 @@ chmod +x ~/bin/unsloth-serve
 
 Usage (each serves on `:8888`; stop the running one with **Ctrl-C** before switching):
 ```bash
-unsloth-serve            # qwen — the daily driver (default)
-unsloth-serve opus       # Opus-4.6 reasoning distill
-unsloth-serve gpt-oss    # smallest/fastest (~12 GB)
-unsloth-serve northmini  # agentic, OpenCode-trained
-unsloth-serve glm        # 2nd coding driver (slower, high quality)
+unsloth-serve            # qwen — the no-arg default
+unsloth-serve ornith     # #1 overall — no weak axis
+unsloth-serve gemma      # #2 — fastest + cleanest tools
+unsloth-serve qwopus     # #3 — best pure coder
+unsloth-serve opus       # #4 — Opus-4.6 reasoning distill
+unsloth-serve glm        # #5 — 2nd coding driver (slower, high quality)
+unsloth-serve northmini  # #6 — agentic, OpenCode-trained
+unsloth-serve qwen       # #7 — same as the bare command above
+unsloth-serve gpt-oss    # #9 — smallest/fastest (~12 GB)
 ```
 
 > **Why `-c 131072`, not the model's full native context (some go to 256K)?** The KV-cache for a
@@ -179,9 +183,10 @@ unsloth-serve glm        # 2nd coding driver (slower, high quality)
 > have RAM headroom to spare.
 
 The launcher also streams an **inline prefill progress bar** into the same terminal for the
-Studio-served models (`qwen`/`opus`/`glm`) — the LM-Studio-style `progress = 0.XX` line that Studio
-otherwise hides in a logfile. Appears only for prefills ≥3 s (same as LM Studio); `gpt-oss` and
-`northmini` print it natively. See **UNSLOTH-CHEATSHEET.md** for the per-flag rationale.
+Studio-served models (`qwen`/`opus`/`glm`/`gemma`) — the LM-Studio-style `progress = 0.XX` line that
+Studio otherwise hides in a logfile. Appears only for prefills ≥3 s (same as LM Studio); `gpt-oss`,
+`northmini`, `ornith` and `qwopus` are direct-served and print it natively. See
+**UNSLOTH-CHEATSHEET.md** for the per-flag rationale.
 
 ---
 
@@ -243,14 +248,17 @@ if [ -f "$HOME/.ssl/allCAbundle.pem" ]; then
 fi
 copilot-local() {
   local key="qwen"
-  case "${1:-}" in qwen|opus|gpt-oss|northmini|glm) key="$1"; shift ;; esac
+  case "${1:-}" in ornith|gemma|qwopus|opus|glm|northmini|qwen|gpt-oss) key="$1"; shift ;; esac
   local model
   case "$key" in
-    qwen)      model="unsloth/Qwen3.6-35B-A3B-MTP-GGUF" ;;
+    ornith)    model="tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF" ;;
+    gemma)     model="unsloth/gemma-4-26B-A4B-it-GGUF" ;;
+    qwopus)    model="Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF" ;;
     opus)      model="hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF" ;;
-    gpt-oss)   model="gpt-oss-20b" ;;
-    northmini) model="unsloth/North-Mini-Code-1.0-GGUF" ;;
     glm)       model="unsloth/GLM-4.7-Flash-GGUF" ;;
+    northmini) model="unsloth/North-Mini-Code-1.0-GGUF" ;;
+    qwen)      model="unsloth/Qwen3.6-35B-A3B-MTP-GGUF" ;;
+    gpt-oss)   model="gpt-oss-20b" ;;
   esac
   COPILOT_PROVIDER_BASE_URL="http://127.0.0.1:8888/v1" \
   COPILOT_PROVIDER_API_KEY="$UNSLOTH_STUDIO_API_KEY" \
@@ -272,10 +280,10 @@ Then **open a new terminal** (or `source ~/.zshenv`).
 > because that env var **disables GitHub auth for every `copilot` call** the moment it's set —
 > that would silently break normal cloud/enterprise Copilot for the whole shell.
 >
-> **`key` (`qwen`/`opus`/`gpt-oss`/`northmini`/`glm`, default `qwen`) only LABELS which model
-> you're talking to — it does not switch models.** Only one local model is ever loaded on
-> `:8888` at a time (same 36 GB constraint as everything else here), so `key` must match
-> whatever you last ran `unsloth-serve <key>` with — see §5. Getting the label right matters
+> **`key` (`ornith`/`gemma`/`qwopus`/`opus`/`glm`/`northmini`/`qwen`/`gpt-oss`, default `qwen`)
+> only LABELS which model you're talking to — it does not switch models.** Only one local model is
+> ever loaded on `:8888` at a time (same 36 GB constraint as everything else here), so `key` must
+> match whatever you last ran `unsloth-serve <key>` with — see §5. Getting the label right matters
 > for Copilot's own context/token-limit lookup; the actual reply always comes from whichever
 > model is loaded, regardless of what's requested (Studio doesn't validate the `model` field).
 
@@ -356,25 +364,33 @@ ls -d ~/.cache/huggingface/hub/models--unsloth--Qwen3.6-35B-A3B-MTP-GGUF 2>/dev/
 
 Get the `hf` downloader if needed, **log in**, and enable fast transfer:
 ```bash
-uv tool install "huggingface_hub[cli]"   # or: pip install "huggingface_hub[cli]"
+uv tool install "huggingface_hub[cli]"   # no uv? python3 -m pip install --user "huggingface_hub[cli]"
 hf auth login                            # paste a free token from huggingface.co/settings/tokens
 export HF_XET_HIGH_PERFORMANCE=1         # fast Xet-backend downloads
 ```
+`install.sh` does these same steps, but note its prompt overstates what it runs: it offers to
+"install it via `uv tool install huggingface_hub`" and then falls back to
+`python3 -m pip install --user` whenever `uv` isn't on the machine — it detects `uv`, it never
+installs it. On a fresh corporate Mac that pip fallback is usually the path you actually get.
+
 > **`hf auth login` matters most on the VPN.** Anonymous downloads get rate-limited / rejected
 > through the corporate TLS proxy; logging in with a (free) HuggingFace token is what unblocked
 > downloads for the team — try it *before* blaming the CA/cert setup below. (The old
 > `export HF_HUB_ENABLE_HF_TRANSFER=1` from earlier guides is now a deprecated no-op — the Hub moved
 > to the Xet backend; `HF_XET_HIGH_PERFORMANCE=1` is the modern equivalent.)
 
-Pick what you need (you don't need all 5 — start with `qwen`):
+Pick what you need (you don't need all 8 — start with `ornith`):
 
 | Model | Size | Command |
 |---|---|---|
-| **qwen** (daily driver) | ~24 GB | `hf download unsloth/Qwen3.6-35B-A3B-MTP-GGUF --include "*UD-Q5_K_S*"` |
-| **opus** (distill) | ~23 GB | `hf download hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF --include "*Q5_K_M*"` |
-| **gpt-oss** (fastest) | ~12 GB | `hf download ggml-org/gpt-oss-20b-GGUF --include "*mxfp4*"` |
-| **northmini** (agentic) | ~23 GB | `hf download unsloth/North-Mini-Code-1.0-GGUF --include "*UD-Q5_K_XL*"` |
-| **glm** (2nd driver) | ~22 GB | `hf download unsloth/GLM-4.7-Flash-GGUF --include "*UD-Q5_K_XL*"` |
+| **ornith** (#1 overall) | ~22 GB | `hf download tashfene/Ornith-1.0-35B-MTP-Q4_K_M-GGUF --include "*Q4_K_M*"` |
+| **gemma** (#2 fastest) | ~21 GB | `hf download unsloth/gemma-4-26B-A4B-it-GGUF --include "*UD-Q5_K_XL*"` |
+| **qwopus** (#3 best coder) | ~25 GB | `hf download Jackrong/Qwopus3.6-35B-A3B-Coder-MTP-GGUF --include "*Q5_K_M*"` |
+| **opus** (#4 distill) | ~23 GB | `hf download hesamation/Qwen3.6-35B-A3B-Claude-4.6-Opus-Reasoning-Distilled-GGUF --include "*Q5_K_M*"` |
+| **glm** (#5 2nd driver) | ~22 GB | `hf download unsloth/GLM-4.7-Flash-GGUF --include "*UD-Q5_K_XL*"` |
+| **northmini** (#6 agentic) | ~23 GB | `hf download unsloth/North-Mini-Code-1.0-GGUF --include "*UD-Q5_K_XL*"` |
+| **qwen** (#7 launcher default) | ~24 GB | `hf download unsloth/Qwen3.6-35B-A3B-MTP-GGUF --include "*UD-Q5_K_S*"` |
+| **gpt-oss** (#9 tiny-RAM) | ~12 GB | `hf download ggml-org/gpt-oss-20b-GGUF --include "*mxfp4*"` |
 
 > **Behind a corporate VPN? `certificate verify failed` on HuggingFace downloads.** `hf download`
 > (Python/httpx) fails with `[SSL: CERTIFICATE_VERIFY_FAILED] … self-signed certificate in
