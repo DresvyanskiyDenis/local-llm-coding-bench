@@ -118,6 +118,40 @@ alone: **9/9 models agree to one decimal place**, max |Δ| = 0.050, rank order i
 | katdev | 82.2 | 82.19 |
 | gpt-oss | 77.1 | 77.14 |
 
+**The gate was never the risk — the unqualified composite was.** The same script, under
+`--round all`, reported `opus/q4` as `n_units: 30`, `missing_terms: []`, `composite: 86.6`, computed
+from the 10 round-1 tasks of a 31-task set with nothing in the JSON saying so. `missing_terms` is
+per-*axis* and could not see it: a config holding only round-1 units has some data on every axis, so
+the field was empty and correct and useless. The coincidence is what made it dangerous — with only
+round-1 units on disk that number is *exactly* the round-1 composite (86.60), so an incomplete
+figure read as a corroborated one. Every row now carries `coverage` (tasks with units against tasks
+the selected set defines, overall and per suite, with the missing task ids) and a
+`composite_coverage` sentence beside the composite; the markdown gains a `cov` column and a `‡` on
+partial rows (c8aa6f4). The composite is still computed when coverage is partial — labelled, not
+suppressed. On the committed `--round 1` aggregate all 15 configs are `10/10`, so nothing is
+currently marked; the marker exists for the mid-run reads that are still ahead.
+
+**The external lane had the same hole, and it is not hypothetical there.** `load_external()` reduced
+`bcb__*.json` / `ifeval__*.json` to a bare float, so the 20-prompt IFEval gate probe and a full
+541-prompt run were indistinguishable in the aggregate. Each external axis now records `n_measured`,
+`n_full_set`, where that full-set size came from, `denominator_unit`, `measured_field`, a
+`complete`/`PARTIAL`/`UNKNOWN` status with a coverage sentence, and the artifact's `ts` and
+filename; a missing denominator degrades to `UNKNOWN`, never to an assumed full set (a6a5b4f).
+`eval/results/AGGREGATE.md` renders `opus__q4` as `0.300 ‡10/148` for BigCodeBench and
+`0.250 ‡20/541 ⚠` for IFEval. Both full-set sizes are currently fallback constants rather than
+artifact fields: the bcb artifact records no available-count field at all, and
+`ifeval__opus__q4.json` is a `schema_version: 1` file written before `n_prompts_available` existed.
+That is now versioned instead of silent — `run_ifeval.py` writes `schema_version: 2`, where 2 is 1
+plus the sampling block (`n_prompts_available`, `sampled`, `sample_requested_n`, `sample_seed`,
+`sample_realised_n_by_type`) that the `--sample` work had added without a bump (0505a18).
+
+**The `⚠` is a stronger claim than the `‡`.** IFEval entries carry `truncation_contamination`, keyed
+on `n_finish_length` alone: `ifeval__opus__q4.json` has 15 of 20, so its `0.250` is contaminated
+rather than merely a slice — see "A second leak shape" above for the 13 of those 15 that are untagged
+prose. Detection only; nothing is re-scored and the leak itself is untouched, since it is item 0
+under "Needs Denis". The gate is unaffected by any of this: the `gate` block of the regenerated
+`eval/results/AGGREGATE.json` still reads 9/9 agreeing to 1 dp, max |Δ| 0.050, rank order identical.
+
 ## Environment health
 
 BigCodeBench relaxed-pin local execution, resolved against the vendored venv

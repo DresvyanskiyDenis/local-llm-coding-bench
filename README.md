@@ -73,6 +73,11 @@ there is evidence of correlation. **The composite's internal weights did change 
 stay computable on every row, and the round-1 weighting still reproduces the published leaderboard
 9/9, which is what licenses reusing round 1's units instead of re-running them.
 
+Every reported number carries the denominator it was measured over: a composite states how many of
+the selected set's tasks it actually covers, and an external axis renders as `0.300 ‡10/148` when it
+is a slice rather than a full-set score — with a `⚠` when the slice is contaminated as well as
+partial (methodology §6.12).
+
 BigCodeBench Hard here runs local with relaxed dependency pins (the official path is a Docker image
 with no arm64 manifest, or a remote Gradio executor that uploads solutions to a third party) —
 148/148 hard tasks resolve locally with 0 blocked, but the resulting `pass@1` is a **within-fleet**

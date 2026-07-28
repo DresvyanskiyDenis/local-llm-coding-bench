@@ -370,6 +370,14 @@ Two separate questions, kept separate:
    the six existing axes combine; it does not fold in either external axis, so point 1 above still
    holds unchanged.
 
+**"Reported alongside" is not "reported without a denominator."** An unweighted axis still has to
+say what it was measured over. Every external value the aggregate emits now carries the number of
+items that run actually scored, against the benchmark's full-set size and where that size came
+from, with a `complete`/`PARTIAL`/`UNKNOWN` status — and, for IFEval, a truncation-contamination
+flag that is a stronger warning than partial coverage. A 10-of-148 probe therefore cannot be read
+as a full-set number, and neither can a composite computed over part of the selected task set.
+§6.12.
+
 ### 6.7 Validation — rank correlation (the scientific claim of this round)
 
 Once BigCodeBench Hard and IFEval have full-fleet results, Spearman rank correlation is computed
@@ -546,3 +554,69 @@ weights (i.e. no `A_coding`-shape effect, isolating change 1 above), `qwen` move
 — axes where `gemma` doesn't lead — are worth more); `ornith`, `opus`, `katdev`, and `gpt-oss` hold
 their round-1 rank. See the generated reweighting-impact table in
 [`eval/results/AGGREGATE.md`](../eval/results/AGGREGATE.md) for the full per-model before/after.
+
+### 6.12 Coverage and provenance — a number is emitted with the denominator it was measured over
+
+**The failure this exists to stop.** Under `--round all` the aggregate reported `opus/q4` as
+`n_units: 30`, `missing_terms: []`, `composite: 86.6` — a composite computed from the 10 round-1
+tasks of a 31-task selected set, with nothing in the JSON saying so. `missing_terms` could not
+catch it, because that field is per-*axis*: a config holding only round-1 units has *some* data on
+every axis, so the field was empty, technically correct and useless here. The failure is not an
+absent axis, it is an axis computed over a third of its task set. What made it dangerous is the
+coincidence — with only round-1 units on disk the round-all composite equals the round-1 composite
+exactly (`opus/q4` = 86.60, `eval/results/AGGREGATE.json`), so an incomplete number read as a
+corroborated one.
+
+**Coverage is data on the row, not prose in a header.** Every config row carries `coverage`:
+`tasks_with_units` against `tasks_in_set`, as a `fraction`, a `complete` boolean and a
+`complete`/`PARTIAL` `status`, with `missing_tasks` listed and a `by_suite` breakdown
+(`build_coverage`, `eval/harness/aggregate.py:425`). Suites are enumerated from the task *set*, not
+from what is on disk, so a suite with zero units appears as `0/n` instead of vanishing — "A_coding
+complete but D_text 1/6" is what a reader needs before quoting the composite. A `composite_coverage`
+sentence sits directly next to the composite it qualifies, and the markdown gains a `cov` column
+with a `‡` on partial rows, so the rendered view and the JSON agree instead of one of them knowing
+something the other does not. A task counts as covered if at least one unit file for it parsed —
+reps are **not** checked, so 1/3 reps still counts the task as covered and the composite is a
+thinner mean than a complete row's. The composite is still computed and still reported when
+coverage is partial: a partial number is useful mid-run, it just may not claim to be a complete one.
+
+**The same rule, one lane over.** `load_external()` used to reduce `bcb__*.json` / `ifeval__*.json`
+to a bare float, so a 20-prompt gate probe and a 541-prompt full run were indistinguishable in the
+aggregate — the identical trap, and both shapes are on disk right now. Each external axis now
+records `n_measured` (the denominator that run actually scored: `n_tasks` for BigCodeBench,
+`n_prompts` for IFEval), `n_full_set`, `denominator_unit`, `measured_field`, `full_set_source`, a
+`complete`/`PARTIAL`/`UNKNOWN` status with a coverage sentence, and the artifact's `ts` and
+`source_file` (`eval/harness/aggregate.py:598`). A missing denominator field degrades to `UNKNOWN`,
+never to an assumed full set — silence must not render as full coverage. Slice scores are not
+comparable to full-set scores, nor to each other across different slices. Markdown reuses the `cov`
+column's marker, so in `eval/results/AGGREGATE.md` the BigCodeBench cell for `opus__q4` reads
+`0.300 ‡10/148` and its IFEval cell `0.250 ‡20/541 ⚠`.
+
+**`full_set_source` says where the denominator came from, because it is not always the artifact.**
+Both full-set sizes are transcribed from the runners as *fallbacks* for what the artifact itself
+should say. The BigCodeBench artifact records no available-count field at all, so
+`BCB_HARD_N_TASKS=148` is the only source of that denominator. IFEval's runner does record
+`n_prompts_available` per run, but `eval/results/ifeval__opus__q4.json` (`schema_version: 1`, ts
+`2026-07-25T20:41:30`) was written before that field existed, so the entry falls back to
+`IFEVAL_N_PROMPTS_FULL=541` and states in `full_set_source` that it did. That shape difference is
+now versioned rather than implicit: `eval/external/ifeval/run_ifeval.py` writes `schema_version: 2`,
+where 2 is 1 plus the sampling block (`n_prompts_available`, `sampled`, `sample_requested_n`,
+`sample_seed`, `sample_realised_n_by_type`) that had been added without a bump. A reader of a v1
+file must not assume those fields are present.
+
+**Contamination is a stronger claim than partial coverage, and nothing is re-scored.** IFEval
+entries additionally carry `truncation_contamination`, rendered `⚠`. `n_finish_length > 0` is the
+whole test — no keyword heuristic, no judgement about which prompts. `ifeval__opus__q4.json` has
+`n_finish_length: 15` of 20 scored prompts, so its `0.250` is not merely a 20-of-541 slice: 15 of
+the prompts it *does* cover hit the token ceiling without finishing and were scored anyway, and for
+a config whose reasoning carries no `<think>` tag the stripper cannot fire, so that prose was graded
+as the answer (§6.5; `eval/ROUND2_STATUS.md`, "A second leak shape", where 13 of those 15 are
+untagged prose). This is **detection only**. No value is adjusted, suppressed or re-scored here, and
+how to handle untagged reasoning is an open decision, not a settled one
+(`eval/ROUND2_STATUS.md`, "Needs Denis" #0) — labelling a number is not fixing the leak that made it
+unsafe to quote.
+
+**None of this changes what the composite is.** Coverage and provenance are additional fields; the
+`composite` field the Phase 6 gate and `validate_correlation.py` read is untouched, and the gate
+recorded in `eval/results/AGGREGATE.json` still reads 9/9 models agreeing to one decimal place, max
+|Δ| 0.050, rank order identical.
