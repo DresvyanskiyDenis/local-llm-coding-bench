@@ -532,7 +532,12 @@ def score_and_build(work_path, model, quant, base_url, strip_mode, max_tokens, l
             "reasoning_stripped": strip_mode != "off",
         },
         "vendor_sha": vendor_sha256(),
-        "schema_version": 1,
+        # 2 adds the sampling block above (n_prompts_available, sampled, sample_requested_n,
+        # sample_seed, sample_realised_n_by_type). eval/results/ifeval__opus__q4.json is a v1
+        # file, written before those fields existed, so a reader must not assume they are
+        # present: aggregate.py falls back to the 541 constant when n_prompts_available is
+        # missing and says so in full_set_source.
+        "schema_version": 2,
         "ts": now_iso(),
     }
 
