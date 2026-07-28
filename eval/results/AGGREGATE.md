@@ -1,6 +1,6 @@
 # AGGREGATE — round 1
 
-*Generated 2026-07-27T06:10:39.382144+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
+*Generated 2026-07-28T07:26:22.825622+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
 
 ```
 Overall (round1 weights, published) = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100
@@ -27,25 +27,29 @@ Overall (round2 weights)            = 0.35*A_coding + 0.10*(1 - tool_malformed%)
 
 ## Per-config components
 
-| Config | LB | n | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 | **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) | BCB-Hard | IFEval |
-|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| `ornith` q4 | * | 30 | 0.987 | 9% (8.70%) | 0.91 | 0.863 | 0.556 | 0.983 | 74.4 | 0.543 | **88.35** | **84.57†** | 88.35 | — | — |
-| `gemma` q4 | * | 30 | 0.911 | 3% (3.08%) | 0.97 | 0.863 | 0.333 | 0.967 | 137.1 | 1.001 | **87.08** | **80.18†** | 87.08 | — | — |
-| `qwopus` q5 | * | 30 | 0.994 | 3% (3.49%) | 0.97 | 0.863 | 0.389 | 0.883 | 63.5 | 0.464 | **87.03** | **80.68†** | 87.03 | — | — |
-| `gemma` q5 |  | 30 | 0.911 | 2% (2.47%) | 0.98 | 0.863 | 0.445 | 0.967 | 92.2 | 0.673 | **86.81** | **80.88†** | 86.81 | — | — |
-| `opus` q4 | * | 30 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | **81.11†** | 85.76 | 0.300 | 0.250 |
-| `opus` q5 |  | 30 | 0.923 | 3% (2.94%) | 0.97 | 0.818 | 0.611 | 0.867 | 68.4 | 0.499 | **86.10** | **81.75†** | 86.93 | — | — |
-| `glm` q4 | * | 30 | 0.916 | 3% (2.94%) | 0.97 | 0.879 | 0.445 | 0.883 | 58.0 | 0.423 | **84.89** | **79.19†** | 84.89 | — | — |
-| `glm` q5 |  | 30 | 0.880 | 4% (3.67%) | 0.96 | 0.909 | 0.445 | 0.883 | 65.3 | 0.477 | **84.10** | **78.70†** | 84.10 | — | — |
-| `northmini` q4 | * | 30 | 0.942 | 19% (19.32%) | 0.81 | 0.879 | 0.556 | 0.958 | 57.9 | 0.423 | **83.66** | **81.47†** | 83.58 | — | — |
-| `qwen` q5 |  | 30 | 0.970 | 28% (27.78%) | 0.72 | 0.863 | 0.556 | 0.975 | 92.6 | 0.676 | **83.58** | **82.66†** | 83.67 | — | — |
-| `qwen` q4 | * | 30 | 0.991 | 32% (32.48%) | 0.68 | 0.894 | 0.500 | 0.975 | 86.8 | 0.634 | **83.01** | **82.28†** | 82.93 | — | — |
-| `katdev` iq4 | * | 30 | 0.946 | 5% (4.60%) | 0.95 | 0.863 | 0.278 | 0.908 | 14.2 | 0.104 | **82.19** | **75.03†** | 82.10 | — | — |
-| `katdev` q4 |  | 30 | 0.885 | 2% (2.42%) | 0.98 | 0.863 | 0.333 | 0.908 | 13.4 | 0.098 | **81.32** | **74.27†** | 81.41 | — | — |
-| `northmini` q5 |  | 30 | 0.898 | 18% (17.86%) | 0.82 | 0.803 | 0.444 | 0.958 | 55.3 | 0.404 | **80.02** | **76.17†** | 80.10 | — | — |
-| `gpt-oss` mxfp4 | * | 30 | 0.883 | 11% (10.53%) | 0.89 | 0.863 | 0.111 | 0.883 | 30.1 | 0.220 | **77.14** | **69.22†** | 77.14 | — | — |
+| Config | LB | n | cov | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 | **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) | BCB-Hard | IFEval |
+|---|:--:|--:|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| `ornith` q4 | * | 30 | 10/10 | 0.987 | 9% (8.70%) | 0.91 | 0.863 | 0.556 | 0.983 | 74.4 | 0.543 | **88.35** | **84.57†** | 88.35 | — | — |
+| `gemma` q4 | * | 30 | 10/10 | 0.911 | 3% (3.08%) | 0.97 | 0.863 | 0.333 | 0.967 | 137.1 | 1.001 | **87.08** | **80.18†** | 87.08 | — | — |
+| `qwopus` q5 | * | 30 | 10/10 | 0.994 | 3% (3.49%) | 0.97 | 0.863 | 0.389 | 0.883 | 63.5 | 0.464 | **87.03** | **80.68†** | 87.03 | — | — |
+| `gemma` q5 |  | 30 | 10/10 | 0.911 | 2% (2.47%) | 0.98 | 0.863 | 0.445 | 0.967 | 92.2 | 0.673 | **86.81** | **80.88†** | 86.81 | — | — |
+| `opus` q4 | * | 30 | 10/10 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | **81.11†** | 85.76 | 0.300 | 0.250 |
+| `opus` q5 |  | 30 | 10/10 | 0.923 | 3% (2.94%) | 0.97 | 0.818 | 0.611 | 0.867 | 68.4 | 0.499 | **86.10** | **81.75†** | 86.93 | — | — |
+| `glm` q4 | * | 30 | 10/10 | 0.916 | 3% (2.94%) | 0.97 | 0.879 | 0.445 | 0.883 | 58.0 | 0.423 | **84.89** | **79.19†** | 84.89 | — | — |
+| `glm` q5 |  | 30 | 10/10 | 0.880 | 4% (3.67%) | 0.96 | 0.909 | 0.445 | 0.883 | 65.3 | 0.477 | **84.10** | **78.70†** | 84.10 | — | — |
+| `northmini` q4 | * | 30 | 10/10 | 0.942 | 19% (19.32%) | 0.81 | 0.879 | 0.556 | 0.958 | 57.9 | 0.423 | **83.66** | **81.47†** | 83.58 | — | — |
+| `qwen` q5 |  | 30 | 10/10 | 0.970 | 28% (27.78%) | 0.72 | 0.863 | 0.556 | 0.975 | 92.6 | 0.676 | **83.58** | **82.66†** | 83.67 | — | — |
+| `qwen` q4 | * | 30 | 10/10 | 0.991 | 32% (32.48%) | 0.68 | 0.894 | 0.500 | 0.975 | 86.8 | 0.634 | **83.01** | **82.28†** | 82.93 | — | — |
+| `katdev` iq4 | * | 30 | 10/10 | 0.946 | 5% (4.60%) | 0.95 | 0.863 | 0.278 | 0.908 | 14.2 | 0.104 | **82.19** | **75.03†** | 82.10 | — | — |
+| `katdev` q4 |  | 30 | 10/10 | 0.885 | 2% (2.42%) | 0.98 | 0.863 | 0.333 | 0.908 | 13.4 | 0.098 | **81.32** | **74.27†** | 81.41 | — | — |
+| `northmini` q5 |  | 30 | 10/10 | 0.898 | 18% (17.86%) | 0.82 | 0.803 | 0.444 | 0.958 | 55.3 | 0.404 | **80.02** | **76.17†** | 80.10 | — | — |
+| `gpt-oss` mxfp4 | * | 30 | 10/10 | 0.883 | 11% (10.53%) | 0.89 | 0.863 | 0.111 | 0.883 | 30.1 | 0.220 | **77.14** | **69.22†** | 77.14 | — | — |
 
-`*` = the config the published leaderboard uses for this model's headline composite. `†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the round-1-weighted composite to its left**; see the caveat at the top of this document and the reweighting-impact table below before comparing the two columns as a ranking.
+`*` = the config the published leaderboard uses for this model's headline composite. `†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the round-1-weighted composite to its left**; see the caveat at the top of this document and the reweighting-impact table below before comparing the two columns as a ranking. `cov` = tasks with units / tasks the selected set defines; **`‡` = PARTIAL — both composites on that row were computed over only those tasks**, per-suite breakdown in the coverage section below.
+
+### Coverage — which rows rest on the whole task set, and which do not
+
+All 15 configs have units on every one of the 10 tasks in the selected set. Every composite above covers the full set.
 
 ## Reweighting impact — round-1 vs round-2 weights, same underlying scores
 
@@ -85,3 +89,4 @@ Isolates the weight change from any task-set change: both composites below are c
 - **`decode`** — Median decode_tps over all cold_samples + warm_samples of every point in probe__<model>__<quant>.json (same reduction as digest.py), divided by 137. Not task-scoped, so it is identical for --round 1 / 2 / all. gemma-q4's 137.1 makes its term marginally exceed 1.0; the formula is applied verbatim, uncapped.
 - **`leaderboard_quant`** — q4 for every multi-quant model EXCEPT katdev, which reproduces only from iq4. qwopus (q5), ornith (q4) and gpt-oss (mxfp4) are single-quant.
 - **`external_axes`** — bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation.
+- **`coverage`** — Per config: how many tasks OF THE SELECTED TASK SET this config actually has units on disk for (`tasks_with_units`) against how many that set defines (`tasks_in_set`), overall and broken down per suite. A task counts as covered if at least one unit file for it parsed -- reps are NOT checked, so 1/3 reps still counts the task as covered and the composite is a thinner mean than a complete row's. `composite_coverage` repeats the verdict (`complete` / `PARTIAL n/m ...`) next to the composite itself. This is deliberately NOT the same thing as `missing_terms`, which is per-AXIS: a config with only round-1 units under --round all has data on every axis, so missing_terms is [] while its composite covers 10 of 31 tasks. Coverage is never a reason to null the composite -- a partial number is useful mid-run, it just may not claim to be a complete one.

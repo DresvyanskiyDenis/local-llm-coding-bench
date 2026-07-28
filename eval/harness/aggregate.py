@@ -37,6 +37,15 @@ it without any visible symptom.
 The round-2-weighted composite is NOT the same quantity as the round-1 leaderboard composite --
 see `ROUND2_COMPARABILITY_NOTE` below, repeated next to every place the number is rendered.
 
+Design property #3 — COVERAGE IS DATA, NOT PROSE. A composite is only as complete as the task
+set it was computed over, and mid-run that set is whatever happened to finish. Every row carries
+`coverage` (tasks-with-units vs tasks-the-set-defines, overall and per suite) plus a
+`composite_coverage` status string sitting directly next to the composite it qualifies.
+`missing_terms` does NOT cover this: it is per-AXIS, so a config holding only round-1 tasks
+still has *some* data on every axis and reports `missing_terms: []` while its composite was
+computed over a third of the selected task set. A partial composite is useful during a run; a
+partial composite that presents itself as complete is not. So it is labelled, never suppressed.
+
 The new round-2 axes (bcb_hard_pass@1, ifeval_prompt_strict) are reported ALONGSIDE, UNWEIGHTED,
 independent of either weight set. Folding them in waits for evidence of correlation (see
 validate_correlation.py).
@@ -288,6 +297,29 @@ CONVENTIONS: dict[str, str] = {
         "bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of "
         "the composite. Re-weighting waits for evidence of correlation."
     ),
+    "coverage": (
+        "Per config: how many tasks OF THE SELECTED TASK SET this config actually has units on "
+        "disk for (`tasks_with_units`) against how many that set defines (`tasks_in_set`), "
+        "overall and broken down per suite. A task counts as covered if at least one unit file "
+        "for it parsed -- reps are NOT checked, so 1/3 reps still counts the task as covered "
+        "and the composite is a thinner mean than a complete row's. `composite_coverage` "
+        "repeats the verdict (`complete` / `PARTIAL n/m ...`) next to the composite itself. "
+        "This is deliberately NOT the same thing as `missing_terms`, which is per-AXIS: a "
+        "config with only round-1 units under --round all has data on every axis, so "
+        "missing_terms is [] while its composite covers 10 of 31 tasks. Coverage is never a "
+        "reason to null the composite -- a partial number is useful mid-run, it just may not "
+        "claim to be a complete one."
+    ),
+}
+
+# Suite a task id belongs to, from its leading letter. ROUND1_TASKS / ROUND2_TASKS are grouped
+# by exactly this convention and UNIT_RE encodes the same suite names; coverage needs the
+# mapping for tasks with ZERO units on disk, where the suite cannot be read off a unit file.
+SUITE_BY_TASK_PREFIX: dict[str, str] = {
+    "A": "A_coding",
+    "B": "B_review",
+    "C": "C_edit",
+    "D": "D_text",
 }
 
 UNIT_RE = re.compile(
@@ -314,6 +346,62 @@ def task_set(which: str) -> frozenset[str]:
     if which == "2":
         return ROUND2_TASKS
     return ROUND1_TASKS | ROUND2_TASKS
+
+
+def task_suite(task: str) -> str:
+    """Suite of a task id (`A5_bcb854_...` -> `A_coding`). An id that does not follow the
+    convention is bucketed as `unknown` rather than dropped -- coverage must never lose a task
+    the task set defines."""
+    return SUITE_BY_TASK_PREFIX.get(task[:1], "unknown")
+
+
+def build_coverage(tasks: frozenset[str], seen: frozenset[str]) -> dict:
+    """How much of the SELECTED task set a config actually has units for, as data.
+
+    `seen` is the set of task ids this config has at least one parsed unit for. The per-suite
+    breakdown is the operative part during a run: A/B/C/D do not fill in at the same rate, and
+    "A_coding complete but D_text 1/6" is what a reader needs to know before quoting the
+    composite. Suites are enumerated from the task SET, not from what is on disk, so a suite
+    with zero units still appears as 0/n instead of silently vanishing.
+    """
+    expected_by_suite: dict[str, set[str]] = defaultdict(set)
+    for t in tasks:
+        expected_by_suite[task_suite(t)].add(t)
+
+    present = seen & tasks
+    by_suite: dict[str, dict] = {}
+    for suite in sorted(expected_by_suite):
+        exp = expected_by_suite[suite]
+        got = exp & present
+        by_suite[suite] = {
+            "tasks_with_units": len(got),
+            "tasks_in_set": len(exp),
+            "fraction": f"{len(got)}/{len(exp)}",
+            "complete": len(got) == len(exp),
+            "missing_tasks": sorted(exp - got),
+        }
+
+    complete = len(present) == len(tasks)
+    return {
+        "tasks_with_units": len(present),
+        "tasks_in_set": len(tasks),
+        "fraction": f"{len(present)}/{len(tasks)}",
+        "complete": complete,
+        "status": "complete" if complete else "PARTIAL",
+        "missing_tasks": sorted(tasks - present),
+        "by_suite": by_suite,
+    }
+
+
+def coverage_status_line(cov: dict) -> str:
+    """One string, machine-parseable prefix first, that a reader scanning the row cannot miss."""
+    per_suite = ", ".join(f"{s} {b['fraction']}" for s, b in cov["by_suite"].items())
+    if cov["complete"]:
+        return f"complete — all {cov['fraction']} tasks of the selected set have units"
+    return (
+        f"PARTIAL — composite computed over {cov['fraction']} tasks of the selected set "
+        f"({per_suite})"
+    )
 
 
 def load_units(results: Path, tasks: frozenset[str]) -> list[dict]:
@@ -405,12 +493,14 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
     suite_units: dict[tuple[str, str], dict[str, int]] = defaultdict(
         lambda: defaultdict(int)
     )
+    tasks_seen: dict[tuple[str, str], set[str]] = defaultdict(set)
 
     for d in units:
         k = (d["model"], d["quant"])
         n_units[k] += 1
         suite = d.get("suite")
         suite_units[k][suite] += 1
+        tasks_seen[k].add(d["task"])
         g = d.get("grade") or {}
         if suite == "A_coding":
             if g.get("pass_rate") is not None:
@@ -447,6 +537,7 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
         d_model = _mean3(d_by_model.get(model, []))
         d_cfg = _mean3(d_by_config.get(k, []))
         dec = probe_decode(results, model, quant)
+        coverage = build_coverage(tasks, frozenset(tasks_seen[k]))
 
         # raw (unweighted) per-axis components -- identical inputs feed both weight sets
         raw_axes: dict[str, float | None] = {
@@ -491,6 +582,9 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
                 "is_leaderboard_config": LEADERBOARD_QUANT.get(model) == quant,
                 "n_units": n_units[k],
                 "units_by_suite": dict(sorted(suite_units[k].items())),
+                # How much of the SELECTED task set this row actually rests on. n_units alone
+                # cannot say: 30 units is a complete round-1 row and a 10-of-31 round-all one.
+                "coverage": coverage,
                 "a_coding": a,
                 "tool_calls_total": total,
                 "tool_calls_malformed": malformed,
@@ -513,6 +607,10 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
                     kk: (None if v is None else round(v, 6)) for kk, v in terms.items()
                 },
                 "missing_terms": missing,
+                # Qualifies `composite` AND `composite_round2_weights` below -- both are
+                # combinations of the same per-axis scores, so both rest on the same tasks.
+                # Never a reason to null either number; see CONVENTIONS["coverage"].
+                "composite_coverage": coverage_status_line(coverage),
                 "composite": composite,
                 "composite_weights_version": "round1",
                 "composite_config_d": composite_cfg_d,
@@ -676,10 +774,11 @@ def render_md(agg: dict) -> str:
     L.append("## Per-config components")
     L.append("")
     L.append(
-        "| Config | LB | n | A | tools% (raw) | 1−tools | C | B | D/10 | decode | decode/137 "
-        "| **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) | BCB-Hard | IFEval |"
+        "| Config | LB | n | cov | A | tools% (raw) | 1−tools | C | B | D/10 | decode "
+        "| decode/137 | **Composite (R1 wts)** | **Composite (R2 wts)†** | comp (per-cfg D) "
+        "| BCB-Hard | IFEval |"
     )
-    L.append("|---|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|")
+    L.append("|---|:--:|--:|:--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|")
 
     def _sort_key(r):
         return (
@@ -698,8 +797,11 @@ def render_md(agg: dict) -> str:
         dec = r["decode_tps"]
         dec_norm_col = "—" if dec is None else f"{dec / DECODE_NORM_TPS:.3f}"
         star = "*" if r["is_leaderboard_config"] else ""
+        cov = r["coverage"]
+        cov_col = cov["fraction"] + ("" if cov["complete"] else " ‡")
         L.append(
-            f"| `{r['model']}` {r['quant']} | {star} | {r['n_units']} | {_f(r['a_coding'])} | "
+            f"| `{r['model']}` {r['quant']} | {star} | {r['n_units']} | {cov_col} | "
+            f"{_f(r['a_coding'])} | "
             f"{tools_col} | {rel_col} | {_f(r['c_edit'])} | {_f(r['b_recall'])} | {d_col} | "
             f"{_f(dec, 1)} | {dec_norm_col} | **{_f(r['composite'], 2)}** | "
             f"**{_f(r['composite_round2_weights'], 2)}†** | "
@@ -711,8 +813,54 @@ def render_md(agg: dict) -> str:
         "`*` = the config the published leaderboard uses for this model's headline composite. "
         "`†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the "
         "round-1-weighted composite to its left**; see the caveat at the top of this document "
-        "and the reweighting-impact table below before comparing the two columns as a ranking."
+        "and the reweighting-impact table below before comparing the two columns as a ranking. "
+        "`cov` = tasks with units / tasks the selected set defines; **`‡` = PARTIAL — both "
+        "composites on that row were computed over only those tasks**, per-suite breakdown in "
+        "the coverage section below."
     )
+    L.append("")
+
+    L.append("### Coverage — which rows rest on the whole task set, and which do not")
+    L.append("")
+    partial = [r for r in agg["configs"] if not r["coverage"]["complete"]]
+    if not agg["configs"]:
+        L.append("No configs to cover.")
+    elif not partial:
+        L.append(
+            f"All {len(agg['configs'])} configs have units on every one of the "
+            f"{len(agg['task_set'])} tasks in the selected set. Every composite above covers "
+            f"the full set."
+        )
+    else:
+        L.append(
+            f"**{len(partial)} of {len(agg['configs'])} configs are `‡` PARTIAL.** Their "
+            f"composites above are computed over the tasks listed here and no others — a "
+            f"usable mid-run number, not a complete one. `missing_terms` stays empty for a "
+            f"partial row whenever every axis has *some* data, which is why this section "
+            f"exists separately from the incomputable-composite list below."
+        )
+        L.append("")
+        L.append(
+            "| Config | cov | "
+            + " | ".join(sorted(SUITE_BY_TASK_PREFIX.values()))
+            + " |"
+        )
+        L.append("|---|--:|" + "--:|" * len(SUITE_BY_TASK_PREFIX))
+        for r in sorted(partial, key=lambda r: (r["model"], r["quant"])):
+            cov = r["coverage"]
+            cells = []
+            for suite in sorted(SUITE_BY_TASK_PREFIX.values()):
+                b = cov["by_suite"].get(suite)
+                cells.append(
+                    "—"
+                    if b is None
+                    else b["fraction"] + ("" if b["complete"] else " ‡")
+                )
+            L.append(
+                f"| `{r['model']}__{r['quant']}` | {cov['fraction']} ‡ | "
+                + " | ".join(cells)
+                + " |"
+            )
     L.append("")
 
     L.append(
@@ -753,11 +901,19 @@ def render_md(agg: dict) -> str:
                 if d_rank == 0
                 else (f"↑ {d_rank}" if d_rank > 0 else f"↓ {-d_rank}")
             )
+            cov = r["coverage"]
+            mark = "" if cov["complete"] else f" ‡ {cov['fraction']}"
             L.append(
-                f"| {r1_pos[m]} | `{m}` | {r['quant']} | {_f(r['composite'], 2)} | "
+                f"| {r1_pos[m]} | `{m}`{mark} | {r['quant']} | {_f(r['composite'], 2)} | "
                 f"{_f(r['composite_round2_weights'], 2)} | {r2_pos[m]} | {arrow} |"
             )
         L.append("")
+        if any(not r["coverage"]["complete"] for r in r1_rank):
+            L.append(
+                "`‡` = that row's scores cover only the tasks shown, not the full selected "
+                "set — the ranking it takes part in is provisional until coverage completes."
+            )
+            L.append("")
         ranking_changed = [r["model"] for r in r1_rank] != [r["model"] for r in r2_rank]
         L.append(
             f"**Reweighting alone {'DOES' if ranking_changed else 'does NOT'} reorder the "

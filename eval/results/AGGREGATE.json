@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_ts": "2026-07-27T06:10:55.654762+00:00",
+  "generated_ts": "2026-07-28T07:28:30.290601+00:00",
   "round": "1",
   "task_set": [
     "A1_events_sessionize",
@@ -80,7 +80,8 @@
     "d_text": "Mean 0-10 judge score from DTEXT_JUDGED.json, POOLED ACROSS BOTH QUANTS OF THE MODEL (12 judged units), divided by 10. methodology.md says the composite uses the q4 quant, but the D term in the published table is model-level: per-config D gives opus 85.8 against a published 86.6. Per-config D is reported alongside as d_text_config and drives the diagnostic composite_config_d column.",
     "decode": "Median decode_tps over all cold_samples + warm_samples of every point in probe__<model>__<quant>.json (same reduction as digest.py), divided by 137. Not task-scoped, so it is identical for --round 1 / 2 / all. gemma-q4's 137.1 makes its term marginally exceed 1.0; the formula is applied verbatim, uncapped.",
     "leaderboard_quant": "q4 for every multi-quant model EXCEPT katdev, which reproduces only from iq4. qwopus (q5), ornith (q4) and gpt-oss (mxfp4) are single-quant.",
-    "external_axes": "bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation."
+    "external_axes": "bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation.",
+    "coverage": "Per config: how many tasks OF THE SELECTED TASK SET this config actually has units on disk for (`tasks_with_units`) against how many that set defines (`tasks_in_set`), overall and broken down per suite. A task counts as covered if at least one unit file for it parsed -- reps are NOT checked, so 1/3 reps still counts the task as covered and the composite is a thinner mean than a complete row's. `composite_coverage` repeats the verdict (`complete` / `PARTIAL n/m ...`) next to the composite itself. This is deliberately NOT the same thing as `missing_terms`, which is per-AXIS: a config with only round-1 units under --round all has data on every axis, so missing_terms is [] while its composite covers 10 of 31 tasks. Coverage is never a reason to null the composite -- a partial number is useful mid-run, it just may not claim to be a complete one."
   },
   "n_units_total": 450,
   "configs": [
@@ -94,6 +95,44 @@
         "B_review": 6,
         "C_edit": 6,
         "D_text": 6
+      },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
       },
       "a_coding": 0.911,
       "tool_calls_total": 130,
@@ -116,6 +155,7 @@
         "decode": 0.050036
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 87.08,
       "composite_weights_version": "round1",
       "composite_config_d": 87.08,
@@ -143,6 +183,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.911,
       "tool_calls_total": 162,
       "tool_calls_malformed": 4,
@@ -164,6 +242,7 @@
         "decode": 0.03365
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 86.81,
       "composite_weights_version": "round1",
       "composite_config_d": 86.81,
@@ -191,6 +270,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.916,
       "tool_calls_total": 102,
       "tool_calls_malformed": 3,
@@ -212,6 +329,7 @@
         "decode": 0.021168
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 84.89,
       "composite_weights_version": "round1",
       "composite_config_d": 84.89,
@@ -239,6 +357,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.88,
       "tool_calls_total": 109,
       "tool_calls_malformed": 4,
@@ -260,6 +416,7 @@
         "decode": 0.023832
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 84.1,
       "composite_weights_version": "round1",
       "composite_config_d": 84.1,
@@ -287,6 +444,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.883,
       "tool_calls_total": 76,
       "tool_calls_malformed": 8,
@@ -308,6 +503,7 @@
         "decode": 0.010985
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 77.14,
       "composite_weights_version": "round1",
       "composite_config_d": 77.14,
@@ -335,6 +531,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.946,
       "tool_calls_total": 87,
       "tool_calls_malformed": 4,
@@ -356,6 +590,7 @@
         "decode": 0.005182
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 82.19,
       "composite_weights_version": "round1",
       "composite_config_d": 82.1,
@@ -383,6 +618,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.885,
       "tool_calls_total": 124,
       "tool_calls_malformed": 3,
@@ -404,6 +677,7 @@
         "decode": 0.004891
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 81.32,
       "composite_weights_version": "round1",
       "composite_config_d": 81.41,
@@ -431,6 +705,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.942,
       "tool_calls_total": 88,
       "tool_calls_malformed": 17,
@@ -452,6 +764,7 @@
         "decode": 0.021131
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 83.66,
       "composite_weights_version": "round1",
       "composite_config_d": 83.58,
@@ -479,6 +792,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.898,
       "tool_calls_total": 140,
       "tool_calls_malformed": 25,
@@ -500,6 +851,7 @@
         "decode": 0.020182
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 80.02,
       "composite_weights_version": "round1",
       "composite_config_d": 80.1,
@@ -527,6 +879,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.976,
       "tool_calls_total": 91,
       "tool_calls_malformed": 5,
@@ -548,6 +938,7 @@
         "decode": 0.026241
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 86.6,
       "composite_weights_version": "round1",
       "composite_config_d": 85.76,
@@ -575,6 +966,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.923,
       "tool_calls_total": 102,
       "tool_calls_malformed": 3,
@@ -596,6 +1025,7 @@
         "decode": 0.024964
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 86.1,
       "composite_weights_version": "round1",
       "composite_config_d": 86.93,
@@ -623,6 +1053,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.987,
       "tool_calls_total": 92,
       "tool_calls_malformed": 8,
@@ -644,6 +1112,7 @@
         "decode": 0.027153
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 88.35,
       "composite_weights_version": "round1",
       "composite_config_d": 88.35,
@@ -671,6 +1140,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.991,
       "tool_calls_total": 157,
       "tool_calls_malformed": 51,
@@ -692,6 +1199,7 @@
         "decode": 0.031679
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 83.01,
       "composite_weights_version": "round1",
       "composite_config_d": 82.93,
@@ -719,6 +1227,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.97,
       "tool_calls_total": 162,
       "tool_calls_malformed": 45,
@@ -740,6 +1286,7 @@
         "decode": 0.033796
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 83.58,
       "composite_weights_version": "round1",
       "composite_config_d": 83.67,
@@ -767,6 +1314,44 @@
         "C_edit": 6,
         "D_text": 6
       },
+      "coverage": {
+        "tasks_with_units": 10,
+        "tasks_in_set": 10,
+        "fraction": "10/10",
+        "complete": true,
+        "status": "complete",
+        "missing_tasks": [],
+        "by_suite": {
+          "A_coding": {
+            "tasks_with_units": 4,
+            "tasks_in_set": 4,
+            "fraction": "4/4",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "B_review": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "C_edit": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          },
+          "D_text": {
+            "tasks_with_units": 2,
+            "tasks_in_set": 2,
+            "fraction": "2/2",
+            "complete": true,
+            "missing_tasks": []
+          }
+        }
+      },
       "a_coding": 0.994,
       "tool_calls_total": 86,
       "tool_calls_malformed": 3,
@@ -788,6 +1373,7 @@
         "decode": 0.023175
       },
       "missing_terms": [],
+      "composite_coverage": "complete \u2014 all 10/10 tasks of the selected set have units",
       "composite": 87.03,
       "composite_weights_version": "round1",
       "composite_config_d": 87.03,
