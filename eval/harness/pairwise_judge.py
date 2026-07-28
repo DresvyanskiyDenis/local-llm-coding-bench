@@ -171,7 +171,7 @@ def _load_recovery_manifest(suite):
     return manifest
 
 
-def load_answer(config, suite, task, round_=1):
+def load_answer(config, suite, task):
     """Preferred source: driver.answer_file -> <rundir>/answer.txt under eval/runs/ (the
     original round-1 path — gone on this machine, 0 entries, but kept first so a healthy
     machine never needs the fallback). Fallback: the recovery manifest written by
@@ -181,7 +181,12 @@ def load_answer(config, suite, task, round_=1):
     a non-"recovered" status (export_failed / no_final_text) is reported honestly rather
     than silently treated as missing-with-no-explanation.
     """
-    unit_id = f"{config['model']}__{config['quant']}__{suite}__{task}__rep{round_}"
+    # rep1, NOT rep{round_}: `round_` is the benchmark round (1, 2), not a repetition index.
+    # discover_tasks() globs `*__rep1.json`, so splicing the round in here made `--round 2`
+    # judge repetition 2 against a rep-1-keyed task list, silently. The two are only equal at
+    # round 1. ops/recover_round1_answers.py:57,147 keeps the round==rep coincidence on
+    # purpose (it only ever runs for round 1) — do not "align" one of the two back to the other.
+    unit_id = f"{config['model']}__{config['quant']}__{suite}__{task}__rep1"
 
     path = RESULTS_DIR / f"{unit_id}.json"
     if not path.exists():
@@ -1514,7 +1519,7 @@ def main():
     missing_detail = []
     for c in configs:
         for t in tasks:
-            rec = load_answer(c, args.suite, t, args.round)
+            rec = load_answer(c, args.suite, t)
             answers[(c["id"], t)] = rec
             if rec.text is not None:
                 n_found += 1

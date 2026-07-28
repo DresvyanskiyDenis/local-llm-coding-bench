@@ -286,9 +286,10 @@ def run_gt_check(parallel: int, log_path: Path) -> dict:
             "log": str(log_path),
             "rlimits": "disabled",
             "rlimits_reason": RLIMIT_NOTE,
-            "n_setrlimit_errors": (proc.stdout + proc.stderr).count(
-                "current limit exceeds maximum limit"
-            ),
+            # `text`, not proc.stdout/proc.stderr: the Popen above streams to `log_f` with
+            # stderr=STDOUT, so both attributes are None and adding them raised TypeError —
+            # after the full 30-60 min pass and before OUT.write_text(), losing the whole run.
+            "n_setrlimit_errors": text.count("current limit exceeds maximum limit"),
             "note": (
                 "gt_pass_rate is the CEILING on every model's pass@1 under this executor; "
                 "failed_tasks are environment errors by construction, not model errors."
@@ -431,6 +432,16 @@ def main() -> int:
     # was the cheap import-only pass.
     if args.gt_check:
         obj["gt_check"] = run_gt_check(args.parallel, Path(args.gt_log))
+        # run_bcb.py::_gt_ceiling_scope reads these two to state the CEILING's denominator.
+        # gt_from_cache() supplies them; the live path did not, so every bcb__*.json got
+        # `gt_pass_rate_ceiling_scope: "unknown: ... has no n_tasks_in_cache"`. Setting only
+        # the count would be worse — the scope string would then claim the number was
+        # "measured at the ground-truth cache" when it came from this live run.
+        obj["gt_check"]["n_tasks_in_cache"] = len(problems)
+        obj["gt_check"]["source"] = (
+            f"the live --check-gt-only pass over all {len(problems)} tasks, "
+            f"log {args.gt_log}"
+        )
     elif args.gt_from_cache:
         cached = gt_from_cache()
         if cached:
