@@ -4,7 +4,7 @@
 
 > **Correction notice (2026-07-17).** The original edition of this file put `katdev`, `qwopus`, `ornith` in a "failed as OpenCode agentic drivers" bucket. **That conclusion was wrong — it was a harness artifact, not a model verdict.** A `opencode-log-sanitizer` plugin was rewriting the task prompt to the literal string `"redacted"` before it reached those three models, so they answered "I see you've sent redacted…" and never called a tool. The plugin was installed **Jul-15 10:44**, exactly at the night-2/night-3 boundary, so it corrupted **only** night-3 (these three) and left the six night-1/2 models untouched (`redacted` appears in 153 katdev / 54 qwopus / 60 ornith run-dirs and **zero** of the other six). Plugin removed → the three re-run **clean** (`redacted`=0, tool-calls fire, termination flips from ~80% `no_tools` to ~80% `clean`). Their real numbers are below, and they are **among the best of the fleet**.
 
-> 📊 **A self-explanatory dashboard version of this leaderboard** (verdict + sortable table + metric glossary + methodology timeline) lives at [`../../leaderboard.html`](../../leaderboard.html) — open it in a browser.
+> 📊 **A self-explanatory dashboard version of this leaderboard** (verdict + sortable table + metric glossary + methodology timeline) lives at [`../../docs/leaderboard.html`](../../docs/leaderboard.html) — open it in a browser.
 
 ## Final verdict — overall composite ranking
 

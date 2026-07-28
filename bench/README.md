@@ -29,7 +29,7 @@ Since 2026-07-25, `:8888` is not always this repo's own single-model server. Dai
 by `llama-swap` (loads models on demand, multiple ids); an eval run instead stops llama-swap and
 hands the port to `unsloth-serve` for the duration
 (`eval/harness/ops/serving_mode.sh {eval|daily}` — see
-[`docs/methodology.md`](../docs/methodology.md) §6.2 for why the two lanes need a stable serving
-stack). `smoke_test.py` itself doesn't care which one is answering — it only needs an
+[`eval/IMPLEMENTATION_PLAN.md`](../eval/IMPLEMENTATION_PLAN.md) §3.5 for why the two lanes need a
+stable serving stack). `smoke_test.py` itself doesn't care which one is answering — it only needs an
 OpenAI-compatible endpoint on `--base-url` — but if you run it mid-eval-night you are smoke-testing
 whatever `unsloth-serve` currently has loaded, not your daily llama-swap fleet.

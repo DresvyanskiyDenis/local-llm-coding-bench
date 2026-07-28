@@ -142,7 +142,7 @@ parser here). Match findings against `grade/key.json` via location overlap + syn
 ```
 `ambiguous` = findings that partially matched; Opus resolves later, so SAVE them, don't guess.
 
-**Round 2 addition — control tasks (e.g. `B6_control_nobugs`, not yet on disk, Phase 4):**
+**Round 2 addition — control tasks (e.g. `B6_control_nobugs`, on disk since Phase 4):**
 `grade/key.json` plants nothing, recognised via an explicit `{"control": true, "bugs": []}`
 (a bare `{"bugs": []}` is also honoured). `planted` is then 0, so `recall` is `null` — never
 `0.0`, recall is undefined when nothing was planted. `precision` collapses to the
@@ -176,7 +176,7 @@ For C_edit the orchestrator runs BOTH pytest_grader and diff_grader and merges (
 **Round 2 addition — `noise.json` gains a `kind` field** (`out_of_scope` | `already_done` |
 `contradiction` | `must_survive`; `must_survive` is today's only kind, now explicit) and may
 carry multiple entries via `{"noise": [...]}` (e.g. `C5_contradiction`, `C3_scope_creep`,
-`C4_already_done` — not yet on disk, Phase 4). A `noise.json` with no `kind` key (today's
+`C4_already_done` — on disk since Phase 4). A `noise.json` with no `kind` key (today's
 only real shape, e.g. C1/C2) is untouched and byte-identical to before this addition. Which
 `grade/noise.json` key each `kind` pairs with:
 - `must_survive` / `already_done` → `required_pattern`/`required_snippet` (correct code that
