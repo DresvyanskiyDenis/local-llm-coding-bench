@@ -15,6 +15,10 @@
     "assembled_path": "longctx_core/core.md",
     "assembly": "the source files concatenated verbatim in listed order, joined by a blank line",
     "sha256": "8703a2d4bd7f7051c9ee9d90b95fcc1cabc58fe9e6ae8ecbbf2c501651c5290c",
+    "snapshot": true,
+    "pinned_at_commit": "020e776b7f23bf8e2d888119d7247962ac49f22b",
+    "pinned_utc": "2026-07-25T20:45:43+00:00",
+    "pin_policy": "Each `repo-relative` source below is a SNAPSHOT of that file as it stood when the corpus was assembled, NOT a live mirror. The corpus is frozen: the D3/D4/D5 measured token counts in longctx_measured_tokens.json were taken against this exact text, and the recorded sha256s therefore describe the bytes embedded in longctx_core/core.md. Verify them against core.md, not against the working tree. Do NOT re-assemble from the current docs: it would invalidate the measurements, and docs/methodology.md now describes this benchmark (including what the graders reward), which must not leak into the haystack D3/D4/D5 ask a model to search. Repo files drifting away from these snapshots is expected and is not corpus corruption.",
     "sources": [
       {
         "id": "docs/methodology.md",

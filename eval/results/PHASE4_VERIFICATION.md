@@ -1,6 +1,12 @@
 # Phase 4 task verification
 
-`33/33` checks passed. Regenerate: `uv run eval/harness/ops/verify_phase4.py`.
+`32/32 checks passed, 0 failed, 1 skipped (not attempted, so not graded), 3 notes`. Regenerate: `uv run eval/harness/ops/verify_phase4.py --offline`.
+
+Verdicts: **PASS**/**FAIL** are graded. **SKIP** is a check that deliberately did not run — it is not a failure and is not in the denominator. **NOTE** is an observation with no pass/fail meaning.
+
+## Not verified by this run
+
+- `manifest.padding` — fetched padding sha256s (kind=fetched, NOT on disk): 0/49 not attempted (--offline). these 49 refs have no on-disk copy, so only a re-fetch can verify them; NOT verified by this run. To verify: `uv run eval/harness/ops/verify_phase4.py` (no --offline, needs network)
 
 | Area | Task | Check | Verdict | Number |
 |---|---|---|---|---|
@@ -29,11 +35,14 @@
 | C | `C5_contradiction` | FAIL case: trap fires | PASS | acted_on=True, surgical=0.7, pytest=0.917 |
 | C | `C5_contradiction` | contradiction signal: named vs silent (documented false-negative)<br>_keyword match only -- cannot tell 'right for the right reason, unstated' from 'never noticed'_ | PASS | named=True, silent=False (both code-correct: acted_on=False) |
 | D | `longctx_core` | assembled core.md sha256 matches manifest | PASS | 8703a2d4bd7f7051... |
-| D | `manifest.core` | on-disk core source sha256s | PASS | 3/3 OK |
+| D | `manifest.core` | core source sha256s, as embedded in core.md<br>_pinned snapshots verified against the frozen corpus, not against the live repo_ | PASS | 3/3 OK |
 | D | `manifest.core` | core.md == sources joined by blank line | PASS | 36396 == 36396 bytes |
-| D | `manifest.padding` | fetched padding sha256s (re-fetched from pinned commits) | PASS | 49/49 OK |
-| D | `longctx_manifest` | total sha256 refs verified | PASS | 53/53 |
+| D | `manifest.core` | live repo copy of docs/methodology.md<br>_docs/methodology.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid_ | NOTE | 14017 -> 34937 bytes |
+| D | `manifest.core` | live repo copy of docs/leaderboard.md<br>_6860 bytes, still identical to the snapshot_ | NOTE | unchanged since pin |
+| D | `manifest.core` | live repo copy of docs/replication.md<br>_15517 bytes, still identical to the snapshot_ | NOTE | unchanged since pin |
+| D | `manifest.padding` | fetched padding sha256s (kind=fetched, NOT on disk)<br>_these 49 refs have no on-disk copy, so only a re-fetch can verify them; NOT verified by this run. To verify: `uv run eval/harness/ops/verify_phase4.py` (no --offline, needs network)_ | SKIP | 0/49 not attempted (--offline) |
+| D | `longctx_manifest` | sha256 refs verified (of those verifiable offline)<br>_the on-disk corpus is fully verified; the fetched padding refs are not_ | PASS | 4/4 offline-verifiable; 49 of 53 not attempted |
 | D | `D3/D4/D5` | core present in full in all three corpora | PASS | D3=610/610, D4=610/610, D5=610/610 |
 | D | `D3/D4/D5` | extracted core byte-identical across the ladder | PASS | 92009e4649a9b08d... x3, fragments=[14, 19, 19] |
 | D | `D3/D4/D5` | PROMPT/rubric/key_points identical + match longctx_shared | PASS | 3/3 identical |
-| D | `D3/D4/D5` | rep count held constant across the ladder<br>_D3 falls through to orchestrate.py default_reps=[1,2,3]; D4/D5 pinned to 1_ | PASS | D3=[1]; D4=[1]; D5=[1] |
+| D | `D3/D4/D5` | rep count held constant across the ladder<br>_all three pin reps explicitly, so none falls through to orchestrate.py default_reps (D3's fall-through confound was fixed in 169a3c6)_ | PASS | D3=[1]; D4=[1]; D5=[1] |

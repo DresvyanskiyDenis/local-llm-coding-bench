@@ -19,12 +19,19 @@ Runs, with the graders UNMODIFIED and no local model / no port touched:
                         shared core across D3/D4/D5.
 
 Writes eval/results/PHASE4_VERIFICATION.json + .md and prints a compact table.
-Exit code 0 iff every check passed.
+Verdicts are PASS/FAIL (graded), SKIP (deliberately not run -- kept out of the
+denominator, since a check that did not run is not a check that failed) and NOTE
+(observation, no pass/fail meaning). Exit code 0 iff nothing FAILed.
+
+The core sources are PINNED SNAPSHOTS taken at assembly time, not live mirrors: they are
+verified against the bytes embedded in core.md, not against the current repo files. The
+corpus is frozen on purpose (D3/D4/D5's measured token counts were taken against this
+text), so a repo doc drifting away from its snapshot is reported as a NOTE, not a failure.
 
 Network: the manifest's 49 padding sources are `kind: fetched` (pinned raw.githubusercontent
 URLs) and have NO on-disk copy in this repo, so they can only be verified by re-fetching.
-Cached under $TMPDIR/phase4_pad_src. Run with --offline to skip them (they are then
-reported as "unverifiable offline" rather than silently passing).
+Cached under $TMPDIR/phase4_pad_src. Run with --offline to skip them; the run then states
+plainly which refs it did not verify and what command would.
 """
 
 import argparse
@@ -46,11 +53,24 @@ RESULTS = ROOT / "eval" / "results"
 
 results = []
 
+# Four verdicts, only two of which are graded.
+#   PASS/FAIL -- a check that ran and reached a verdict; both count in the denominator.
+#   SKIP      -- a check that deliberately did not run (e.g. --offline). Not a failure:
+#                nothing was demonstrated either way, so it stays out of the denominator.
+#   NOTE      -- an observation with no pass/fail semantics. Reported, never graded.
+PASS, FAIL, SKIP, NOTE = "PASS", "FAIL", "SKIP", "NOTE"
+GRADED = (PASS, FAIL)
 
-def record(area, task, check, ok, number, note=""):
-    results.append({"area": area, "task": task, "check": check,
-                    "ok": bool(ok), "number": str(number), "note": note})
-    print(f"  [{'PASS' if ok else 'FAIL'}] {task:<22} {check:<44} {number}")
+
+def record(area, task, check, verdict, number, note=""):
+    """verdict is a bool (graded) or one of PASS/FAIL/SKIP/NOTE."""
+    status = verdict if isinstance(verdict, str) else (PASS if verdict else FAIL)
+    results.append({"area": area, "task": task, "check": check, "status": status,
+                    # `ok` is JSON null for ungraded rows so that a SKIP can never be
+                    # summed as a failure -- the same null-vs-0.0 distinction B6 tests for.
+                    "ok": (status == PASS) if status in GRADED else None,
+                    "number": str(number), "note": note})
+    print(f"  [{status}] {task:<22} {check:<44} {number}")
 
 
 def run(cmd, cwd=None):
@@ -326,24 +346,56 @@ def check_d(offline):
     record("D", "longctx_core", "assembled core.md sha256 matches manifest",
            sha(core_bytes) == man["core"]["sha256"], f"{sha(core_bytes)[:16]}...")
 
-    # on-disk core sources
-    ok = 0
-    parts = []
-    for s in man["core"]["sources"]:
+    # Core sources are PINNED SNAPSHOTS taken when the corpus was assembled, not live
+    # mirrors of the repo. The corpus is frozen: D3/D4/D5's measured token counts were
+    # taken against this exact text, and re-assembling from today's docs would both
+    # invalidate them and leak this benchmark's own current methodology (including what
+    # the grader rewards) into the haystack the model is asked to search.
+    # So verify each source against the bytes actually embedded in core.md -- that is the
+    # check that catches corpus corruption. Live-file drift is reported separately, as a
+    # NOTE, because it is expected and harmless.
+    sources = man["core"]["sources"]
+    n_core = len(sources)
+    sep = b"\n"  # manifest: "concatenated verbatim in listed order, joined by a blank line"
+
+    ok, offset, layout_ok = 0, 0, True
+    for i, s in enumerate(sources):
+        br = s.get("byte_range_used")
+        n = (br[1] - br[0]) if br else s["bytes_total"]
+        embedded = core_bytes[offset:offset + n]
+        if sha(embedded) == s["sha256"]:
+            ok += 1
+        offset += n
+        if i < n_core - 1:
+            if core_bytes[offset:offset + len(sep)] != sep:
+                layout_ok = False
+            offset += len(sep)
+    record("D", "manifest.core", "core source sha256s, as embedded in core.md",
+           ok == n_core, f"{ok}/{n_core} OK",
+           "pinned snapshots verified against the frozen corpus, not against the live repo")
+    record("D", "manifest.core", "core.md == sources joined by blank line",
+           ok == n_core and layout_ok and offset == len(core_bytes),
+           f"{offset} == {len(core_bytes)} bytes",
+           "" if layout_ok else "separator between sources is not a blank line")
+
+    # Live-repo drift: informational. The pin is the point, so divergence is not a failure.
+    pin = man["core"].get("pinned_at_commit", "")
+    for s in sources:
         p = ROOT / s["path"]
         if not p.exists():
+            record("D", "manifest.core", f"live repo copy of {s['id']}", NOTE, "absent",
+                   "no live file to compare; the corpus keeps its pinned snapshot")
             continue
-        data = p.read_bytes()
-        br = s.get("byte_range_used")
-        used = data[br[0]:br[1]] if br else data
-        parts.append(used)
-        if sha(used) == s["sha256"]:
-            ok += 1
-    n_core = len(man["core"]["sources"])
-    record("D", "manifest.core", "on-disk core source sha256s",
-           ok == n_core, f"{ok}/{n_core} OK")
-    record("D", "manifest.core", "core.md == sources joined by blank line",
-           b"\n".join(parts) == core_bytes, f"{len(b'\n'.join(parts))} == {len(core_bytes)} bytes")
+        live = p.read_bytes()
+        if sha(live) == s["sha256"]:
+            record("D", "manifest.core", f"live repo copy of {s['id']}", NOTE,
+                   "unchanged since pin", f"{len(live)} bytes, still identical to the snapshot")
+        else:
+            record("D", "manifest.core", f"live repo copy of {s['id']}", NOTE,
+                   f"{s['bytes_total']} -> {len(live)} bytes",
+                   f"{s['path']} has changed in the repo since the corpus was pinned"
+                   f"{' at ' + pin[:7] if pin else ''}; the corpus deliberately retains the "
+                   "pinned snapshot, so D3/D4/D5's measured token counts stay valid")
 
     # padding: fetched, no on-disk copy
     pad = man["padding"]["order"]
@@ -351,9 +403,11 @@ def check_d(offline):
     cache.mkdir(parents=True, exist_ok=True)
     if offline:
         record("D", "manifest.padding", "fetched padding sha256s (kind=fetched, NOT on disk)",
-               False, f"0/{len(pad)} — skipped (--offline)",
-               "these 49 refs have no on-disk file; only re-fetch can verify them")
-        pad_ok = 0
+               SKIP, f"0/{len(pad)} not attempted (--offline)",
+               f"these {len(pad)} refs have no on-disk copy, so only a re-fetch can verify "
+               "them; NOT verified by this run. To verify: "
+               "`uv run eval/harness/ops/verify_phase4.py` (no --offline, needs network)")
+        pad_ok = None
     else:
         pad_ok = 0
         for i, s in enumerate(pad):
@@ -370,8 +424,18 @@ def check_d(offline):
         record("D", "manifest.padding", "fetched padding sha256s (re-fetched from pinned commits)",
                pad_ok == len(pad), f"{pad_ok}/{len(pad)} OK")
 
-    record("D", "longctx_manifest", "total sha256 refs verified",
-           (1 + ok + pad_ok) == total_refs, f"{1 + ok + pad_ok}/{total_refs}")
+    # Totals: count only what was actually attempted, so a skipped fetch cannot masquerade
+    # as a shortfall in corpus integrity.
+    verified = 1 + ok + (pad_ok or 0)
+    if pad_ok is None:
+        attempted = 1 + n_core
+        record("D", "longctx_manifest", "sha256 refs verified (of those verifiable offline)",
+               verified == attempted,
+               f"{verified}/{attempted} offline-verifiable; {len(pad)} of {total_refs} not attempted",
+               "the on-disk corpus is fully verified; the fetched padding refs are not")
+    else:
+        record("D", "longctx_manifest", "total sha256 refs verified",
+               verified == total_refs, f"{verified}/{total_refs}")
 
     # shared core across D3/D4/D5
     import difflib
@@ -410,40 +474,65 @@ def check_d(offline):
     record("D", "D3/D4/D5", "rep count held constant across the ladder",
            len({str(v) for v in reps.values()}) == 1,
            "; ".join(f"{t.split('_')[0]}={v}" for t, v in reps.items()),
-           "D3 falls through to orchestrate.py default_reps=[1,2,3]; D4/D5 pinned to 1")
+           "all three pin reps explicitly, so none falls through to orchestrate.py "
+           "default_reps (D3's fall-through confound was fixed in 169a3c6)")
 
 
 # ---------------------------------------------------------------------- report
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--offline", action="store_true",
+                    help="do not re-fetch the manifest's padding sources; they are then "
+                         "reported as SKIP (not verified) rather than as failures")
     args = ap.parse_args()
+    offline = args.offline
 
     ws = Path(tempfile.mkdtemp(prefix="phase4_", dir=os.environ.get("TMPDIR")))
     print(f"workspace: {ws}")
     check_b6(ws)
     check_b345(ws)
     check_c(ws)
-    check_d(args.offline)
+    check_d(offline)
 
-    npass = sum(1 for r in results if r["ok"])
+    n = {s: sum(1 for r in results if r["status"] == s) for s in (PASS, FAIL, SKIP, NOTE)}
+    graded = n[PASS] + n[FAIL]
+    headline = f"{n[PASS]}/{graded} checks passed, {n[FAIL]} failed"
+    if n[SKIP]:
+        headline += f", {n[SKIP]} skipped (not attempted, so not graded)"
+    if n[NOTE]:
+        headline += f", {n[NOTE]} notes"
+
+    skipped = [r for r in results if r["status"] == SKIP]
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / "PHASE4_VERIFICATION.json").write_text(json.dumps(
-        {"checks": results, "passed": npass, "total": len(results)}, indent=2))
+        {"checks": results, "passed": n[PASS], "failed": n[FAIL], "skipped": n[SKIP],
+         "notes": n[NOTE], "graded": graded, "total": len(results),
+         "offline": bool(offline),
+         "not_verified": [f"{r['task']}: {r['check']} — {r['note']}" for r in skipped]},
+        indent=2))
 
     lines = ["# Phase 4 task verification", "",
-             f"`{npass}/{len(results)}` checks passed. Regenerate: "
-             "`uv run eval/harness/ops/verify_phase4.py`.", "",
-             "| Area | Task | Check | Verdict | Number |", "|---|---|---|---|---|"]
+             f"`{headline}`. Regenerate: `uv run eval/harness/ops/verify_phase4.py"
+             f"{' --offline' if offline else ''}`.", "",
+             "Verdicts: **PASS**/**FAIL** are graded. **SKIP** is a check that deliberately "
+             "did not run — it is not a failure and is not in the denominator. **NOTE** is an "
+             "observation with no pass/fail meaning.", ""]
+    if skipped:
+        lines += ["## Not verified by this run", ""]
+        lines += [f"- `{r['task']}` — {r['check']}: {r['number']}. {r['note']}" for r in skipped]
+        lines += [""]
+    lines += ["| Area | Task | Check | Verdict | Number |", "|---|---|---|---|---|"]
     for r in results:
         note = f"<br>_{r['note']}_" if r["note"] else ""
         lines.append(f"| {r['area']} | `{r['task']}` | {r['check']}{note} | "
-                     f"{'PASS' if r['ok'] else 'FAIL'} | {r['number']} |")
+                     f"{r['status']} | {r['number']} |")
     (RESULTS / "PHASE4_VERIFICATION.md").write_text("\n".join(lines) + "\n")
 
-    print(f"\n{npass}/{len(results)} checks passed")
+    print(f"\n{headline}")
+    for r in skipped:
+        print(f"  NOT VERIFIED — {r['task']}: {r['check']} ({r['number']})\n    {r['note']}")
     print(f"wrote {RESULTS / 'PHASE4_VERIFICATION.md'}")
-    return 0 if npass == len(results) else 1
+    return 0 if n[FAIL] == 0 else 1
 
 
 if __name__ == "__main__":
