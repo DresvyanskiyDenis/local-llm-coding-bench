@@ -46,6 +46,17 @@ still has *some* data on every axis and reports `missing_terms: []` while its co
 computed over a third of the selected task set. A partial composite is useful during a run; a
 partial composite that presents itself as complete is not. So it is labelled, never suppressed.
 
+Design property #4 — THE SAME RULE FOR THE EXTERNAL LANE. `bcb__*.json` / `ifeval__*.json` each
+carry one headline float measured over whatever slice that run selected: `--limit 10` of
+BigCodeBench-Hard's 148 tasks, or 20 of IFEval's 541 prompts. Read as a bare number, a gate probe
+and a full-set run are indistinguishable — the identical failure that Design property #3 fixed
+for the composite. So every external value is emitted with the denominator it was actually
+measured over, the full-set size, whether that size came from the artifact or from a fallback
+constant, and a coverage string; a missing denominator degrades to UNKNOWN, never to an assumed
+full set. IFEval additionally carries a truncation-contamination flag (see
+`CONVENTIONS["external_coverage"]`): a value can be worse than partial, and nothing here
+re-scores anything.
+
 The new round-2 axes (bcb_hard_pass@1, ifeval_prompt_strict) are reported ALONGSIDE, UNWEIGHTED,
 independent of either weight set. Folding them in waits for evidence of correlation (see
 validate_correlation.py).
@@ -297,6 +308,21 @@ CONVENTIONS: dict[str, str] = {
         "bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of "
         "the composite. Re-weighting waits for evidence of correlation."
     ),
+    "external_coverage": (
+        "Per config and per external axis: the value, `n_measured` (the denominator that run "
+        "actually scored -- `n_tasks` for BigCodeBench, `n_prompts` for IFEval) against "
+        "`n_full_set` (148 Hard tasks / 541 IFEval prompts), where that full-set size came "
+        "from, the artifact's `ts` and its filename. Same argument as `coverage`, applied to "
+        "the external lane: 0.3 over a 10-task probe and 0.3 over the full 148 are the same "
+        "float and not the same claim, and both shapes are on disk. A missing denominator "
+        "field yields status UNKNOWN -- silence must never render as full coverage. Slice "
+        "scores are NOT comparable to full-set scores, nor to each other across different "
+        "slices. `truncation_contamination` (IFEval only) is a separate and stronger warning "
+        "than partial coverage: `n_finish_length > 0` means some scored prompts hit the token "
+        "ceiling without finishing, and for a config whose reasoning carries no `<think>` tag "
+        "the scorer graded that prose as the answer (eval/ROUND2_STATUS.md, 'A second leak "
+        "shape'). Detection only -- no value is adjusted, suppressed or re-scored here."
+    ),
     "coverage": (
         "Per config: how many tasks OF THE SELECTED TASK SET this config actually has units on "
         "disk for (`tasks_with_units`) against how many that set defines (`tasks_in_set`), "
@@ -325,6 +351,47 @@ SUITE_BY_TASK_PREFIX: dict[str, str] = {
 UNIT_RE = re.compile(
     r"^(?P<model>[^_]+(?:-[^_]+)*)__(?P<quant>[^_]+)__(?P<suite>[ABCD]_[a-z]+)__(?P<task>.+)__rep(?P<rep>\d+)\.json$"
 )
+
+# --------------------------------------------------------------------------------------------
+# External benchmarks: how big the FULL set is, so a slice can be recognised as a slice.
+# Neither number is invented here; both are transcribed from the runner that writes the
+# artifact, and each is only a FALLBACK for what the artifact itself should say:
+#   * IFEval -- eval/external/ifeval/run_ifeval.py records the full reference-set size per run
+#     as `n_prompts_available` ("always the full 541-prompt reference set", run_ifeval.py:501).
+#     Artifacts written before that field existed (ifeval__opus__q4.json, ts 2026-07-25) have
+#     only `n_prompts`, so the constant is used and the entry says the size came from a
+#     fallback.
+#   * BigCodeBench-Hard -- eval/external/bigcodebench/run_bcb.py:101 `N_HARD_TASKS = 148`,
+#     the same 148 the artifact's executor.gt_pass_rate_ceiling_scope is measured over
+#     ("ALL 148 BigCodeBench-hard tasks"). The bcb artifact records no available-count field at
+#     all, so for that axis this constant is the ONLY source of the denominator.
+IFEVAL_N_PROMPTS_FULL = 541
+BCB_HARD_N_TASKS = 148
+
+EXTERNAL_AXES: dict[str, dict] = {
+    "bcb_hard_pass@1": {
+        "pattern": "bcb__*.json",
+        "value_key": "pass@1",
+        # `n_tasks` is THIS run's --limit slice, NOT the subset size.
+        "measured_key": "n_tasks",
+        "available_key": None,
+        "full_set_size": BCB_HARD_N_TASKS,
+        "full_set_const": "BCB_HARD_N_TASKS",
+        "unit": "tasks",
+        "truncation_key": None,
+    },
+    "ifeval_prompt_strict": {
+        "pattern": "ifeval__*.json",
+        "value_key": "prompt_level_strict",
+        "measured_key": "n_prompts",
+        "available_key": "n_prompts_available",
+        "full_set_size": IFEVAL_N_PROMPTS_FULL,
+        "full_set_const": "IFEVAL_N_PROMPTS_FULL",
+        "unit": "prompts",
+        # Truncated-but-scored responses. See CONVENTIONS["external_coverage"].
+        "truncation_key": "n_finish_length",
+    },
+}
 
 
 # --------------------------------------------------------------------------------------------
@@ -455,12 +522,92 @@ def probe_decode(results: Path, model: str, quant: str) -> float | None:
     return _median1(dec)
 
 
-def load_external(
-    results: Path, pattern: str, key: str
-) -> dict[tuple[str, str], float | None]:
-    """bcb__* / ifeval__* result files. Absent is normal -- returns {} rather than crashing."""
-    out: dict[tuple[str, str], float | None] = {}
-    for p in sorted(results.glob(pattern)):
+def _num(v) -> float | None:
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def _count(v) -> int | None:
+    """A non-negative integer count, or None. A float or a string where a count belongs is
+    treated as absent rather than coerced -- a wrong denominator is worse than no denominator."""
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else None
+
+
+def external_coverage_line(entry: dict) -> str:
+    """One string, machine-parseable prefix first, qualifying one external value. Mirrors
+    `coverage_status_line` on purpose: the two lanes must read the same way."""
+    n, full, unit = entry["n_measured"], entry["n_full_set"], entry["denominator_unit"]
+    if n is None:
+        return (
+            f"UNKNOWN — the artifact records no `{entry['measured_field']}`, so the number of "
+            f"{unit} this value covers cannot be established; treat it as NOT a full-set score "
+            f"until it is re-run with a denominator on record"
+        )
+    if n >= full:
+        return f"complete — all {n}/{full} {unit} of the full set were scored"
+    return (
+        f"PARTIAL — {n}/{full} {unit} scored; a slice score, NOT comparable to a full-set "
+        f"number nor to another config measured over a different slice"
+    )
+
+
+def truncation_contamination(
+    d: dict, spec: dict, n_measured: int | None
+) -> dict | None:
+    """IFEval's `n_finish_length`, read structurally and only reported.
+
+    Partial coverage says a value covers fewer prompts than the full set. This says something
+    worse about the prompts it DOES cover: responses that hit the token ceiling were still
+    scored, and for a config that reasons without a `<think>` tag the stripper never fires, so
+    the monologue itself was graded as the answer. `n_finish_length > 0` is the whole test --
+    no keyword heuristic, no attempt to re-score, no judgement about which prompts. Fixing the
+    leak is an open decision for the repo owner; this only refuses to let the number look clean.
+    """
+    key = spec["truncation_key"]
+    if key is None:
+        return None
+    n_trunc = _count(d.get(key))
+    if n_trunc is None:
+        return {
+            "flagged": None,
+            "signal": f"`{key}` absent from the artifact",
+            "reason": (
+                f"unknown — this artifact predates or omits `{key}`, so truncated-but-scored "
+                f"responses cannot be ruled out or confirmed from it"
+            ),
+        }
+    over = f"of {n_measured} {spec['unit']}" if n_measured is not None else "scored"
+    if n_trunc == 0:
+        return {
+            "flagged": False,
+            "signal": f"{key}=0 {over}",
+            "reason": "no scored response hit the token ceiling in this run",
+        }
+    return {
+        "flagged": True,
+        "signal": f"{key}={n_trunc} {over}",
+        "reason": (
+            f"CONTAMINATED, not merely partial: {n_trunc} {over} hit the max_tokens ceiling "
+            f"without finishing and were scored anyway — for a config whose reasoning carries "
+            f"no `<think>` tag the stripper cannot fire, so that prose was graded as the "
+            f"answer (eval/ROUND2_STATUS.md, 'A second leak shape': 13 of opus/q4's 15). "
+            f"Detection only; nothing is re-scored here"
+        ),
+    }
+
+
+def load_external(results: Path, spec: dict) -> dict[tuple[str, str], dict]:
+    """bcb__* / ifeval__* result files, each value WITH the denominator it was measured over.
+
+    Absent is normal — returns {} rather than crashing — and an unparseable or model/quant-less
+    file is still warned about and skipped, not fatal. What changed is the shape: a bare float
+    cannot tell a 20-prompt gate probe from a 541-prompt run, and both shapes exist on disk
+    right now. So each entry carries the value, `n_measured`, `n_full_set` and where that size
+    came from, a complete/PARTIAL/UNKNOWN status with a coverage sentence, the artifact's `ts`
+    and its filename. A missing denominator field degrades to UNKNOWN — never to an assumed
+    full set, which is exactly the reading this function exists to prevent.
+    """
+    out: dict[tuple[str, str], dict] = {}
+    for p in sorted(results.glob(spec["pattern"])):
         try:
             d = json.loads(p.read_text())
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
@@ -470,11 +617,67 @@ def load_external(
         if model is None or quant is None:
             print(f"warn: {p.name} has no model/quant, skipped", file=sys.stderr)
             continue
-        v = d.get(key)
-        out[(model, quant)] = (
-            v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
-        )
+
+        n_measured = _count(d.get(spec["measured_key"]))
+        n_full = _count(d.get(spec["available_key"])) if spec["available_key"] else None
+        if n_full is not None:
+            full_source = f"artifact field `{spec['available_key']}`"
+        else:
+            n_full = spec["full_set_size"]
+            absent = (
+                f"the artifact carries no `{spec['available_key']}`"
+                if spec["available_key"]
+                else "this benchmark's artifact records no available-count field"
+            )
+            full_source = (
+                f"fallback constant {spec['full_set_const']}={n_full} — {absent}"
+            )
+
+        entry = {
+            "value": _num(d.get(spec["value_key"])),
+            "n_measured": n_measured,
+            "n_full_set": n_full,
+            "denominator_unit": spec["unit"],
+            "measured_field": spec["measured_key"],
+            "full_set_source": full_source,
+            "complete": None if n_measured is None else n_measured >= n_full,
+            "status": (
+                "UNKNOWN"
+                if n_measured is None
+                else ("complete" if n_measured >= n_full else "PARTIAL")
+            ),
+        }
+        # Written straight after `status` so the sentence sits next to the fields it restates.
+        entry["coverage"] = external_coverage_line(entry)
+        contamination = truncation_contamination(d, spec, n_measured)
+        if contamination is not None:
+            entry["truncation_contamination"] = contamination
+        entry["ts"] = d.get("ts")
+        entry["source_file"] = p.name
+        out[(model, quant)] = entry
     return out
+
+
+def external_value(entries: dict[tuple[str, str], dict], k: tuple[str, str]):
+    """The bare float for a config, for the row fields that have always carried one."""
+    e = entries.get(k)
+    return None if e is None else e["value"]
+
+
+def external_row_coverage(
+    entries: dict[tuple[str, str], dict], k: tuple[str, str]
+) -> str | None:
+    """The coverage sentence that qualifies the bare float on a config row, contamination
+    included -- a reader of the row must not have to join against another section to learn
+    that the number covers 20 of 541 prompts."""
+    e = entries.get(k)
+    if e is None:
+        return None
+    line = e["coverage"]
+    cont = e.get("truncation_contamination") or {}
+    if cont.get("flagged"):
+        line = f"{line} | {cont['signal']} — {cont['reason']}"
+    return line
 
 
 # --------------------------------------------------------------------------------------------
@@ -484,8 +687,8 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
     tasks = task_set(which_round)
     units = load_units(results, tasks)
     d_by_model, d_by_config = load_judged(results, tasks)
-    bcb = load_external(results, "bcb__*.json", "pass@1")
-    ifeval = load_external(results, "ifeval__*.json", "prompt_level_strict")
+    bcb = load_external(results, EXTERNAL_AXES["bcb_hard_pass@1"])
+    ifeval = load_external(results, EXTERNAL_AXES["ifeval_prompt_strict"])
 
     acc: dict[tuple[str, str], dict[str, list]] = defaultdict(lambda: defaultdict(list))
     tools: dict[tuple[str, str], list[int]] = defaultdict(lambda: [0, 0])
@@ -623,9 +826,16 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
                 },
                 "missing_terms_round2_weights": missing_r2,
                 "composite_round2_weights": composite_r2,
-                # round-2 external axes: reported alongside, UNWEIGHTED, absent -> null
-                "bcb_hard_pass@1": bcb.get(k),
-                "ifeval_prompt_strict": ifeval.get(k),
+                # round-2 external axes: reported alongside, UNWEIGHTED, absent -> null. The
+                # value stays a bare float for every existing reader; the `_coverage` string
+                # next to it says what denominator that float rests on, the same way
+                # `composite_coverage` sits next to `composite`. Full provenance (n_measured,
+                # n_full_set, ts, source file, contamination) is in
+                # `external_axes_unweighted` below.
+                "bcb_hard_pass@1": external_value(bcb, k),
+                "bcb_hard_pass@1_coverage": external_row_coverage(bcb, k),
+                "ifeval_prompt_strict": external_value(ifeval, k),
+                "ifeval_prompt_strict_coverage": external_row_coverage(ifeval, k),
             }
         )
 
@@ -654,12 +864,16 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
         "conventions": CONVENTIONS,
         "n_units_total": len(units),
         "configs": rows,
+        # Per config these are OBJECTS, not bare floats: the float alone cannot distinguish a
+        # 10-task BigCodeBench probe from the full 148-task Hard set. `value` is the number
+        # that used to be here; everything beside it says what that number covers.
         "external_axes_unweighted": {
-            "bcb_hard_pass@1": {f"{m}__{q}": v for (m, q), v in sorted(bcb.items())},
+            "bcb_hard_pass@1": {f"{m}__{q}": e for (m, q), e in sorted(bcb.items())},
             "ifeval_prompt_strict": {
-                f"{m}__{q}": v for (m, q), v in sorted(ifeval.items())
+                f"{m}__{q}": e for (m, q), e in sorted(ifeval.items())
             },
             "note": CONVENTIONS["external_axes"],
+            "coverage_note": CONVENTIONS["external_coverage"],
         },
         "gate": gate,
     }
@@ -728,6 +942,28 @@ def _f(v, nd=3, dash="—"):
     if isinstance(v, bool):
         return "yes" if v else "no"
     return f"{v:.{nd}f}" if isinstance(v, float) else str(v)
+
+
+def _ext_entry(agg: dict, axis: str, model: str, quant: str) -> dict | None:
+    return agg["external_axes_unweighted"][axis].get(f"{model}__{quant}")
+
+
+def _ext_cell(e: dict | None) -> str:
+    """An external-axis cell that cannot pass a slice score off as a full-set one. The
+    denominator is printed INSIDE the cell whenever it is not the full set, because a bare
+    `0.250` in a table is precisely the reading this change exists to stop. `‡` = PARTIAL or
+    UNKNOWN denominator (same marker and same meaning as the `cov` column); `⚠` = contaminated.
+    """
+    if e is None:
+        return "—"
+    cell = _f(e["value"])
+    if e["complete"] is None:
+        cell += f" ‡?/{e['n_full_set']}"
+    elif not e["complete"]:
+        cell += f" ‡{e['n_measured']}/{e['n_full_set']}"
+    if (e.get("truncation_contamination") or {}).get("flagged"):
+        cell += " ⚠"
+    return cell
 
 
 def render_md(agg: dict) -> str:
@@ -805,8 +1041,9 @@ def render_md(agg: dict) -> str:
             f"{tools_col} | {rel_col} | {_f(r['c_edit'])} | {_f(r['b_recall'])} | {d_col} | "
             f"{_f(dec, 1)} | {dec_norm_col} | **{_f(r['composite'], 2)}** | "
             f"**{_f(r['composite_round2_weights'], 2)}†** | "
-            f"{_f(r['composite_config_d'], 2)} | {_f(r['bcb_hard_pass@1'])} | "
-            f"{_f(r['ifeval_prompt_strict'])} |"
+            f"{_f(r['composite_config_d'], 2)} | "
+            f"{_ext_cell(_ext_entry(agg, 'bcb_hard_pass@1', r['model'], r['quant']))} | "
+            f"{_ext_cell(_ext_entry(agg, 'ifeval_prompt_strict', r['model'], r['quant']))} |"
         )
     L.append("")
     L.append(
@@ -816,7 +1053,11 @@ def render_md(agg: dict) -> str:
         "and the reweighting-impact table below before comparing the two columns as a ranking. "
         "`cov` = tasks with units / tasks the selected set defines; **`‡` = PARTIAL — both "
         "composites on that row were computed over only those tasks**, per-suite breakdown in "
-        "the coverage section below."
+        "the coverage section below. In the **BCB-Hard / IFEval** columns `‡n/m` carries the "
+        "same warning for the external lane — that score was measured over n of the "
+        "benchmark's m items (`?` = the artifact records no denominator at all), so it is a "
+        "slice score and **not comparable to a full-set number**; `⚠` = contaminated, see the "
+        "round-2 axes section below."
     )
     L.append("")
 
@@ -942,16 +1183,66 @@ def render_md(agg: dict) -> str:
         L.append(
             "No `bcb__*.json` / `ifeval__*.json` result files on disk yet — both axes null."
         )
+        L.append("")
     else:
-        L.append("| Config | bcb_hard_pass@1 | ifeval_prompt_strict |")
-        L.append("|---|--:|--:|")
-        for key in sorted(set(ex["bcb_hard_pass@1"]) | set(ex["ifeval_prompt_strict"])):
-            L.append(
-                f"| `{key}` | {_f(ex['bcb_hard_pass@1'].get(key))} | "
-                f"{_f(ex['ifeval_prompt_strict'].get(key))} |"
+        axes = ("bcb_hard_pass@1", "ifeval_prompt_strict")
+        keys = sorted(set(ex["bcb_hard_pass@1"]) | set(ex["ifeval_prompt_strict"]))
+        L.append(
+            "| Config | bcb_hard_pass@1 | tasks scored | ifeval_prompt_strict "
+            "| prompts scored |"
+        )
+        L.append("|---|--:|:--:|--:|:--:|")
+        for key in keys:
+            cells = []
+            for axis in axes:
+                e = ex[axis].get(key)
+                if e is None:
+                    cells += ["—", "—"]
+                else:
+                    n = "?" if e["n_measured"] is None else e["n_measured"]
+                    cells += [
+                        _ext_cell(e),
+                        f"{n}/{e['n_full_set']} {e['status']}",
+                    ]
+            L.append(f"| `{key}` | " + " | ".join(cells) + " |")
+        L.append("")
+
+        # The denominator is the point of this section, so it is spelled out per number rather
+        # than left to be inferred from a fraction: which file, when, where the full-set size
+        # came from, and -- for a contaminated value -- why partial understates the problem.
+        flagged = [
+            (axis, key, ex[axis][key])
+            for axis in axes
+            for key in keys
+            if key in ex[axis]
+            and (
+                ex[axis][key]["status"] != "complete"
+                or (ex[axis][key].get("truncation_contamination") or {}).get("flagged")
             )
-    L.append("")
+        ]
+        if flagged:
+            L.append(
+                f"**{len(flagged)} of these numbers do not cover their benchmark's full set, "
+                f"or do not cover it cleanly.** A slice score is useful while a run is in "
+                f"progress; it is not a leaderboard number and it is not comparable to a "
+                f"config measured over a different slice."
+            )
+            L.append("")
+            for axis, key, e in flagged:
+                L.append(
+                    f"- **`{key}` · {axis} = {_f(e['value'])}** — {e['coverage']}."
+                )
+                L.append(
+                    f"  Full-set size from {e['full_set_source']}. Source "
+                    f"`{e['source_file']}`, ts `{_f(e['ts'], dash='unknown')}`."
+                )
+                cont = e.get("truncation_contamination") or {}
+                if cont.get("flagged"):
+                    L.append(f"  **⚠ {cont['signal']} — {cont['reason']}.**")
+            L.append("")
     L.append(f"> {ex['note']}")
+    L.append("")
+    L.append(f"> **Coverage:** {ex['coverage_note']}")
     L.append("")
 
     L.append(
