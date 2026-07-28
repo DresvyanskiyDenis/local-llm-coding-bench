@@ -175,8 +175,8 @@ Overall = 0.35·A_coding               (writes correct code)
 
 > This is the **round-1** weighting, as published — `docs/leaderboard.md` and every number in this
 > section were computed with it, and `eval/harness/aggregate.py` keeps it computable byte-for-byte
-> forever (see the gate in [§6.11](#611-composite-reweighting-round-2--formula-why-and-non-comparability)).
-> Round 2 rebalances these weights; **[§6.11](#611-composite-reweighting-round-2--formula-why-and-non-comparability)
+> forever (see the gate in [§6.11](#611-composite-reweighting-round-2-formula-why-and-non-comparability)).
+> Round 2 rebalances these weights; **[§6.11](#611-composite-reweighting-round-2-formula-why-and-non-comparability)
 > has the round-2 formula, why it changed, and why the two are not comparable.**
 
 Rationale: for an agentic driver the two things that matter most are **correct code** (A, 35%)
@@ -258,9 +258,9 @@ the board — equal-or-better pass-rate at lower RAM — so Q4 is the recommende
 ## 6. Round 2 — two lanes, external graders, expanded suites
 
 *Added 2026-07-25/26, branch `feature/round2-expansion`. Companion docs:
-[`eval/experiments_expansion_plan.md`](../eval/experiments_expansion_plan.md) (what and why),
-[`eval/IMPLEMENTATION_PLAN.md`](../eval/IMPLEMENTATION_PLAN.md) (how, in this repo), and the live
-build/run record [`eval/ROUND2_STATUS.md`](../eval/ROUND2_STATUS.md).*
+[`eval/experiments_expansion_plan.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/experiments_expansion_plan.md) (what and why),
+[`eval/IMPLEMENTATION_PLAN.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/IMPLEMENTATION_PLAN.md) (how, in this repo), and the live
+build/run record [`eval/ROUND2_STATUS.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/ROUND2_STATUS.md).*
 
 ### 6.1 Why: credibility and saturation
 
@@ -455,8 +455,8 @@ the Opus-authored suite rather than another instance of the same authorship prob
 
 Detailed setup — venv bootstrap, environment-health checks, exact flags, and the known upstream
 quirks worked around — lives in each benchmark's own README, not duplicated here:
-[`eval/external/ifeval/README.md`](../eval/external/ifeval/README.md),
-[`eval/external/bigcodebench/README.md`](../eval/external/bigcodebench/README.md). Minimal
+[`eval/external/ifeval/README.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/external/ifeval/README.md),
+[`eval/external/bigcodebench/README.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/external/bigcodebench/README.md). Minimal
 copy-pasteable entry points:
 
 ```bash
@@ -476,7 +476,7 @@ eval/harness/ops/serving_mode.sh daily
 Live build and run status — what has actually executed on this machine, and what is still pending
 a sizing decision (the full 541-prompt IFEval suite runs ~44 h across 15 configs and needs a
 subsampling call before an overnight run fits) — is tracked in
-[`eval/ROUND2_STATUS.md`](../eval/ROUND2_STATUS.md), not here: this document describes method,
+[`eval/ROUND2_STATUS.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/ROUND2_STATUS.md), not here: this document describes method,
 that one describes progress.
 
 ### 6.11 Composite reweighting (round 2) — formula, why, and non-comparability
@@ -568,7 +568,7 @@ weights (i.e. no `A_coding`-shape effect, isolating change 1 above), `qwen` move
 6th (a cleaner-tools config loses relative ground once tools is worth less and `B_recall`/`C_edit`
 — axes where `gemma` doesn't lead — are worth more); `ornith`, `opus`, `katdev`, and `gpt-oss` hold
 their round-1 rank. See the generated reweighting-impact table in
-[`eval/results/AGGREGATE.md`](../eval/results/AGGREGATE.md) for the full per-model before/after.
+[`eval/results/AGGREGATE.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/AGGREGATE.md) for the full per-model before/after.
 
 ### 6.12 Coverage and provenance — a number is emitted with the denominator it was measured over
 
