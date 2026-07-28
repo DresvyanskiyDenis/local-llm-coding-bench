@@ -1,6 +1,6 @@
 # AGGREGATE — round 1
 
-*Generated 2026-07-28T07:26:22.825622+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
+*Generated 2026-07-28T07:56:40.199682+00:00 by `eval/harness/aggregate.py`. 450 units over 10 tasks found on disk (task set defines 10).*
 
 ```
 Overall (round1 weights, published) = 0.35*A_coding + 0.25*(1 - tool_malformed%) + 0.15*C_edit + 0.10*B_recall + 0.10*(D_text/10) + 0.05*(decode/137) -> x100
@@ -33,7 +33,7 @@ Overall (round2 weights)            = 0.35*A_coding + 0.10*(1 - tool_malformed%)
 | `gemma` q4 | * | 30 | 10/10 | 0.911 | 3% (3.08%) | 0.97 | 0.863 | 0.333 | 0.967 | 137.1 | 1.001 | **87.08** | **80.18†** | 87.08 | — | — |
 | `qwopus` q5 | * | 30 | 10/10 | 0.994 | 3% (3.49%) | 0.97 | 0.863 | 0.389 | 0.883 | 63.5 | 0.464 | **87.03** | **80.68†** | 87.03 | — | — |
 | `gemma` q5 |  | 30 | 10/10 | 0.911 | 2% (2.47%) | 0.98 | 0.863 | 0.445 | 0.967 | 92.2 | 0.673 | **86.81** | **80.88†** | 86.81 | — | — |
-| `opus` q4 | * | 30 | 10/10 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | **81.11†** | 85.76 | 0.300 | 0.250 |
+| `opus` q4 | * | 30 | 10/10 | 0.976 | 5% (5.50%) | 0.95 | 0.863 | 0.445 | 0.867 | 71.9 | 0.525 | **86.60** | **81.11†** | 85.76 | 0.300 ‡10/148 | 0.250 ‡20/541 ⚠ |
 | `opus` q5 |  | 30 | 10/10 | 0.923 | 3% (2.94%) | 0.97 | 0.818 | 0.611 | 0.867 | 68.4 | 0.499 | **86.10** | **81.75†** | 86.93 | — | — |
 | `glm` q4 | * | 30 | 10/10 | 0.916 | 3% (2.94%) | 0.97 | 0.879 | 0.445 | 0.883 | 58.0 | 0.423 | **84.89** | **79.19†** | 84.89 | — | — |
 | `glm` q5 |  | 30 | 10/10 | 0.880 | 4% (3.67%) | 0.96 | 0.909 | 0.445 | 0.883 | 65.3 | 0.477 | **84.10** | **78.70†** | 84.10 | — | — |
@@ -45,7 +45,7 @@ Overall (round2 weights)            = 0.35*A_coding + 0.10*(1 - tool_malformed%)
 | `northmini` q5 |  | 30 | 10/10 | 0.898 | 18% (17.86%) | 0.82 | 0.803 | 0.444 | 0.958 | 55.3 | 0.404 | **80.02** | **76.17†** | 80.10 | — | — |
 | `gpt-oss` mxfp4 | * | 30 | 10/10 | 0.883 | 11% (10.53%) | 0.89 | 0.863 | 0.111 | 0.883 | 30.1 | 0.220 | **77.14** | **69.22†** | 77.14 | — | — |
 
-`*` = the config the published leaderboard uses for this model's headline composite. `†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the round-1-weighted composite to its left**; see the caveat at the top of this document and the reweighting-impact table below before comparing the two columns as a ranking. `cov` = tasks with units / tasks the selected set defines; **`‡` = PARTIAL — both composites on that row were computed over only those tasks**, per-suite breakdown in the coverage section below.
+`*` = the config the published leaderboard uses for this model's headline composite. `†` = round-2 weights (docs/methodology.md §6.11) -- **not the same quantity as the round-1-weighted composite to its left**; see the caveat at the top of this document and the reweighting-impact table below before comparing the two columns as a ranking. `cov` = tasks with units / tasks the selected set defines; **`‡` = PARTIAL — both composites on that row were computed over only those tasks**, per-suite breakdown in the coverage section below. In the **BCB-Hard / IFEval** columns `‡n/m` carries the same warning for the external lane — that score was measured over n of the benchmark's m items (`?` = the artifact records no denominator at all), so it is a slice score and **not comparable to a full-set number**; `⚠` = contaminated, see the round-2 axes section below.
 
 ### Coverage — which rows rest on the whole task set, and which do not
 
@@ -73,11 +73,21 @@ Isolates the weight change from any task-set change: both composites below are c
 
 ## Round-2 axes (reported alongside, UNWEIGHTED)
 
-| Config | bcb_hard_pass@1 | ifeval_prompt_strict |
-|---|--:|--:|
-| `opus__q4` | 0.300 | 0.250 |
+| Config | bcb_hard_pass@1 | tasks scored | ifeval_prompt_strict | prompts scored |
+|---|--:|:--:|--:|:--:|
+| `opus__q4` | 0.300 ‡10/148 | 10/148 PARTIAL | 0.250 ‡20/541 ⚠ | 20/541 PARTIAL |
+
+**2 of these numbers do not cover their benchmark's full set, or do not cover it cleanly.** A slice score is useful while a run is in progress; it is not a leaderboard number and it is not comparable to a config measured over a different slice.
+
+- **`opus__q4` · bcb_hard_pass@1 = 0.300** — PARTIAL — 10/148 tasks scored; a slice score, NOT comparable to a full-set number nor to another config measured over a different slice.
+  Full-set size from fallback constant BCB_HARD_N_TASKS=148 — this benchmark's artifact records no available-count field. Source `bcb__opus__q4.json`, ts `2026-07-26T21:25:45.990529+00:00`.
+- **`opus__q4` · ifeval_prompt_strict = 0.250** — PARTIAL — 20/541 prompts scored; a slice score, NOT comparable to a full-set number nor to another config measured over a different slice.
+  Full-set size from fallback constant IFEVAL_N_PROMPTS_FULL=541 — the artifact carries no `n_prompts_available`. Source `ifeval__opus__q4.json`, ts `2026-07-25T20:41:30.738149+00:00`.
+  **⚠ n_finish_length=15 of 20 prompts — CONTAMINATED, not merely partial: 15 of 20 prompts hit the max_tokens ceiling without finishing and were scored anyway — for a config whose reasoning carries no `<think>` tag the stripper cannot fire, so that prose was graded as the answer (eval/ROUND2_STATUS.md, 'A second leak shape': 13 of opus/q4's 15). Detection only; nothing is re-scored here.**
 
 > bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation.
+
+> **Coverage:** Per config and per external axis: the value, `n_measured` (the denominator that run actually scored -- `n_tasks` for BigCodeBench, `n_prompts` for IFEval) against `n_full_set` (148 Hard tasks / 541 IFEval prompts), where that full-set size came from, the artifact's `ts` and its filename. Same argument as `coverage`, applied to the external lane: 0.3 over a 10-task probe and 0.3 over the full 148 are the same float and not the same claim, and both shapes are on disk. A missing denominator field yields status UNKNOWN -- silence must never render as full coverage. Slice scores are NOT comparable to full-set scores, nor to each other across different slices. `truncation_contamination` (IFEval only) is a separate and stronger warning than partial coverage: `n_finish_length > 0` means some scored prompts hit the token ceiling without finishing, and for a config whose reasoning carries no `<think>` tag the scorer graded that prose as the answer (eval/ROUND2_STATUS.md, 'A second leak shape'). Detection only -- no value is adjusted, suppressed or re-scored here.
 
 ## Term conventions (what each symbol in the formula actually means here)
 
@@ -89,4 +99,5 @@ Isolates the weight change from any task-set change: both composites below are c
 - **`decode`** — Median decode_tps over all cold_samples + warm_samples of every point in probe__<model>__<quant>.json (same reduction as digest.py), divided by 137. Not task-scoped, so it is identical for --round 1 / 2 / all. gemma-q4's 137.1 makes its term marginally exceed 1.0; the formula is applied verbatim, uncapped.
 - **`leaderboard_quant`** — q4 for every multi-quant model EXCEPT katdev, which reproduces only from iq4. qwopus (q5), ornith (q4) and gpt-oss (mxfp4) are single-quant.
 - **`external_axes`** — bcb_hard_pass@1 and ifeval_prompt_strict are reported UNWEIGHTED and are NOT part of the composite. Re-weighting waits for evidence of correlation.
+- **`external_coverage`** — Per config and per external axis: the value, `n_measured` (the denominator that run actually scored -- `n_tasks` for BigCodeBench, `n_prompts` for IFEval) against `n_full_set` (148 Hard tasks / 541 IFEval prompts), where that full-set size came from, the artifact's `ts` and its filename. Same argument as `coverage`, applied to the external lane: 0.3 over a 10-task probe and 0.3 over the full 148 are the same float and not the same claim, and both shapes are on disk. A missing denominator field yields status UNKNOWN -- silence must never render as full coverage. Slice scores are NOT comparable to full-set scores, nor to each other across different slices. `truncation_contamination` (IFEval only) is a separate and stronger warning than partial coverage: `n_finish_length > 0` means some scored prompts hit the token ceiling without finishing, and for a config whose reasoning carries no `<think>` tag the scorer graded that prose as the answer (eval/ROUND2_STATUS.md, 'A second leak shape'). Detection only -- no value is adjusted, suppressed or re-scored here.
 - **`coverage`** — Per config: how many tasks OF THE SELECTED TASK SET this config actually has units on disk for (`tasks_with_units`) against how many that set defines (`tasks_in_set`), overall and broken down per suite. A task counts as covered if at least one unit file for it parsed -- reps are NOT checked, so 1/3 reps still counts the task as covered and the composite is a thinner mean than a complete row's. `composite_coverage` repeats the verdict (`complete` / `PARTIAL n/m ...`) next to the composite itself. This is deliberately NOT the same thing as `missing_terms`, which is per-AXIS: a config with only round-1 units under --round all has data on every axis, so missing_terms is [] while its composite covers 10 of 31 tasks. Coverage is never a reason to null the composite -- a partial number is useful mid-run, it just may not claim to be a complete one.
