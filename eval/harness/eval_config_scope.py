@@ -58,7 +58,7 @@ def restore():
         return
     CONFIG.write_text(BACKUP.read_text())
     BACKUP.unlink()
-    print(f"[restore] original opencode.json restored; backup removed")
+    print("[restore] original opencode.json restored; backup removed")
 
 
 if __name__ == "__main__":

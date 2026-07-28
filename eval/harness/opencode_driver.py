@@ -163,7 +163,6 @@ def analyze_transcript(transcript):
     tool_calls_total = tool_calls_malformed = 0
     xml_leak = False
     ttft_ms_per_turn, decode_tps_per_turn = [], []
-    last_finish = None
     final_text_parts = []
 
     for m in assistant_msgs:
@@ -174,7 +173,6 @@ def analyze_transcript(transcript):
         out_tok = tokens.get("output") or 0
         answer_tokens += out_tok
         prompt_total += (tokens.get("input") or 0) + (cache.get("read") or 0) + (cache.get("write") or 0)
-        last_finish = info.get("finish")
 
         created = (info.get("time") or {}).get("created")
         completed = (info.get("time") or {}).get("completed")

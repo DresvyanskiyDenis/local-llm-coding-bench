@@ -72,9 +72,12 @@ uv run eval/external/ifeval/bootstrap_nltk.py
   (IMPLEMENTATION_PLAN.md §3.5 bite 3 — per-model server defaults differ across this fleet and a
   penalty of 1.5 on an IF-following measurement would be a real, uneven distortion).
 - `max_tokens=4096` (raised from the phase-1 default of `1280` — see "Why the cap moved to
-  4096" below; this is unresolved-but-adopted, not a settled measurement).
+  1280 → 4096" below; this is unresolved-but-adopted, not a settled measurement).
 - `--strip-reasoning {auto,on,off}` (default `auto`): strips `<think>…</think>` /
-  `<reasoning>…</reasoning>` / `<thinking>…</thinking>` out of `choices[0].message.content`.
+  `<reasoning>…</reasoning>` / `<thinking>…</thinking>` out of `choices[0].message.content`,
+  plus two further shapes ported from `eval_proxy.py` — an orphan closing `</think>` with no
+  opening tag, and gpt-oss's closed harmony analysis channel. See "The two strippers, diffed"
+  below for what each side covers, what the orphan-close pattern costs, and what still leaks.
   **The leak is confirmed, not hypothetical** — `eval/external/reasoning_leak_probe.json` (a
   live probe against `qwen4`) shows `choices[0].message` keys are exactly
   `['content', 'refusal', 'role']`: no `reasoning_content`, no `reasoning` field,
@@ -91,18 +94,22 @@ uv run eval/external/ifeval/bootstrap_nltk.py
     bug — but it must be visible: the result JSON carries `n_finish_length` (requests that hit
     the token budget) and `n_empty_after_strip` (responses that came out empty post-stripping),
     so a near-zero `prompt_level_strict` on a thinking config can be read as "it never reached an
-    answer within 1280 tokens" rather than mistaken for "it ignored every instruction."
+    answer within the `max_tokens` budget" rather than mistaken for "it ignored every instruction."
   - Unit coverage: `uv run eval/external/ifeval/test_strip_reasoning.py` — well-formed pair,
     unclosed tag (→ empty), no tags (→ unchanged), tags mid-response, `off` mode, `auto`≡`on`,
     a closed pair followed by a second unclosed tag (keeps the real answer, drops the truncated
-    tail), a separate `reasoning_content` field (recorded, not required to strip anything), and
-    the untagged-leak gap documented below (asserts current, imperfect behaviour — not a claim
-    it is correct).
+    tail), a separate `reasoning_content` field (recorded, not required to strip anything), an
+    orphan closing `</think>` (monologue removed, answer kept) and the cost of that pattern
+    (ordinary prose containing a bare `</think>` loses its opening — asserted, see below), the
+    harmony analysis channel closed *and* truncated (the truncated half asserts the current,
+    unflagged behaviour), and the untagged-leak gap documented below (asserts current, imperfect
+    behaviour — not a claim it is correct).
   - **Verdict on the specific question this test suite exists to answer**: a response cut off
     mid-`<think>` (unclosed tag, `finish_reason: "length"`) strips to **EMPTY**, not to the
-    partial reasoning text — confirmed by `test_strip_reasoning.py`'s second case, 8/8 (now 9/9)
-    passing. That mechanism is correct. See "Reasoning leak: a second, untagged shape" below for
-    a real, live gap in a *different* leak shape it does not cover.
+    partial reasoning text — confirmed by `test_strip_reasoning.py`'s second case, 8/8 (now
+    12/12) passing. That mechanism is correct. See "Reasoning leak: a second, untagged shape"
+    and "The two strippers, diffed" below for real, live gaps in *different* leak shapes it does
+    not cover.
 - Serve lifecycle (`serve_config` / `unload`) is **imported from `harness/orchestrate.py`**, not
   reimplemented. Requires `eval/harness/ops/serving_mode.sh eval` to have handed `:8888` to the
   eval harness first — `run_ifeval.py` refuses to launch (aborts loudly, names the script to run)
@@ -137,12 +144,13 @@ Two things worth knowing before drawing conclusions from this:
   reasoning preamble — clean answers only. That's suggestive (more token budget may turn
   truncated-mid-monologue responses into ordinary clean stops rather than the model rambling
   regardless of cap) but is not proof; it's one config, 20 prompts.
-- `eval_proxy.py` (`:8899`, owned by the port owner / used by BigCodeBench) has the **identical**
-  gap — its `strip_reasoning()` is also tag-anchored (`<think>`, harmony `<|channel|>analysis`)
-  only. This is not an IFEval-only problem; any config that leaks reasoning as untagged prose is
-  unprotected on both paths. Flagging this for the team, not fixing `eval_proxy.py` here — it's
-  out of this round's scope (owned by another agent) and a fix needs to be consistent across
-  both files, not adapter-local.
+- `eval_proxy.py` (`:8899`, owned by the port owner / used by BigCodeBench) has the **same
+  untagged-prose gap** — its `strip_reasoning()` is tag-anchored too (`<think>`, harmony
+  `<|channel|>analysis`). This is not an IFEval-only problem; any config that leaks reasoning as
+  untagged prose is unprotected on both paths. Flagging this for the team, not fixing
+  `eval_proxy.py` here — it's out of this round's scope (owned by another agent) and a fix needs
+  to be consistent across both files, not adapter-local. What is shared is this *gap*, not the
+  implementations: outside it the two are **not** at parity — see the diff below.
 
 **Not fixed in this change.** Inventing a detection heuristic for untagged prose (e.g. matching
 on `"Thinking Process:"` or similar headings) risks false-positives against legitimately
@@ -153,6 +161,55 @@ either a per-model-family leak probe (like the phase-0 `<think>` one) before tru
 untagged-reasoning config's numbers, or a cross-file (`run_ifeval.py` + `eval_proxy.py`) design
 for it. Treat `opus/q4`'s `prompt_level_strict: 0.25` from the gate run as **not yet
 trustworthy** until this is resolved.
+
+### The two strippers, diffed
+
+`run_ifeval.py` talks to `:8888` directly, so `eval_proxy.py` is never in the path and this lane
+carries its own copy of the patterns. They are separate on purpose (one rewrites a live HTTP
+body, the other rewrites a saved record) and they have drifted. What each side handles now:
+
+- **Closed pair.** `run_ifeval.py`'s `REASONING_TAG_RE` matches `<think>`, `<reasoning>` *and*
+  `<thinking>`; `eval_proxy.py`'s `THINK_BLOCK` matches `<think>` only.
+- **Unclosed opening tag (truncation).** Same asymmetry — `OPEN_REASONING_TAG_RE` covers all
+  three spellings, `THINK_UNCLOSED` covers `<think>`. This lane additionally returns a
+  per-response `truncated` flag (it drives the `TRUNCATED` log line and pairs with
+  `n_empty_after_strip`); the proxy has no truncation-specific flag — it records
+  `empty_after_strip` / `empty_finish_reasons` per request in its JSONL and a process-wide total
+  on shutdown, which does not separate truncation from any other strip that empties a choice.
+- **Orphan closing tag** — a monologue that ends in `</think>` with no opening tag, because the
+  chat template opened the block in the prompt prefix and it is never echoed back.
+  `ORPHAN_CLOSE_RE` is `eval_proxy`'s `ORPHAN_CLOSE` verbatim, `<think>`-only on purpose: the
+  proxy's own rule is that a delimiter must be *observed* before it is stripped.
+- **gpt-oss harmony analysis channel.** `HARMONY_ANALYSIS_RE` is `eval_proxy`'s
+  `HARMONY_ANALYSIS` verbatim.
+- **Untagged reasoning prose.** Neither catches it — the gap above.
+
+So the asymmetry is: tag *spellings* (three here, one there) and truncation *reporting* (a
+dedicated `truncated` flag here, only emptiness-after-strip there). The other two shapes are verbatim ports. Keeping them in
+step is a manual job in both directions.
+
+**Still a gap in both files: a truncated harmony monologue is neither stripped nor flagged.**
+`HARMONY_ANALYSIS_RE` only matches a *closed* analysis channel (terminated by `<|end|>` or the
+final-channel marker). A monologue cut off by the token cap carries neither, so nothing matches,
+the raw monologue is scored as the answer — **and** `truncated` stays `False`, because that flag
+is bound to the unclosed-`<think>` branch alone. `n_empty_after_strip` misses it too — that
+counts responses left *empty* after stripping, and this one comes through non-empty; only
+`n_finish_length` sees it at all, and it cannot tell it apart from an ordinary long answer.
+Concrete exposure: `gpt-oss/mxfp4` is **not** marked `broken` in
+`harness/configs.json`, so a plain run scores it, and this is its most likely failure mode at
+`max_tokens=4096`. Pinned as the `cut` half of `test_strip_reasoning.py`'s last case — stated,
+not fixed; the fix needs an observed sample first.
+
+**And a cost, not a gap: `ORPHAN_CLOSE_RE` is `\A`-anchored** and deletes everything up to the
+first bare closing tag. In the BigCodeBench lane a mangled response at least lands somewhere
+observable — `sanitize()` + `ast.parse()` turn it into a counted `n_unparseable_solutions`
+(`run_bcb.py`'s `completion_stats()`); **IFEval scores free text**, so an ordinary answer that
+merely mentions `</think>` loses its opening — a real false positive, not a theoretical one.
+Pinned as its own case in
+`test_strip_reasoning.py` ("COST OF THE ORPHAN-CLOSE SHAPE"), which asserts that
+`"Some models emit </think> to close a reasoning block. Never nest them."` scores as
+`"to close a reasoning block. Never nest them."` The trade-off is deliberate: the shape the
+pattern catches was observed in a real sample, and this is its price.
 
 ### Why the cap moved to 1280 → 4096
 
@@ -182,8 +239,9 @@ can't reach: the proxy. **That constraint does not apply here.** `run_ifeval.py`
 request body (`generate_one()`) and sends all six `NEUTRAL_SAMPLING` keys itself, verbatim, on
 every request — there is no client-side limitation for a proxy to work around. Going through
 `:8899` anyway would add a hop, a second reasoning-stripper implementation to keep in sync with
-this file's (see the untagged-leak gap above — the two already disagree on nothing new, but
-they'd need to stay in lockstep by hand), and no behavioural benefit. Bypassing it is a
+this file's (see "The two strippers, diffed" above — they already disagree on tag spellings and
+on truncation reporting, and they'd need to stay in lockstep by hand), and no behavioural
+benefit. Bypassing it is a
 deliberate, model-serving-layer decision, not an oversight, and only holds for adapters that set
 every sampling parameter themselves — it does not generalize to BigCodeBench.
 

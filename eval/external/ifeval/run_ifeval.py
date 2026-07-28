@@ -3,10 +3,10 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "httpx>=0.27",
-#     "absl-py>=2.0",
+#     "absl-py>=2.0",        # not imported here: vendored instructions.py / evaluation_main.py
 #     "langdetect>=1.0.9",
-#     "nltk>=3.8",
-#     "immutabledict>=4.0",
+#     "nltk>=3.8",           # not imported here: vendored instructions_util.py, at module load
+#     "immutabledict>=4.0",  # not imported here: vendored instructions_util.py
 # ]
 # ///
 """IFEval adapter — generate + score, per `harness/configs.json` config.
@@ -20,7 +20,8 @@ Usage:
     uv run run_ifeval.py --only opus --limit 20
     uv run run_ifeval.py --only opus                      # full 541-prompt run
     uv run run_ifeval.py --score-only fixtures/synthetic_responses.jsonl \\
-        --model synthetic --quant test                     # offline, no inference, no model needed
+        --model synthetic --quant test \\
+        --out "$TMPDIR/ifeval_synthetic_test.json"         # offline, no inference, no model needed
 
 Serve lifecycle (serve/wait-for-ready/unload) is IMPORTED from harness/orchestrate.py, not
 reimplemented (IMPLEMENTATION_PLAN.md §2 ground rules). Requires
@@ -33,7 +34,6 @@ import hashlib
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -60,7 +60,7 @@ sys.path.insert(0, str(VENDOR_DIR))
 
 from orchestrate import (  # noqa: E402
     api_key as orchestrate_api_key,
-    lsof_listen_pids,
+    llama_swap_listeners,
     serve_config,
     unload,
 )
@@ -148,6 +148,31 @@ REASONING_TAG_RE = re.compile(r"<(think|reasoning|thinking)>.*?</\1>", re.IGNORE
 # is pure unterminated reasoning. REASONING_TAG_RE above cannot match it (no closing tag), so
 # anything from this point onward must be discarded, never scored as the model's answer.
 OPEN_REASONING_TAG_RE = re.compile(r"<(?:think|reasoning|thinking)>", re.IGNORECASE)
+# Two further shapes, ported from eval/harness/eval_proxy.py. This lane needs its own copy:
+# run_ifeval talks to :8888 DIRECTLY (see the API_BASE_DEFAULT note), so eval_proxy is never in
+# the path and nothing downstream can catch a leak before IFEval scores the text as the answer.
+# The two stripper implementations stay separate on purpose — one rewrites a live HTTP body,
+# this one rewrites a saved record — so they are NOT unified.
+#
+# ORPHAN_CLOSE_RE is eval_proxy's pattern verbatim, <think>-only and deliberately NOT
+# generalised to (think|reasoning|thinking): eval_proxy's own rule is that a delimiter must be
+# OBSERVED before it is stripped, because guessing at one eats real answer text. Shape observed:
+# a monologue that ends in </think> with no opening tag, because the chat template opens the
+# block in the prompt prefix and it is never echoed back. It is \A-anchored and deletes
+# everything up to the first bare closing tag — in the BCB lane sanitize()+ast.parse bounds that
+# blast radius, but IFEval scores FREE TEXT, so ordinary prose that merely mentions "</think>"
+# loses its opening sentence (pinned as a test case in test_strip_reasoning.py).
+ORPHAN_CLOSE_RE = re.compile(r"\A(?:(?!<think>).)*?</think>\s*", re.DOTALL | re.IGNORECASE)
+# HARMONY_ANALYSIS_RE is gpt-oss's channel form. gpt-oss/mxfp4 is NOT marked broken in
+# configs.json, so a plain run scores it and an unstripped harmony monologue is graded as the
+# answer. Only the CLOSED shape matches: a monologue cut off by the token cap carries neither
+# <|end|> nor the final-channel marker, so it is not stripped AND not flagged (`truncated` below
+# stays bound to the unclosed-<think> branch). That is the most likely gpt-oss failure at
+# max_tokens 4096 — stated here, not fixed here, because the fix needs an observed sample first.
+HARMONY_ANALYSIS_RE = re.compile(
+    r"<\|channel\|>analysis<\|message\|>.*?(?:<\|end\|>|<\|start\|>assistant<\|channel\|>final<\|message\|>)",
+    re.DOTALL,
+)
 
 
 def now_iso():
@@ -186,30 +211,30 @@ def _port_from_url(base_url):
     return int(m.group(1)) if m else None
 
 
-def _pid_comm(pid):
-    try:
-        out = subprocess.run(["ps", "-p", str(pid), "-o", "comm="],
-                              capture_output=True, text=True, timeout=5)
-        return out.stdout.strip().rsplit("/", 1)[-1]
-    except Exception:
-        return ""
-
-
 def assert_serving_ready(base_url):
-    """§3.5 bite 1: orchestrate.clear_port() SIGKILLs every llama-server on the stated
-    premise that "we own the port exclusively" — false once llama-swap owns :8888 for daily
-    use. Refuse to launch rather than silently eating someone's daily model server."""
+    """§3.5 bite 1: refuse to run while llama-swap still owns the port named in --base-url.
+
+    Not a duplicate of orchestrate.clear_port()'s guard — that one has raised SystemExit rather
+    than SIGKILLed since 5117989 (2026-07-25), and it only ever checks orchestrate's own PORT.
+    This fires
+    once, up front, on whatever port --base-url actually names, so the abort lands before the
+    config loop opens its first serve log instead of mid-run.
+
+    Detection is orchestrate.llama_swap_listeners(), not the local `ps -o comm=` + startswith
+    check it replaced: comm is the truncated executable name, so a llama-swap started under a
+    wrapper or a renamed binary read as "not llama-swap" and the guard passed. That does NOT
+    close the silent-fallback hole — orchestrate.pid_command() still returns "" on any ps
+    failure, which also reads as "no llama-swap". The hole is relocated, not closed.
+    """
     port = _port_from_url(base_url)
     if port is None:
         return
-    for pid in lsof_listen_pids(port):
-        comm = _pid_comm(pid)
-        if comm.startswith("llama-swap"):
-            sys.exit(
-                f"ABORT: :{port} is held by llama-swap (pid {pid}, comm={comm!r}).\n"
-                f"Run 'eval/harness/ops/serving_mode.sh eval' first to hand the port to the "
-                f"eval harness, then re-run run_ifeval.py."
-            )
+    for pid, cmd in llama_swap_listeners(port):
+        sys.exit(
+            f"ABORT: :{port} is held by llama-swap (pid {pid}, cmd={cmd!r}).\n"
+            f"Run 'eval/harness/ops/serving_mode.sh eval' first to hand the port to the "
+            f"eval harness, then re-run run_ifeval.py."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -310,7 +335,8 @@ def select_inputs(limit=None, sample=None, seed=DEFAULT_SAMPLE_SEED):
 # ---------------------------------------------------------------------------
 
 def strip_reasoning(message, mode):
-    """Strip <think>/<reasoning>/<thinking> wrappers out of `content`. Confirmed empirically
+    """Strip <think>/<reasoning>/<thinking> wrappers out of `content`, plus the two further
+    leak shapes documented at ORPHAN_CLOSE_RE / HARMONY_ANALYSIS_RE above. Confirmed empirically
     (see the module-level comment above REASONING_TAG_RE): this server has no separate
     reasoning_content/reasoning field, so "prefer the separate field" degrades to "there is no
     separate field" — reading one, if present on some other server, is still supported as a
@@ -336,6 +362,8 @@ def strip_reasoning(message, mode):
         return content, False, had_reasoning_field, False
 
     stripped = REASONING_TAG_RE.sub("", content)
+    stripped = ORPHAN_CLOSE_RE.sub("", stripped)
+    stripped = HARMONY_ANALYSIS_RE.sub("", stripped)
     truncated = False
     open_match = OPEN_REASONING_TAG_RE.search(stripped)
     if open_match:  # a well-formed pass left an unclosed opening tag -> truncation
@@ -624,6 +652,14 @@ def main():
         result = score_and_build(work_path, args.model, args.quant, args.base_url,
                                   args.strip_reasoning, args.max_tokens, args.limit, args.sample,
                                   args.seed, diag)
+        # --score-only never contacts a server and never calls strip_reasoning(), so every value
+        # score_and_build() puts in `generation` is this process's CLI defaults, not what
+        # produced the file: re-scoring the shipped ifeval__opus__q4.json (generated at
+        # max_tokens 1280) would stamp it 4096 and claim reasoning_stripped. Null the WHOLE
+        # block — keeping the sampler values while nulling endpoint/max_tokens would be a MORE
+        # confident lie. The key stays present, holding null, so the shape is stable and a naive
+        # consumer fails loud instead of reading a fabricated number.
+        result["generation"] = None
         result["wall_clock_s"] = round(time.monotonic() - t0, 2)
         atomic_write_json(out_path, result)
         print(f"[ifeval] score-only wrote {out_path}")

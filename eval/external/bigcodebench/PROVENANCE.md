@@ -2,7 +2,9 @@
 
 Third-party code used **unmodified**. Nothing under `.venv/` or in the installed
 `bigcodebench` package has been patched; every deviation from upstream defaults is expressed
-as a **CLI flag** in `run_bcb.py` / `env_health.py` and recorded in the result JSON.
+either as a **CLI flag** in `run_bcb.py` / `env_health.py` or by the **interposed proxy** that
+generation is pointed at (last row of the deviations table — it is the largest deviation and it
+is not something the client could have been flagged into), and recorded in the result JSON.
 
 ## Source
 
@@ -86,7 +88,7 @@ The pins that motivated the decision, and where they actually landed:
 The full 62-entry mapping, machine-readable, is in **`install_report.json`**
 (`pins_relaxed`), regenerated on every `bootstrap.sh` run.
 
-## Deviations from upstream defaults (flags only, no code edits)
+## Deviations from upstream defaults (flags and the proxy, no code edits)
 
 | Flag | Upstream default | Used here | Why |
 |---|---|---|---|
@@ -96,6 +98,7 @@ The full 62-entry mapping, machine-readable, is in **`install_report.json`**
 | `--bs` | `None` | `1` | With `None`, `generate.py` writes nothing to disk until the whole split finishes (`generate.py:88`), so `--resume` has nothing to resume from after a crash. |
 | `--parallel` | `cpu_count() // 2` | `4` | With rlimits off, and while a 35B GGUF may be resident, unbounded workers are a memory risk. |
 | `--pass-k` | `"1,5,10"` | *not passed* | `fire` would coerce `1` to an int and `evaluate.py:218` then iterates it. The default already yields only `pass@1` when `n_samples == 1`. |
+| `--base-url` | the served model, directly | `http://127.0.0.1:8899/v1` — `eval/harness/eval_proxy.py`, in front of the served model | **The largest deviation, and the one no flag on the upstream client could express.** `run_bcb.py` hands `run_generate` the *proxy* URL, never `:8888` (`run_bcb.py:1052-1053`), so generation never reaches the served model directly. The proxy rewrites both directions. **Request:** on every `POST …/chat/completions` it forces `NEUTRAL_SAMPLING` — temperature 0 · top_p 1 · top_k 0 · min_p 0 · presence_penalty 0 · frequency_penalty 0 (`eval_proxy.py:64-71`) — over BigCodeBench's hardcoded `top_p = 0.95` (`gen/util/openai_request.py:17`) and over the per-model server defaults the client cannot reach at all. **Response:** it strips reasoning out of every choice's `message.content`, four observed shapes — `<think>…</think>`, orphan `</think>`, unclosed `<think>`, harmony `<\|channel\|>analysis` (`eval_proxy.py:81-87`) — because this fleet leaks the monologue into `content` with no `reasoning_content` field. Both halves are recorded per config: `generation.sampling_injected` + `generation.proxy_stats` for the request rewrite, `generation.reasoning_stripped` for the response rewrite, and `generation.completions_provenance` for whether the scored completions went through it at all. |
 
 ## Consequence for the numbers
 

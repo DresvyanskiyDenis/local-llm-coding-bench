@@ -2,7 +2,8 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""verify_phase4.py — evidence generator for the 11 round-2 task dirs (commit 020e776).
+"""verify_phase4.py — evidence generator for 10 of the 11 round-2 task dirs (commit 020e776).
+D6_pr_describe is judge-graded: there is no mechanical grader to round-trip, so it is not covered.
 
 Runs, with the graders UNMODIFIED and no local model / no port touched:
 
@@ -50,6 +51,10 @@ ROOT = HARNESS.parent.parent
 TASKS = ROOT / "eval" / "tasks"
 GRADERS = HARNESS / "graders"
 RESULTS = ROOT / "eval" / "results"
+
+sys.path.insert(0, str(HARNESS))
+
+from digest import mean  # noqa: E402  (path must be set first)
 
 results = []
 
@@ -107,7 +112,6 @@ def check_b6(ws):
         "hallucinated": ('```json\n[{"file":"src/rate_window.py","line":26,'
                          '"description":"mutable default argument shared across calls"}]\n```'),
     }
-    verdicts = {}
     for name, ans in cases.items():
         d = write_run(ws / f"b6_{name}", answer=ans)
         out = d / "grade_review.json"
@@ -117,7 +121,6 @@ def check_b6(ws):
             continue
         raw = out.read_text()
         v = json.loads(raw)
-        verdicts[name] = v
         literal_null = re.search(r'"recall":\s*null', raw) is not None
         record("B", "B6_control_nobugs", f"recall is literal JSON null ({name})",
                literal_null and v["recall"] is None,
@@ -126,19 +129,14 @@ def check_b6(ws):
                v["precision"] == (1.0 if name == "clean" else 0.0),
                f'precision={v["precision"]}, fpr={v.get("false_positive_rate")}')
 
-    # digest.py consequence
-    import statistics as st
-
-    def mean(xs):
-        xs = [x for x in xs if isinstance(x, (int, float))]
-        return round(st.mean(xs), 3) if xs else None
-
+    # digest.py consequence -- run through the REAL digest.mean, not a local copy of it.
+    # A reimplementation here would keep passing after digest.py started summing nulls as
+    # 0.0, which is precisely the regression this row exists to catch.
     with_null = mean([1.0, 0.667, None])
     with_zero = mean([1.0, 0.667, 0.0])
     record("B", "B6_control_nobugs", "digest.py mean drops null (would drag if 0.0)",
            with_null == 0.834 and with_zero == 0.556,
            f"null->{with_null} vs 0.0->{with_zero}")
-    return verdicts
 
 
 def raw_recall(raw):
@@ -259,6 +257,9 @@ C_EDITS = {
     },
 }
 
+# MIRROR of diff_grader.FREE_LINES -- deliberately not imported: this is a PEP 723 standalone
+# and `uv run` puts ops/ on sys.path, not graders/. If the two drift, the "N lines (limit 15)"
+# evidence in PHASE4_VERIFICATION.md certifies a budget the grader no longer enforces.
 FREE_LINES = 15
 
 
@@ -343,8 +344,9 @@ def check_d(offline):
 
     # assembled core
     core_bytes = (dt / "longctx_core" / "core.md").read_bytes()
+    core_ok = sha(core_bytes) == man["core"]["sha256"]
     record("D", "longctx_core", "assembled core.md sha256 matches manifest",
-           sha(core_bytes) == man["core"]["sha256"], f"{sha(core_bytes)[:16]}...")
+           core_ok, f"{sha(core_bytes)[:16]}...")
 
     # Core sources are PINNED SNAPSHOTS taken when the corpus was assembled, not live
     # mirrors of the repo. The corpus is frozen: D3/D4/D5's measured token counts were
@@ -400,7 +402,6 @@ def check_d(offline):
     # padding: fetched, no on-disk copy
     pad = man["padding"]["order"]
     cache = Path(os.environ.get("TMPDIR", tempfile.gettempdir())) / "phase4_pad_src"
-    cache.mkdir(parents=True, exist_ok=True)
     if offline:
         record("D", "manifest.padding", "fetched padding sha256s (kind=fetched, NOT on disk)",
                SKIP, f"0/{len(pad)} not attempted (--offline)",
@@ -409,6 +410,7 @@ def check_d(offline):
                "`uv run eval/harness/ops/verify_phase4.py` (no --offline, needs network)")
         pad_ok = None
     else:
+        cache.mkdir(parents=True, exist_ok=True)
         pad_ok = 0
         for i, s in enumerate(pad):
             f = cache / f"{i:02d}.bin"
@@ -426,7 +428,7 @@ def check_d(offline):
 
     # Totals: count only what was actually attempted, so a skipped fetch cannot masquerade
     # as a shortfall in corpus integrity.
-    verified = 1 + ok + (pad_ok or 0)
+    verified = int(core_ok) + ok + (pad_ok or 0)
     if pad_ok is None:
         attempted = 1 + n_core
         record("D", "longctx_manifest", "sha256 refs verified (of those verifiable offline)",

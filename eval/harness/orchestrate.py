@@ -54,11 +54,11 @@ SPEED_PROBE_PATH = HARNESS_DIR / "speed_probe.py"
 UNSLOTH_SERVE = Path.home() / "bin" / "unsloth-serve"
 OPENCODE_CONFIG = Path.home() / ".config" / "opencode" / "opencode.json"
 
-API_BASE = "http://127.0.0.1:8888/v1"
+PORT = 8888
+API_BASE = f"http://127.0.0.1:{PORT}/v1"
 # Same fallback key already committed in speed_probe.py — kept identical so both
 # scripts agree without either one needing the real secret from the environment.
 DEFAULT_API_KEY_FALLBACK = "sk-local-dummy-key"
-PORT = 8888
 
 SUITES = ["A_coding", "B_review", "C_edit", "D_text"]
 REQUIRED_CONFIG_KEYS = {
@@ -80,6 +80,11 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+# The four near-copies of this across the repo are per-script BY DESIGN — unifying them
+# breaks callers: opencode_driver.py gets a `str` from argparse (needs Path() coercion),
+# run_ifeval.py/run_bcb.py mkdir the parent first (this one writes into a dir orchestrate
+# already made), and run_bcb.py appends "\n" — dropping it rewrites the bytes of every
+# shipped artifact.
 def atomic_write_json(path, obj):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, indent=2))
@@ -98,12 +103,17 @@ def save_configs(configs):
     atomic_write_json(CONFIGS_PATH, configs)
 
 
-def mark_broken(configs, config):
+def mark_broken(configs, config, reason):
+    """Emits the ONE line run_model.sh counts as broken_marks. Its wording must stay
+    distinct from the "already broken, skipping" line in process_config: the two call
+    sites used to print their own prose (or, on serve failure, nothing at all), so a
+    night where a config genuinely broke still reported broken_marks=0 in the marker."""
     for c in configs:
         if c["serve_name"] == config["serve_name"]:
             c["broken"] = True
     save_configs(configs)
     config["broken"] = True
+    print(f"  [broken] MARKED {config['serve_name']}: {reason}")
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +221,11 @@ def dry_run():
         else:
             checks.append(("task dirs (eval/tasks/)", "PASS", f"{len(tasks)} tasks parse across {len(SUITES)} suites"))
 
-    # driver + graders (may still be landing — pending, not fail)
+    # driver + graders — a missing one is FAIL, not PENDING: this gate's whole contract
+    # is "0 FAIL before any real launch", and PENDING does not move the exit code, so a
+    # tree with a deleted driver used to gate green and then produce zero units all night.
+    # The is_file() branch has to stay: compiles_clean() only catches SyntaxError, so a
+    # missing file would raise FileNotFoundError before the table or summary ever print.
     for label, path in [
         ("opencode_driver.py", DRIVER_PATH),
         ("graders/pytest_grader.py", PYTEST_GRADER),
@@ -219,7 +233,7 @@ def dry_run():
         ("graders/diff_grader.py", DIFF_GRADER),
     ]:
         if not path.is_file():
-            checks.append((label, "PENDING", "not landed yet (COMPONENT 2)"))
+            checks.append((label, "FAIL", "missing"))
             continue
         ok, err = compiles_clean(path)
         checks.append((label, "PASS" if ok else "FAIL", "syntax OK" if ok else err))
@@ -695,7 +709,7 @@ def process_config(config, stages, agent, log_dir):
     log_path = log_dir / f"serve__{config['serve_name']}.log"
     proc, ready = serve_config(config, log_path)
     if not ready:
-        mark_broken(load_configs(), config)
+        mark_broken(load_configs(), config, "serve never became ready")
         unload(proc)
         return
 
@@ -703,7 +717,7 @@ def process_config(config, stages, agent, log_dir):
         run_speed_probe(config)
         if not run_smoke(config):
             print(f"[config] {label} smoke test failed (0 tools / garbage) -> marking broken, skipping task depth")
-            mark_broken(load_configs(), config)
+            mark_broken(load_configs(), config, "smoke test failed (0 tools / garbage)")
             return
         if not pending:
             return
@@ -724,7 +738,7 @@ def process_config(config, stages, agent, log_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--resume", action="store_true", help="required (with --dry-run) to actually launch models")
+    ap.add_argument("--resume", action="store_true", help="required to actually launch models; --dry-run validates only and never serves")
     ap.add_argument("--stage", type=int, choices=[1, 2], default=None,
                      help="restrict to one stage; omit to run stage 1 then stage 2")
     ap.add_argument("--only", default=None, help="restrict to configs whose 'model' field matches")

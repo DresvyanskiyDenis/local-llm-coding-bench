@@ -60,10 +60,13 @@ for p in $(pgrep -f "opencode run" 2>/dev/null); do
 done
 sleep 2
 
-PORT=$(lsof -nP -iTCP:8888 -sTCP:LISTEN 2>/dev/null | wc -l | tr -d ' ')
+PORT=$(lsof -nP -iTCP:8888 -sTCP:LISTEN -t 2>/dev/null | wc -l | tr -d ' ')
 UNITS=$(ls -1 "$RESULTS"/${MODEL}__*.json 2>/dev/null | wc -l | tr -d ' ')
 UNLOADS=$(grep -c "RAM released, port clear" "$ORCH_LOG" 2>/dev/null)
-BROKEN=$(grep -c "marked broken" "$ORCH_LOG" 2>/dev/null)
+# counts FRESH marks only — mark_broken() emits "[broken] MARKED"; the "marked broken in
+# configs.json, skipping entirely" line is a config broken on an EARLIER night and must not
+# inflate this, or every later night reports a breakage that did not happen tonight.
+BROKEN=$(grep -c "\[broken\] MARKED" "$ORCH_LOG" 2>/dev/null)
 {
   echo "model=$MODEL"
   echo "orchestrate_rc=$RC"

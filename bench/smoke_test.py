@@ -16,7 +16,6 @@ import json
 import os
 import re
 import statistics
-import sys
 import time
 
 import httpx
@@ -201,26 +200,27 @@ def scenario_2(client, base_url, headers, model):
     message = resp["choices"][0]["message"]
     tool_calls = parse_tool_calls(message)
     content = message.get("content") or ""
+    tokps = tokens_per_sec(resp, wall)
     if has_leaked_tool_call(content):
-        return "fail", "emitted tool-call XML as plain text instead of a real tool_calls entry", tokens_per_sec(resp, wall)
+        return "fail", "emitted tool-call XML as plain text instead of a real tool_calls entry", tokps
     if not tool_calls:
-        return "fail", "no tool call emitted", tokens_per_sec(resp, wall)
+        return "fail", "no tool call emitted", tokps
     if len(tool_calls) > 1:
-        return "partial", f"emitted {len(tool_calls)} tool calls, expected exactly 1", tokens_per_sec(resp, wall)
+        return "partial", f"emitted {len(tool_calls)} tool calls, expected exactly 1", tokps
     call = tool_calls[0]
     if call["name"] != "run_command":
-        return "fail", f"called wrong tool: {call['name']!r}", tokens_per_sec(resp, wall)
+        return "fail", f"called wrong tool: {call['name']!r}", tokps
     args = call["args"]
     if args is None:
-        return "fail", f"malformed arguments JSON: {call['raw']!r}", tokens_per_sec(resp, wall)
+        return "fail", f"malformed arguments JSON: {call['raw']!r}", tokps
     if not isinstance(args, dict) or "pytest" not in str(args.get("command", "")):
-        return "fail", f"missing/incorrect 'command': {args!r}", tokens_per_sec(resp, wall)
+        return "fail", f"missing/incorrect 'command': {args!r}", tokps
     options = args.get("options")
     if isinstance(options, dict) and "/repo" in str(options.get("cwd", "")) and str(options.get("timeout_sec")) == "60":
-        return "pass", "correct tool + properly nested arguments", tokens_per_sec(resp, wall)
+        return "pass", "correct tool + properly nested arguments", tokps
     if "/repo" in str(args.get("cwd", "")) and str(args.get("timeout_sec")) == "60":
-        return "partial", "nested 'options' object flattened to top level (grammar degradation)", tokens_per_sec(resp, wall)
-    return "fail", f"nested arguments incorrect or missing: {args!r}", tokens_per_sec(resp, wall)
+        return "partial", "nested 'options' object flattened to top level (grammar degradation)", tokps
+    return "fail", f"nested arguments incorrect or missing: {args!r}", tokps
 
 
 def scenario_3(client, base_url, headers, model):

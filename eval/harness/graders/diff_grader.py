@@ -180,7 +180,14 @@ def main():
         elif isinstance(raw, dict) and "kind" in raw:
             noise_entries_out = [_grade_noise_entry(raw, new_root, run_dir)]
         else:
-            noise = raw if isinstance(raw, dict) else {}
+            # A non-object noise.json is a broken grading key, not "no noise comment":
+            # coercing it to {} emits noise_comment_acted_on: null plus a fully computed
+            # surgical_score that the aggregate would consume as real data. CONTRACT.md §2
+            # requires a non-zero exit on grader malfunction, and names the file so the
+            # operator knows WHICH key is broken.
+            if not isinstance(raw, dict):
+                raise TypeError(f"{noise_path}: expected object, got {type(raw).__name__}")
+            noise = raw
             target = new_root / noise.get("file", "")
             if noise.get("file") and target.exists():
                 noise_acted_on = _check_pattern_field(noise, target.read_text(errors="replace"))

@@ -80,7 +80,11 @@ DEFAULT_OUT = RESULTS_DIR / "DTEXT_PAIRWISE"
 # and report the abort instead of burning the rest of --limit on a dead backend.
 ABORT_AFTER_CONSECUTIVE_BACKEND_ERRORS = 5
 
-# The two D tasks round 1 actually ran (D3-D6 are round-2 content, not authored yet).
+# The two D tasks round 1 actually ran. D3-D6 exist since phase 4, but are deliberately NOT
+# listed: this constant does double duty as (a) the default task list for --suite D_text
+# --round 1 (discover_tasks) and (b) the `--scheme auto` selector in main — a task named here
+# gets full round-robin (comparable to round-1 absolute judging), everything else gets Swiss.
+# Adding D3-D6 here would silently re-scheme them and re-key the round-1 comparison.
 ROUND1_D_TASKS = ("D1_summarize_mtp", "D2_dedup_approaches")
 
 # A BT point-estimate fitted from fewer than this many games for a config is treated as
@@ -151,7 +155,7 @@ class AnswerRecord:
     config_id: str
     task: str
     text: Optional[str]
-    source: str  # "run_dir" | "embedded:<key>" | a human-readable missing-reason
+    source: str  # "run_dir" | "recovered_opencode_export (...)" | a missing-reason
 
 
 _RECOVERY_MANIFEST_CACHE: dict[str, Optional[dict]] = {}
@@ -162,7 +166,7 @@ def _load_recovery_manifest(suite):
     ops/recover_round1_answers.py: the authoritative (unit_id -> {status, out_path,
     session_id, ...}) mapping. Cached per-suite for the life of the process; returns None
     if no recovery has ever been run for this suite (not an error — just means the
-    fallback answer_file / embedded-text paths are all that's available)."""
+    driver.answer_file path is all that's available)."""
     if suite in _RECOVERY_MANIFEST_CACHE:
         return _RECOVERY_MANIFEST_CACHE[suite]
     manifest_path = RESULTS_DIR / "round1_answers" / suite / "_manifest.json"
@@ -171,7 +175,7 @@ def _load_recovery_manifest(suite):
     return manifest
 
 
-def load_answer(config, suite, task, round_=1):
+def load_answer(config, suite, task):
     """Preferred source: driver.answer_file -> <rundir>/answer.txt under eval/runs/ (the
     original round-1 path — gone on this machine, 0 entries, but kept first so a healthy
     machine never needs the fallback). Fallback: the recovery manifest written by
@@ -181,7 +185,12 @@ def load_answer(config, suite, task, round_=1):
     a non-"recovered" status (export_failed / no_final_text) is reported honestly rather
     than silently treated as missing-with-no-explanation.
     """
-    unit_id = f"{config['model']}__{config['quant']}__{suite}__{task}__rep{round_}"
+    # rep1, NOT rep{round_}: `round_` is the benchmark round (1, 2), not a repetition index.
+    # discover_tasks() globs `*__rep1.json`, so splicing the round in here made `--round 2`
+    # judge repetition 2 against a rep-1-keyed task list, silently. The two are only equal at
+    # round 1. ops/recover_round1_answers.py:57,147 keeps the round==rep coincidence on
+    # purpose (it only ever runs for round 1) — do not "align" one of the two back to the other.
+    unit_id = f"{config['model']}__{config['quant']}__{suite}__{task}__rep1"
 
     path = RESULTS_DIR / f"{unit_id}.json"
     if not path.exists():
@@ -228,11 +237,6 @@ def load_answer(config, suite, task, round_=1):
         return AnswerRecord(
             config["id"], task, None, f"recovery_manifest status: {status}"
         )
-
-    for key in ("answer_text", "final_answer", "answer"):
-        val = driver.get(key)
-        if isinstance(val, str) and val.strip():
-            return AnswerRecord(config["id"], task, val.strip(), f"embedded:{key}")
 
     return AnswerRecord(
         config["id"],
@@ -488,6 +492,12 @@ class JudgeBackend:
         }
 
 
+# JudgeBackend._stub_call regexes this exact shape ("ANSWER A:\n…\n\nANSWER B:\n…\n\nJudge")
+# to recover the two answers, which is what lets --dry-run/--self-test run fully offline with
+# zero real judge calls. Reword any literal below and the stub matches nothing, so every pair
+# comes back unparseable and no game is ever resolved: VERIFIED 2026-07-28 that --self-test
+# then dies with `AttributeError: 'NoneType' object has no attribute 'items'` on bt_strengths
+# inside run_self_test — a traceback nowhere near this function.
 def build_prompt(task_prompt, text_a, text_b):
     return (
         f"TASK the two answers below were both asked to complete:\n{task_prompt}\n\n"
@@ -720,9 +730,9 @@ def roundrobin_pairs(config_ids):
 
 
 def swiss_pairs_schedule(config_ids, rounds, seed):
-    """Generator of (round_idx, [(a,b), ...], byes) — caller judges each round's pairs and
-    calls `advance_scores` before the next round is generated, since pairing depends on
-    running standings."""
+    """Generator of (round_idx, [(a,b), ...], byes, scores) — caller judges each round's
+    pairs and calls `advance_scores` on the yielded `scores` before the next round is
+    generated, since pairing depends on running standings."""
     config_ids = sorted(config_ids)
     scores = {c: 0.0 for c in config_ids}
     played = defaultdict(set)
@@ -781,6 +791,18 @@ def advance_scores(scores, pairs, outcomes):
 # Bradley-Terry (MM iteration) + bootstrap CI
 # --------------------------------------------------------------------------------------
 
+# OBSERVED 2026-07-28 in the shipped DTEXT_PAIRWISE.json (ts 2026-07-26): when the win graph
+# is not strongly connected the BT maximum-likelihood estimate does not exist, so MM has no
+# fixed point to reach — it runs out max_iter and returns wherever it drifted. NOTHING in such
+# a fit is converged, not merely the offending config. D1: qwen__q5, qwen__q4 and ornith__q4
+# are each 3-0 and all land on the identical 552.9639885837366, so the rendered table's top
+# three are in dict insertion order, not merit order; katdev__q4 (0-4) lands on exactly 0.0 and
+# carries NO low_confidence flag, because n_games=4 clears MIN_GAMES_FOR_RELIABLE_ESTIMATE. D2
+# is worse: its top SEVEN all sit on 495.7318336416505 while gpt-oss__mxfp4, equally undefeated
+# at 3-0, lands on a different rail (330.2); gemma__q5 (3-11) and glm__q5 (1-2) are pushed to
+# 5.2e-06 and 8.0e-09 — neither winless, both indistinguishable from the 0.0 rail glm__q4 (0-5)
+# sits on. Read such a fit as unranked; never quote the ordering as a ranking.
+
 
 def bt_mm(config_ids, games, max_iter=2000, tol=1e-12):
     """games: list of (winner, loser, weight). Ties supplied as two 0.5-weight entries.
@@ -826,12 +848,11 @@ def bootstrap_bt_ci(config_ids, games, n_boot=1000, seed=0, alpha=0.05):
     if not games:
         return {c: None for c in config_ids}
     rng = np.random.default_rng(seed)
-    games_arr = games
-    m = len(games_arr)
+    m = len(games)
     samples = defaultdict(list)
     for _ in range(n_boot):
         idxs = rng.integers(0, m, size=m)
-        resampled = [games_arr[i] for i in idxs]
+        resampled = [games[i] for i in idxs]
         strengths, _ = bt_mm(config_ids, resampled, max_iter=500)
         for c, v in strengths.items():
             samples[c].append(v)
@@ -980,13 +1001,9 @@ def run_task(
     decisions = []  # every judged/attempted pair, for order-bias + win matrix
     skipped_missing = 0
 
-    def get_texts(a, b):
-        ta, tb = answers[(a, task)], answers[(b, task)]
-        return ta.text, tb.text
-
     def do_pair(a, b):
         nonlocal skipped_missing
-        text_a, text_b = get_texts(a, b)
+        text_a, text_b = answers[(a, task)].text, answers[(b, task)].text
         if text_a is None or text_b is None:
             skipped_missing += 1
             missing = [c for c, t in ((a, text_a), (b, text_b)) if t is None]
@@ -1035,7 +1052,7 @@ def run_task(
     win_matrix = {a: {b: 0.0 for b in config_ids} for a in config_ids}
     for d in decisions:
         w = d.get("winner")
-        if w is None or w == "TIE" and "skipped" in d:
+        if w is None:
             continue
         a, b = d["cfg_a"], d["cfg_b"]
         if w == "TIE":
@@ -1146,6 +1163,16 @@ def run_task(
 # --------------------------------------------------------------------------------------
 # Reporting
 # --------------------------------------------------------------------------------------
+
+
+def fit_has_no_finite_mle(bt_strengths):
+    """True if any config that actually played sits on MM's 0.0 rail — the tell that this
+    whole fit has no finite BT MLE (see the comment above bt_mm), so every strength and the
+    ordering they induce are artifacts of max_iter, not estimates."""
+    return any(
+        v["strength"] == 0.0 and not v["insufficient_data"]
+        for v in bt_strengths.values()
+    )
 
 
 def render_markdown(report):
@@ -1271,6 +1298,13 @@ def render_markdown(report):
                 "this partial pass — their strength is an anecdotal point estimate, "
                 "not a fitted rank, and its 95% CI is correspondingly wide/unreliable."
                 if n_low_conf
+                else "",
+                "",
+                "> :warning: this fit has NO finite Bradley-Terry MLE (the win graph is not "
+                "strongly connected), so MM ran to max_iter: no strength below is converged "
+                "and the row order is not a ranking — including rows not flagged "
+                "`low_confidence`."
+                if fit_has_no_finite_mle(t["bt_strengths"])
                 else "",
                 "",
                 "| config | strength | 95% CI | n_games | low_confidence | insufficient data |",
@@ -1514,7 +1548,7 @@ def main():
     missing_detail = []
     for c in configs:
         for t in tasks:
-            rec = load_answer(c, args.suite, t, args.round)
+            rec = load_answer(c, args.suite, t)
             answers[(c["id"], t)] = rec
             if rec.text is not None:
                 n_found += 1
@@ -1564,16 +1598,17 @@ def main():
     task_results = {}
     config_ids = [c["id"] for c in configs]
     for t in tasks:
+        if args.scheme == "auto":
+            scheme = "roundrobin" if t in ROUND1_D_TASKS else "swiss"
+        else:
+            scheme = args.scheme
         if session.aborted:
             print(
                 f"[pairwise_judge] SKIPPING task={t}: session aborted — {session.abort_reason}",
                 file=sys.stderr,
             )
             n_designed_stub = (
-                len(roundrobin_pairs(config_ids))
-                if (args.scheme in ("auto", "roundrobin") and t in ROUND1_D_TASKS)
-                or args.scheme == "roundrobin"
-                else 0
+                len(roundrobin_pairs(config_ids)) if scheme == "roundrobin" else 0
             )
             task_results[t] = {
                 "pairing_scheme": "not_run (session aborted before this task started)",
@@ -1589,10 +1624,6 @@ def main():
                 "spearman_vs_round1_absolute": None,
             }
             continue
-        if args.scheme == "auto":
-            scheme = "roundrobin" if t in ROUND1_D_TASKS else "swiss"
-        else:
-            scheme = args.scheme
         session.limit_remaining = (
             args.limit
         )  # per-task budget; cache hits are always free

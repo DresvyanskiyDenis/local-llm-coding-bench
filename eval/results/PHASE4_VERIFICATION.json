@@ -249,7 +249,7 @@
       "check": "live repo copy of docs/methodology.md",
       "status": "NOTE",
       "ok": null,
-      "number": "14017 -> 40908 bytes",
+      "number": "14017 -> 45128 bytes",
       "note": "docs/methodology.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid"
     },
     {
@@ -258,8 +258,8 @@
       "check": "live repo copy of docs/leaderboard.md",
       "status": "NOTE",
       "ok": null,
-      "number": "unchanged since pin",
-      "note": "6860 bytes, still identical to the snapshot"
+      "number": "6860 -> 7446 bytes",
+      "note": "docs/leaderboard.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid"
     },
     {
       "area": "D",
@@ -267,7 +267,7 @@
       "check": "live repo copy of docs/replication.md",
       "status": "NOTE",
       "ok": null,
-      "number": "15517 -> 21254 bytes",
+      "number": "15517 -> 22016 bytes",
       "note": "docs/replication.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid"
     },
     {

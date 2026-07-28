@@ -73,9 +73,6 @@ HF_CACHE = (
 ARROW = HF_CACHE / "bigcodebench-hard-v0.1.4.arrow"
 DATASET = "bigcode/bigcodebench-hard"
 DATASET_SPLIT = "v0.1.4"
-DATASET_URL = "https://huggingface.co/datasets/bigcode/bigcodebench-hard"
-UPSTREAM_REPO = "https://github.com/bigcode-project/bigcodebench"
-FETCH_DATE = "2026-07-25"        # when bootstrap.sh pulled the dataset (see ../PROVENANCE.md)
 DERIVED_DATE = "2026-07-26"
 
 TIMEOUT_S = 900                  # same per-attempt cap as the hand-written A tasks
@@ -282,7 +279,7 @@ the function, change the signature, or drop the imports that are already there.
 STUB_BODY = '    raise NotImplementedError\n'
 
 
-def title_for(row: dict, slug: str) -> str:
+def title_for(row: dict) -> str:
     first = row["instruct_prompt"].split("\n")[0]
     first = re.split(r"(?<=[a-z])\. ", first)[0].strip().rstrip(".")
     if len(first) > 88:
@@ -347,7 +344,7 @@ def emit(rows_by_id: dict[str, dict]) -> list[dict]:
         meta = {
             "id": task_id,
             "suite": "A_coding",
-            "title": title_for(row, slug),
+            "title": title_for(row),
             "grader": "pytest",
             "timeout_s": TIMEOUT_S,
             "est_ctx_tokens": est_ctx,

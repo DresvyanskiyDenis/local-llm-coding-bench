@@ -15,7 +15,7 @@ Overall = 0.35·A_coding + 0.25·(1 − tool_malformed%) + 0.15·C_edit
         + 0.10·B_recall + 0.10·(D_text/10) + 0.05·(decode/137)      → ×100
 ```
 
-Rationale: for an agentic driver the two things that matter most are **does it write correct code** (A, 35%) and **does it drive tools without malformed calls** (tools, 25%); surgical-edit precision (C, 15%) is next; planted-bug review (B) and prose (D) are secondary (10% each); raw speed is a 5% tiebreaker. RAM is a constraint, not scored. The composite uses the **q4** quant (or the model's single quant); decode is normalized to the fleet max of 137 t/s.
+Rationale: for an agentic driver the two things that matter most are **does it write correct code** (A, 35%) and **does it drive tools without malformed calls** (tools, 25%); surgical-edit precision (C, 15%) is next; planted-bug review (B) and prose (D) are secondary (10% each); raw speed is a 5% tiebreaker. RAM is a constraint, not scored. The composite uses the **q4** quant (or the model's single quant) with three qualifications: `katdev` is the exception and reproduces only from **iq4**; the **D_text** term is model-level, pooled across *both* quants rather than taken per-config; and `tool_malformed%` is rounded to the nearest whole percent before it enters the formula — a reconstruction, not a documented rule (`eval/harness/aggregate.py` labels the rounding an inferred convention). Decode is normalized to the fleet max of 137 t/s.
 
 | # | Key | Model | Quant | Composite | Role (one line) |
 |---|-----|-------|-------|:---------:|-----------------|
@@ -72,4 +72,4 @@ Numbers are `q4 / q5` unless noted (`katdev` shown `q4 / iq4`; single-quant mode
 - Reasoning-off is not a handicap here: four of the top coders (`qwopus`, `ornith`, `northmini`, `katdev`) run non-thinking, and two of them top the coding and prose axes.
 - Known measurement gaps (MTP acceptance rate, 80 K context probe point, long-context quality decay, auto-compaction survival) are documented in [METHODOLOGY.md](methodology.md) and [`eval/results/METRICS_ROLLUP.md`](https://github.com/DresvyanskiyDenis/local-llm-coding-bench/blob/main/eval/results/METRICS_ROLLUP.md).
 
-*Benchmark hardware: MacBook Pro M4 Max, 36 GB unified memory. Composite computed on the q4 (or single) quant of each model.*
+*Benchmark hardware: MacBook Pro M4 Max, 36 GB unified memory. Composite computed on the q4 (or single) quant of each model — except `katdev`, which reproduces only from iq4; the D_text term is pooled across both quants, and tool_malformed% is rounded to a whole percent first (see the composite-ranking section above).*

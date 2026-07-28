@@ -36,6 +36,9 @@ RESULTS_DIR = EVAL_DIR / "results"
 CONFIGS_PATH = HARNESS_DIR / "configs.json"
 
 
+# A DELIBERATE copy of pairwise_judge.py's load_configs, not an oversight: importing it needs
+# sys.path surgery AND drags `numpy>=1.26` into a recovery script whose PEP 723 header declares
+# no dependencies at all — deduplicating it makes the data-loss recovery path the fragile one.
 def load_configs():
     raw = json.loads(CONFIGS_PATH.read_text())
     out, seen = [], set()
@@ -55,10 +58,7 @@ def discover_tasks(suite, round_):
         return ["D1_summarize_mtp", "D2_dedup_approaches"]
     tasks = set()
     for p in RESULTS_DIR.glob(f"*__{suite}__*__rep{round_}.json"):
-        try:
-            data = json.loads(p.read_text())
-        except Exception:
-            continue
+        data = json.loads(p.read_text())
         t = data.get("task")
         if t:
             tasks.add(t)

@@ -87,7 +87,6 @@
 #   biased toward doing nothing, per the brief: never act to make room, refuse
 #   loudly in every ambiguous case. This whole section is the part most likely
 #   to be wrong; if a run shape shows up that neither signal catches (a new
-#   wrong; if a run shape shows up that neither signal catches (a new
 #   orchestrator that isn't `orchestrate.py --resume` and touches none of the
 #   watched paths), you will see a false DEADMAN classification — check the
 #   log and --check-only before trusting an unattended restore in that case.
@@ -116,12 +115,12 @@
 # $1 this script happened to have, and would leak `set -e` into this script's
 # shell — both wrong. Invoking it as a subprocess is the safe form of reuse.)
 #
-# WHY BASH, NOT PYTHON: this script's entire job is asking the OS three
-# questions (who's on this port, is that pid this process, is that launchd
-# job loaded) and comparing timestamps — exactly what serving_mode.sh and
-# ops/watchdog.sh already do, in the same idiom, on the same machine. There is
-# no data processing here that would benefit from Python; matching the
-# sibling scripts' language keeps this readable next to them.
+# WHY BASH, NOT PYTHON: this script's entire job is asking the OS two
+# questions (who's on this port, is that pid this process) and comparing
+# timestamps — exactly what serving_mode.sh and ops/watchdog.sh already do, in
+# the same idiom, on the same machine. There is no data processing here that
+# would benefit from Python; matching the sibling scripts' language keeps this
+# readable next to them.
 #
 # TESTING: state-detection logic (`classify`) is exercised by
 # serving_watchdog_selftest.sh against synthesized inputs under $TMPDIR — see
@@ -146,8 +145,6 @@
 set -euo pipefail
 
 PORT=8888
-LABEL="com.user.llama-swap"
-DOMAIN="gui/$(id -u)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARNESS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 EVAL_DIR="$(cd "$HARNESS_DIR/.." && pwd)"
@@ -182,15 +179,12 @@ enable/disable commands and the launchd plist template.
 EOF
 }
 
-die() { echo "ERROR: $*" >&2; exit 1; }
-
 # --- primitives (deliberately duplicated from serving_mode.sh — read-only
 # subset only; see header comment for why this is not sourced) --------------
 
 port_pids() { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null || true; }
 pid_comm() { ps -p "$1" -o comm= 2>/dev/null | sed 's|.*/||' || true; }
 pid_cmd()  { ps -p "$1" -o command= 2>/dev/null || true; }
-svc_loaded() { launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; }
 
 llama_swap_on_port() {
   local pid

@@ -1,5 +1,12 @@
 # Round 2 — session kickoff prompt
 
+> **SPENT** — this prompt was written and pasted on 2026-07-25 (`e56761a`; Phase 0 landed the same
+> day in `5117989`) and the session it started has finished; for the current state read
+> [`ROUND2_STATUS.md`](ROUND2_STATUS.md) and [`IMPLEMENTATION_PLAN.md` §7](IMPLEMENTATION_PLAN.md).
+> It is kept, not deleted, because round 2 has still not been *run*: this is the record of the brief
+> that build was given. The serving-mode hazard under "Before pasting" is now also covered by
+> `eval/harness/ops/serving_watchdog.sh` and by the "Incident" section of `ROUND2_STATUS.md`.
+
 *Paste the block below into a fresh Claude Code session started in
 `~/MyProjects/local-llm-coding-bench`. Everything it needs is on disk; it should not need to ask
 questions to start.*
@@ -42,8 +49,15 @@ ALREADY DECIDED — do not re-litigate:
   build items: ops/serving_mode.sh, the clear_port() guard, and eval_proxy.py.
 - IFEval: vendor the google-research verifier, do NOT use lm-evaluation-harness (torch is a core
   dependency there and is not wanted on this machine).
-- Pairwise judge: `claude -p` via --judge-cmd. There is no ANTHROPIC_API_KEY on this machine.
-- The composite is NOT re-weighted this round. BCB and IFEval are reported as unweighted new axes.
+- Pairwise judge: the built-in minimal-context `claude -p` backend, which is the DEFAULT. Do
+  NOT pass --judge-cmd 'claude -p': --judge-cmd is a SEPARATE backend and cache identity is
+  derived from it — 'custom:<cmd>' versus the built-in's 'claude-p:<model>:<system prompt>' —
+  so it namespaces to a different cache dir and re-spends every already-judged pair. There is
+  no ANTHROPIC_API_KEY on this machine.
+- CORRECTED after this prompt was written: the composite IS re-weighted this round
+  (tool_malformed% 0.25 -> 0.10, C_edit 0.15 -> 0.20, B_recall 0.10 -> 0.20; aggregate.py's
+  --weights defaults to round2). BCB and IFEval are still reported as unweighted new axes.
+  See docs/methodology.md § 6.11 and the "Composite change" section of eval/ROUND2_STATUS.md.
 
 HARD RULES
 - Branch feature/round2-expansion. Commit after EVERY phase, conventional commits. A usage-limit

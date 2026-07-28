@@ -37,7 +37,7 @@ def probe_speed(model, quant):
     d = json.loads(p.read_text())
     dec, pre = [], []
     for pt in d.get("points", []):
-        for s in pt.get("cold_samples", []) + pt.get("warm_samples", []):
+        for s in pt.get("cold_samples", []):
             if s.get("decode_tps"):
                 dec.append(s["decode_tps"])
             if s.get("prefill_tps"):
