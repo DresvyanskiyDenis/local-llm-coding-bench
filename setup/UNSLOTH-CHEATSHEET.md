@@ -240,7 +240,7 @@ sysctl iogpu.wired_limit_mb
 | Symptom | Likely cause → fix |
 |---|---|
 | OpenCode / VS Code Copilot: "Invalid or expired API key" | **Not the key.** No model on `:8888` (`unsloth-serve ornith`, wait for "model loaded") **or** `UNSLOTH_STUDIO_API_KEY` unset in this shell (new terminal / `source ~/.zshenv`; check with `unsloth-key`) |
-| Requests hang, GPU at 0 % | `--no-context-shift` freeze → restart the OpenCode agent; keep `limit.context:90000` in `opencode.json` |
+| Requests hang, GPU at 0 % | `--no-context-shift` freeze → restart the OpenCode agent; keep each model's `limit.context` in `opencode.json` below its served `-c` (90000 for the 131072 fleet, **60000 for glm**, which is served at 65536) |
 | 502 / nothing on :8888 but port is LISTENing | zombie Studio (engine child died) → `kill <studio-pid>`, `unsloth-serve ornith` |
 | Second `unsloth-serve` "works" but OpenCode gets nothing | it bound `:8889` → Ctrl-C the first one, restart |
 | `failed to parse grammar` (constant, MTP model) | stale Studio → `curl … unsloth.ai/install.sh \| sh` |
