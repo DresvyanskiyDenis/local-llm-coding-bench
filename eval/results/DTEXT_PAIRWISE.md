@@ -1,10 +1,10 @@
 # D_text pairwise judge — Bradley-Terry re-ranking
 
-- Generated: 2026-07-26T20:31:27.821240+00:00
+- Generated: 2026-07-29T06:08:50.672473+00:00
 - Suite/round: D_text / round 1
 - Judge: claude -p --model sonnet (minimal context: --strict-mcp-config --disable-slash-commands --tools '')
 - Seed: 42
-- schema_version: 2
+- schema_version: 3
 
 ## Input inventory
 
@@ -41,7 +41,7 @@
 ## D1_summarize_mtp
 
 - pairing scheme: **roundrobin**
-- pairs designed: 105 · attempted: 105 · judged (real verdict, non-skipped): 46 · skipped (missing answer): 0 · unparseable: 0 · backend errors: 0
+- pairs designed: 105 · attempted: 105 · judged (real verdict, non-skipped): 46 · skipped (missing answer): 0 · skipped (limit): 59 · skipped (abort): 0 · unparseable: 0 · backend errors: 0
 
 **Order (position) effect** — first-shown win-rate over decisive (non-tie, parseable, non-backend-error) judgements, Wilson score 95% CI
 - first-position win rate: 0.32608695652173914 (95% CI [0.20865764564493355, 0.4703253725567292], n=46 decisive, 0 ties, 0 unparseable, 0 backend errors)
@@ -50,6 +50,8 @@
 **Bradley-Terry strengths** (geometric-mean-normalized to 1; 95% CI via 1000-resample bootstrap over games)
 
 > :warning: 4/15 configs are `low_confidence` (< 4 judged games) in this partial pass — their strength is an anecdotal point estimate, not a fitted rank, and its 95% CI is correspondingly wide/unreliable.
+
+> :warning: this fit has NO finite Bradley-Terry MLE (the win graph is not strongly connected), so MM ran to max_iter: no strength below is converged and the row order is not a ranking — including rows not flagged `low_confidence`.
 
 | config | strength | 95% CI | n_games | low_confidence | insufficient data |
 |---|---|---|---|---|---|
@@ -96,7 +98,7 @@ qwopus__q5        0.0        0.0        1.0        0.0        0.0        0.0    
 ## D2_dedup_approaches
 
 - pairing scheme: **roundrobin**
-- pairs designed: 105 · attempted: 105 · judged (real verdict, non-skipped): 30 · skipped (missing answer): 0 · unparseable: 0 · backend errors: 0
+- pairs designed: 105 · attempted: 105 · judged (real verdict, non-skipped): 30 · skipped (missing answer): 0 · skipped (limit): 75 · skipped (abort): 0 · unparseable: 0 · backend errors: 0
 
 **Order (position) effect** — first-shown win-rate over decisive (non-tie, parseable, non-backend-error) judgements, Wilson score 95% CI
 - first-position win rate: 0.4666666666666667 (95% CI [0.3023212722412823, 0.6385798671847496], n=30 decisive, 0 ties, 0 unparseable, 0 backend errors)
@@ -105,6 +107,8 @@ qwopus__q5        0.0        0.0        1.0        0.0        0.0        0.0    
 **Bradley-Terry strengths** (geometric-mean-normalized to 1; 95% CI via 1000-resample bootstrap over games)
 
 > :warning: 12/15 configs are `low_confidence` (< 4 judged games) in this partial pass — their strength is an anecdotal point estimate, not a fitted rank, and its 95% CI is correspondingly wide/unreliable.
+
+> :warning: this fit has NO finite Bradley-Terry MLE (the win graph is not strongly connected), so MM ran to max_iter: no strength below is converged and the row order is not a ranking — including rows not flagged `low_confidence`.
 
 | config | strength | 95% CI | n_games | low_confidence | insufficient data |
 |---|---|---|---|---|---|
