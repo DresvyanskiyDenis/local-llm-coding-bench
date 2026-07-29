@@ -48,8 +48,8 @@
     "quant": "q5",
     "serve_name": "glm",
     "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
-    "real_ctx": 131072,
-    "probe_max_ctx": 80000,
+    "real_ctx": 65536,
+    "probe_max_ctx": 65536,
     "mtp": false,
     "reasoning": "on",
     "broken": false
@@ -59,8 +59,8 @@
     "quant": "q4",
     "serve_name": "glm4",
     "opencode_model_id": "unsloth/GLM-4.7-Flash-GGUF",
-    "real_ctx": 131072,
-    "probe_max_ctx": 80000,
+    "real_ctx": 65536,
+    "probe_max_ctx": 65536,
     "mtp": false,
     "reasoning": "on",
     "broken": false

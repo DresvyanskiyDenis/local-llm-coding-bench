@@ -71,7 +71,9 @@ CACHE_ROOT = (
     HARNESS_DIR / ".cache" / "pairwise_judge"
 )  # matches gitignored bare `.cache/`
 
-SCHEMA_VERSION = 2
+# 3: per-task `n_pairs_skipped_limit` / `n_pairs_skipped_abort` added, so the per-task
+#    counters close on their own instead of leaning on the pooled run_budget.n_skipped_limit.
+SCHEMA_VERSION = 3
 DEFAULT_OUT = RESULTS_DIR / "DTEXT_PAIRWISE"
 
 # If this many *consecutive* real judge calls all come back as backend errors (rate
@@ -1151,6 +1153,22 @@ def run_task(
             and not d.get("backend_error")
         ),
         "n_pairs_skipped_missing_answer": skipped_missing,
+        # The two below close the per-task identity:
+        #   attempted == judged + skipped_missing_answer + skipped_limit + skipped_abort
+        #                + unparseable + backend_errors
+        # Without them it did not close. Shipped D1 reads designed 105 / attempted 105 /
+        # judged 46 with every other per-task counter at 0, and the 59 missing pairs were
+        # explained only by the GLOBAL run_budget.n_skipped_limit -- a number that pools all
+        # tasks, so nothing said which task lost the pairs. `limit_reached` (:619) and
+        # `aborted_backend_unavailable` (:614) are the only two skip reasons besides
+        # missing-answer, and both land in `decisions`; counting one and not the other would
+        # just move the day the identity breaks to the next aborted run.
+        "n_pairs_skipped_limit": sum(
+            1 for d in decisions if d.get("skipped") == "limit_reached"
+        ),
+        "n_pairs_skipped_abort": sum(
+            1 for d in decisions if d.get("skipped") == "aborted_backend_unavailable"
+        ),
         "n_unparseable": n_unparseable,
         "n_backend_errors": n_backend_errors,
         "win_matrix": win_matrix,
@@ -1272,6 +1290,8 @@ def render_markdown(report):
             f"- pairs designed: {t['n_pairs_designed']} · attempted: {t['n_pairs_attempted']} · "
             f"judged (real verdict, non-skipped): {t['n_pairs_judged']} · "
             f"skipped (missing answer): {t['n_pairs_skipped_missing_answer']} · "
+            f"skipped (limit): {t['n_pairs_skipped_limit']} · "
+            f"skipped (abort): {t['n_pairs_skipped_abort']} · "
             f"unparseable: {t['n_unparseable']} · backend errors: {t['n_backend_errors']}",
             "",
         ]
@@ -1616,6 +1636,12 @@ def main():
                 "n_pairs_attempted": 0,
                 "n_pairs_judged": 0,
                 "n_pairs_skipped_missing_answer": 0,
+                # 0, not the designed count: this task never started, so it attempted nothing
+                # and skipped nothing. `n_pairs_designed - n_pairs_attempted` is what says the
+                # pairs were never reached. The render below indexes these keys directly, so
+                # the stub has to carry every one of them.
+                "n_pairs_skipped_limit": 0,
+                "n_pairs_skipped_abort": 0,
                 "n_unparseable": 0,
                 "n_backend_errors": 0,
                 "win_matrix": {},

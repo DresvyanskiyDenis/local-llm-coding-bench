@@ -249,7 +249,7 @@
       "check": "live repo copy of docs/methodology.md",
       "status": "NOTE",
       "ok": null,
-      "number": "14017 -> 45128 bytes",
+      "number": "14017 -> 47152 bytes",
       "note": "docs/methodology.md has changed in the repo since the corpus was pinned at 020e776; the corpus deliberately retains the pinned snapshot, so D3/D4/D5's measured token counts stay valid"
     },
     {

@@ -1,6 +1,6 @@
 {
-  "schema_version": 2,
-  "ts": "2026-07-26T20:31:27.821240+00:00",
+  "schema_version": 3,
+  "ts": "2026-07-29T06:08:50.672473+00:00",
   "suite": "D_text",
   "round": 1,
   "seed": 42,
@@ -80,6 +80,8 @@
       "n_pairs_attempted": 105,
       "n_pairs_judged": 46,
       "n_pairs_skipped_missing_answer": 0,
+      "n_pairs_skipped_limit": 59,
+      "n_pairs_skipped_abort": 0,
       "n_unparseable": 0,
       "n_backend_errors": 0,
       "win_matrix": {
@@ -537,6 +539,8 @@
       "n_pairs_attempted": 105,
       "n_pairs_judged": 30,
       "n_pairs_skipped_missing_answer": 0,
+      "n_pairs_skipped_limit": 75,
+      "n_pairs_skipped_abort": 0,
       "n_unparseable": 0,
       "n_backend_errors": 0,
       "win_matrix": {

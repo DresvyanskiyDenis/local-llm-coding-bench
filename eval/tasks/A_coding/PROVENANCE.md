@@ -242,10 +242,10 @@ Not fixed, deliberately, on three grounds:
 | BigCodeBench/879 | Ground-truth failure. Listed in `env_health.json` `gt_check.failed_tasks`, and it reproduces here: the reference solution calls `np.issubdtype()` on a pandas 3 `StringDtype` column, which raises `TypeError`, so 5 of its 8 tests fail on truth. Wrapped, verified, then dropped. |
 | BigCodeBench/120 | The test asserts the exact 366-date list produced by one specific `randint()` call sequence. Passing requires reproducing the reference implementation's RNG call order, not the specified behaviour. |
 | BigCodeBench/1057 | Spec not self-contained: the test asserts shape `(10, 7)` for the default arguments, but the 10 animals and 7 foods exist only inside the reference solution and appear nowhere in the prompt. |
-| BigCodeBench/101 | Downloads the Boston housing dataset over HTTP. |
+| BigCodeBench/101 | Downloads the Boston housing dataset over HTTP. Also one of the 14 `gt_check.failed_tasks` — named here because the network dependency alone disqualifies it, and excluded from the row below so it is not counted twice. |
 | BigCodeBench/308 | No seed anywhere — the reference builds a 100×6 grade table from bare `random.randint`, so only the DataFrame's shape is checkable. |
 | BigCodeBench/752 | Same validation-heavy shape as 969 but a much larger sklearn import cost inside the 120 s cap; 969 already covers scikit-learn. |
-| the other 13 `gt_check.failed_tasks` | Unpassable under this executor (criterion 1). |
+| the other 12 `gt_check.failed_tasks` | Unpassable under this executor (criterion 1). 14 total, minus `879` and `101`, which have their own rows above. |
 | 91 further tasks | Network / filesystem / subprocess / clock / mock / unseeded RNG (criterion 2). |
 | 17 further tasks | Library too heavy to install inside the grader's 120 s cap (criterion 3). |
 

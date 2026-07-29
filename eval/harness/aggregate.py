@@ -23,7 +23,8 @@ replacing the other:
   - `round1` — verbatim from docs/methodology.md §4 as originally published. `composite` /
     `terms` / `missing_terms` on every row are ALWAYS this weighting, unconditionally, so the
     Phase 6 gate (`build_gate`, below) and anything reading the legacy field names (e.g.
-    `validate_correlation.py`) keep working byte-for-byte forever, regardless of `--weights`.
+    `validate_correlation.py`) keep working byte-for-byte forever. There is no flag that
+    changes this; both weight sets are always computed and always emitted.
   - `round2` — tool_malformed 0.25 -> 0.10 (bimodal, not saturated, in round-1 data: a tight
     2.4-5.5% cluster where the ordinal differences are ~noise, alongside 8.7/10.5/17.9-19.3/
     27.8-32.5% outliers 2-10x worse that a small weight already punishes decisively), the freed
@@ -81,7 +82,9 @@ from pathlib import Path
 HARNESS = Path(__file__).resolve().parent
 RESULTS = HARNESS.parent / "results"
 
-SCHEMA_VERSION = 1
+# 2: `primary_weights` dropped (the --weights flag that set it wrote a string nothing read),
+#    and IFEval's `n_measured` now sources `n_scored` instead of the selected `n_prompts`.
+SCHEMA_VERSION = 2
 
 # --------------------------------------------------------------------------------------------
 # Task sets. EXPLICIT AND FROZEN. Round-1 numbers must never move when round-2 tasks land.
@@ -197,9 +200,9 @@ ROUND2_COMPARABILITY_NOTE = (
     "(tool_malformed 0.25->0.10, B_recall +0.10, C_edit +0.05 -- see ROUND2_REWEIGHT_REASON), "
     "and (2) for any aggregation that includes round-2 tasks (--round 2 / --round all), "
     "A_coding itself changed shape -- round-1 A was 4 saturated hand-written tasks "
-    "(0.883-0.994 pass-rate); round-2 A5-A14 wrap BigCodeBench-Hard, so A is now 14 tasks of a "
-    "materially different difficulty. This caveat belongs next to every round-2-weighted number, "
-    "not in a footnote."
+    "(0.883-0.994 pass-rate); round-2 A5-A14 wrap BigCodeBench-Hard, so A is 10 tasks under "
+    "--round 2 and 14 under --round all, at a materially different difficulty. This caveat "
+    "belongs next to every round-2-weighted number, not in a footnote."
 )
 
 
@@ -294,13 +297,13 @@ CONVENTIONS: dict[str, str] = {
         "against a published 86.6. Per-config D is reported alongside as d_text_config and "
         "drives the diagnostic composite_config_d column."
     ),
-    # OBSERVED 2026-07-28: "cold_samples + warm_samples" overstates the read -- no probe point
-    # carries a warm_samples key, so probe_decode medians cold_samples alone. Wording is frozen
-    # here because this string ships verbatim inside the immutable published AGGREGATE.md;
-    # correct it at the next deliberate regeneration or the artifact keeps claiming an input
-    # that does not exist.
+    # `cold_samples` alone, and the string says so. It used to read "cold_samples +
+    # warm_samples", which named an input that has never existed: all 68 points across the 17
+    # probe artifacts carry exactly cold_samples, and speed_probe.py stores only the two warm
+    # *reductions*, never a warm_samples list. Corrected at the regeneration that also drops
+    # --weights, because this string ships verbatim inside AGGREGATE.md.
     "decode": (
-        "Median decode_tps over all cold_samples + warm_samples of every point in "
+        "Median decode_tps over all cold_samples of every point in "
         "probe__<model>__<quant>.json (same reduction as digest.py), divided by 137. Not "
         "task-scoped, so it is identical for --round 1 / 2 / all. gemma-q4's 137.1 makes its "
         "term marginally exceed 1.0; the formula is applied verbatim, uncapped."
@@ -314,12 +317,17 @@ CONVENTIONS: dict[str, str] = {
         "the composite. Re-weighting waits for evidence of correlation."
     ),
     "external_coverage": (
-        "Per config and per external axis: the value, `n_measured` (the denominator that run "
-        "actually scored -- `n_tasks` for BigCodeBench, `n_prompts` for IFEval) against "
+        "Per config and per external axis: the value, `n_measured`, against "
         "`n_full_set` (148 Hard tasks / 541 IFEval prompts), where that full-set size came "
         "from, the artifact's `ts` and its filename. Same argument as `coverage`, applied to "
         "the external lane: 0.3 over a 10-task probe and 0.3 over the full 148 are the same "
-        "float and not the same claim, and both shapes are on disk. A missing denominator "
+        "float and not the same claim, and both shapes are on disk. The two axes source "
+        "`n_measured` differently and the difference matters: IFEval reads `n_scored`, which "
+        "is what that run actually graded, while BigCodeBench reads `n_tasks`, which is the "
+        "SELECTED slice (`--limit` or the full 148). For BigCodeBench the two coincide on "
+        "every run that completes, and diverge on one that dies partway -- so read a "
+        "BigCodeBench denominator as what was attempted, not as what was scored, and check "
+        "`completions_provenance` in the artifact before trusting a pass@1. A missing denominator "
         "field yields status UNKNOWN -- silence must never render as full coverage. Slice "
         "scores are NOT comparable to full-set scores, nor to each other across different "
         "slices. `truncation_contamination` (IFEval only) is a separate and stronger warning "
@@ -388,7 +396,13 @@ EXTERNAL_AXES: dict[str, dict] = {
     "ifeval_prompt_strict": {
         "pattern": "ifeval__*.json",
         "value_key": "prompt_level_strict",
-        "measured_key": "n_prompts",
+        # `n_scored`, not `n_prompts`: `n_prompts` is the SELECTED set. On `--score-only`,
+        # run_ifeval.py rebuilds it with select_inputs(None, None, seed) -- 541 -- while only
+        # the prompts present in the hand-supplied responses file get scored. A live check
+        # printed `n_scored = 21 | n_prompts = 541`, which this row would have rendered as
+        # `complete`. Shipped ifeval__opus__q4.json has n_prompts == n_scored == 20, so no
+        # published number moves.
+        "measured_key": "n_scored",
         "available_key": "n_prompts_available",
         "full_set_size": IFEVAL_N_PROMPTS_FULL,
         "full_set_const": "IFEVAL_N_PROMPTS_FULL",
@@ -688,7 +702,7 @@ def external_row_coverage(
 # --------------------------------------------------------------------------------------------
 # aggregation
 # --------------------------------------------------------------------------------------------
-def aggregate(results: Path, which_round: str, primary_weights: str = "round2") -> dict:
+def aggregate(results: Path, which_round: str) -> dict:
     tasks = task_set(which_round)
     units = load_units(results, tasks)
     d_by_model, d_by_config = load_judged(results, tasks)
@@ -845,7 +859,7 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
         )
 
     # The gate ALWAYS reproduces against round-1 weights -- that is the formula the published
-    # leaderboard used; --weights never touches which weighting the gate checks.
+    # leaderboard used.
     gate = build_gate(rows, which_round)
 
     return {
@@ -860,7 +874,6 @@ def aggregate(results: Path, which_round: str, primary_weights: str = "round2") 
         # explicit, both weight sets, named and versioned
         "formulas": FORMULAS,
         "weight_sets": WEIGHT_SETS,
-        "primary_weights": primary_weights,
         "round2_reweight_reason": ROUND2_REWEIGHT_REASON,
         "round2_comparability_note": ROUND2_COMPARABILITY_NOTE,
         "decode_norm_tps": DECODE_NORM_TPS,
@@ -985,7 +998,21 @@ def render_md(agg: dict) -> str:
     L.append(f"Overall (round2 weights)            = {agg['formulas']['round2']}")
     L.append("```")
     L.append("")
-    L.append(f"> **Non-comparability:** {agg['round2_comparability_note']}")
+    # Clause (2) of the note is about A_coding changing shape, which only happens once round-2
+    # tasks are in the selection. Rendered on a --round 1 report it warned about a change that
+    # did not occur for that round; the weights half (clause 1) still applies, because a
+    # round-1 report also carries the round2-weighted column.
+    if agg["round"] == "1":
+        L.append(
+            "> **Non-comparability:** the round-2-weighted composite is NOT the same quantity "
+            "as the round-1 leaderboard composite and must never be compared to "
+            "docs/leaderboard.md or eval/results/LEADERBOARD.md as if it were: the weights "
+            "differ (tool_malformed 0.25->0.10, B_recall +0.10, C_edit +0.05 -- see "
+            "ROUND2_REWEIGHT_REASON). The A_coding shape change does not apply to this report "
+            "-- it aggregates round-1 tasks only."
+        )
+    else:
+        L.append(f"> **Non-comparability:** {agg['round2_comparability_note']}")
     L.append("")
 
     gate = agg["gate"]
@@ -1285,24 +1312,13 @@ def main() -> int:
         action="store_true",
         help="exit 1 if the round-1 gate does not reproduce the published leaderboard",
     )
-    ap.add_argument(
-        "--weights",
-        choices=["round1", "round2"],
-        default="round2",
-        help=(
-            "which weight set is recorded as `primary_weights` for this report (both are "
-            "always computed and emitted on every row as `composite` [round1, unconditional] "
-            "and `composite_round2_weights` [round2] -- this flag never changes which "
-            "weighting the gate checks, only which one this metadata field names as primary)"
-        ),
-    )
     a = ap.parse_args()
 
     if not a.results.is_dir():
         print(f"error: results dir not found: {a.results}", file=sys.stderr)
         return 2
 
-    agg = aggregate(a.results, a.round, primary_weights=a.weights)
+    agg = aggregate(a.results, a.round)
 
     suffix = "" if a.round == "1" else f"__round{a.round}"
     out_json = a.json or (a.results / f"AGGREGATE{suffix}.json")

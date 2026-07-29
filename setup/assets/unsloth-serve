@@ -130,16 +130,19 @@ case "${1:-qwen}" in
     # #5 (benchmark 84.9 — high-quality 2nd coding driver, slower). GLM-4.7-Flash — Studio-
     # served, NON-MTP. The GLM-MTP quants need the unmerged llama.cpp PR #24868 (MTP head
     # support for GLM), so this UD-Q5_K_XL is the plain (non-MTP) variant the bundled llama.cpp
-    # serves today. No --spec-type. UD-Q5_K_XL (~21.7 GB). Context narrowed 131072 -> 60000 to
-    # match OpenCode's limit.context=60000 with auto-compact at 55K — GLM was looping/degrading
-    # at the wider window. Native is 202752 if ever needed. -ctk q8_0: for GLM-4, q8_0 is the
+    # serves today. No --spec-type. UD-Q5_K_XL (~21.7 GB). Context narrowed 131072 -> 65536:
+    # GLM was looping/degrading at the wider window. The wall must stay ABOVE OpenCode's window
+    # for this model — opencode.json sets limit.context=60000 and compaction.reserved=12000, so
+    # OpenCode auto-compacts at 48000 and never walks into the 65536 wall, which matters because
+    # Studio serves with --no-context-shift (it hard-errors rather than sliding). Change one,
+    # change the other. Native is 202752 if ever needed. -ctk q8_0: for GLM-4, q8_0 is the
     # SAFE KV quant — q4_0/q4_1/q5_0 break GLM output, q8_0 works and is near-lossless. Studio
     # mirrors K→V.
     studio_run \
       --model unsloth/GLM-4.7-Flash-GGUF \
       --gguf-variant UD-Q5_K_XL \
       --disable-tools --parallel 1 -p "$PORT" \
-      --max-seq-length 60000 -ngl 99 -ctk q8_0 \
+      --max-seq-length 65536 -ngl 99 -ctk q8_0 \
       --no-mmproj --reasoning on
     ;;
   northmini)

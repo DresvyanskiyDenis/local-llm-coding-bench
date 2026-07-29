@@ -207,11 +207,17 @@ vault plugins, no personal keys):
 
 - **Default model = local** `unsloth-studio/unsloth/Qwen3.6-35B-A3B-MTP-GGUF`, with all 5 local
   models registered.
-- **`compaction` + per-model `limit.context: 90000`** — the important safety net. Studio launches
+- **`compaction` + a per-model `limit.context`** — the important safety net. Studio launches
   every model with `--no-context-shift`; when a session outgrows the server's real context,
   llama-server returns a hard error instead of shifting, and OpenCode (a plain OpenAI client) then
-  **hangs with the GPU at 0 %**. The `limit.context: 90000` makes OpenCode auto-compact *before* it
-  ever hits that wall. **Keep this** unless you serve a model at a smaller `-c`.
+  **hangs with the GPU at 0 %**. `limit.context` makes OpenCode auto-compact *before* it
+  ever hits that wall: compaction fires at `limit.context - compaction.reserved` (12000 here), so
+  that figure — not `limit.context` itself — is what has to stay under the server's real `-c`.
+  Four models are registered at **90000** against a 131072 server. **GLM is the exception at
+  60000**, because `unsloth-serve glm` deliberately serves a narrower 65536 window (it loops and
+  degrades at the full one) — 60000 − 12000 = 48000, well clear of that wall. That is the pattern
+  to copy: **keep these values** unless you serve a model at a smaller `-c`, and if you do, lower
+  its `limit.context` to match.
 - **Cloud fallbacks (optional, you add your own keys):** LiteLLM (your LiteLLM gateway, e.g.
   `your-litellm-gateway.example.com` — user-supplied), GitHub Copilot enterprise (your enterprise
   GitHub, e.g. `your-enterprise-github.example.com` — user-supplied), DeepSeek. Cloud Anthropic/Google

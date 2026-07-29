@@ -116,10 +116,10 @@
           }
         },
         "unsloth/GLM-4.7-Flash-GGUF": {
-          "name": "GLM-4.7-Flash (UD-Q5_K_XL, non-MTP)",
+          "name": "GLM-4.7-Flash (UD-Q5_K_XL, non-MTP, 64K window)",
           "reasoning": true,
           "limit": {
-            "context": 90000,
+            "context": 60000,
             "output": 8192
           }
         }
