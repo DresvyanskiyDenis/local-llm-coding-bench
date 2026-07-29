@@ -177,7 +177,6 @@
     "strip_reasoning_required": true,
     "evidence": {
       "probed_serve_name": "qwen4",
-      "note": "opus4's GGUF is absent from the HF cache (partial download only), so the probe ran on qwen4 \u2014 identical Studio serve shape, --reasoning on, same Qwen3.6-35B-A3B chat template, differing only in repo/quant.",
       "model_id": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
       "message_keys": [
         "content",
@@ -189,8 +188,11 @@
       "content_has_close_think_tag": true,
       "reasoning_tokens_reported": 0,
       "finish_reason": "stop",
-      "observed_truncation_form": "at max_tokens=512 the same config returned an all-monologue content with finish_reason 'length'; eval_proxy strips an unclosed <think> to an EMPTY answer and counts it (empty_after_strip)"
+      "operator_notes": {
+        "note": "opus4's GGUF is absent from the HF cache (partial download only), so the probe ran on qwen4 \u2014 identical Studio serve shape, --reasoning on, same Qwen3.6-35B-A3B chat template, differing only in repo/quant.",
+        "observed_truncation_form": "at max_tokens=512 the same config returned an all-monologue content with finish_reason 'length'; eval_proxy strips an unclosed <think> to an EMPTY answer and counts it (empty_after_strip)"
+      }
     },
-    "derived_ts": "2026-07-25T20:32:43.671799+00:00"
+    "derived_ts": "2026-07-29T06:05:33.289131+00:00"
   }
 }

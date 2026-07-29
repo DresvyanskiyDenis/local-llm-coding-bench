@@ -105,9 +105,6 @@ def derive_verdict(results):
         "strip_reasoning_required": verdict == "leaks_into_content",
         "evidence": {
             "probed_serve_name": results.get("serve_name"),
-            "note": "opus4's GGUF is absent from the HF cache (partial download only), so the "
-                    "probe ran on qwen4 — identical Studio serve shape, --reasoning on, same "
-                    "Qwen3.6-35B-A3B chat template, differing only in repo/quant.",
             "model_id": direct["response"].get("model"),
             "message_keys": sorted(msg.keys()),
             "content_starts_with": content[:60],
@@ -116,10 +113,20 @@ def derive_verdict(results):
             "reasoning_tokens_reported": (usage.get("completion_tokens_details") or {})
                 .get("reasoning_tokens"),
             "finish_reason": (direct["response"].get("choices") or [{}])[0].get("finish_reason"),
-            "observed_truncation_form": "at max_tokens=512 the same config returned an "
-                                        "all-monologue content with finish_reason 'length'; "
-                                        "eval_proxy strips an unclosed <think> to an EMPTY "
-                                        "answer and counts it (empty_after_strip)",
+            # Hand-written by the operator, NOT derived from the run whose fields sit above --
+            # kept in their own sub-key so a reader cannot mistake prose for measurement.
+            # `observed_truncation_form` is the sharp case: it describes a max_tokens=512 run,
+            # while `finish_reason` right above it comes from the 2048-token run this block was
+            # derived from and reads "stop". Flat, the two looked like one observation.
+            "operator_notes": {
+                "note": "opus4's GGUF is absent from the HF cache (partial download only), so "
+                        "the probe ran on qwen4 — identical Studio serve shape, --reasoning on, "
+                        "same Qwen3.6-35B-A3B chat template, differing only in repo/quant.",
+                "observed_truncation_form": "at max_tokens=512 the same config returned an "
+                                            "all-monologue content with finish_reason 'length'; "
+                                            "eval_proxy strips an unclosed <think> to an EMPTY "
+                                            "answer and counts it (empty_after_strip)",
+            },
         },
         "derived_ts": now_iso(),
     }
