@@ -5,8 +5,9 @@
 """pytest_grader.py — objective test-graded verdict for A_coding (and the pytest half of
 C_edit's diff_pytest) per CONTRACT.md §2.
 
-Copies the task's grade/test_*.py into a SIBLING dir of <rundir>/repo/ (never into repo/
-itself — diff_grader needs repo/ to reflect only the model's own edits), points PYTHONPATH
+Copies the task's grade/test_*.py (plus conftest.py if present) into a throwaway
+`tempfile.TemporaryDirectory(prefix="grade_pytest_")` OUTSIDE the run dir — never into repo/
+itself, since diff_grader needs repo/ to reflect only the model's own edits — points PYTHONPATH
 at <rundir>/repo so `from src.solution import ...`-style imports resolve, runs pytest with
 --junitxml (stdlib XML parsing only, no pytest-json plugin dependency), and classifies the
 result. Exits 0 even on a failing/erroring grade; non-zero only on grader malfunction.

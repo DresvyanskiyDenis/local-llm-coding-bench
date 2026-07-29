@@ -46,9 +46,10 @@ bugs in a mandated machine-parseable format. Measures recall (found/planted) and
 - `B2_order_pricing` — order-pricing module
 
 ### C_edit — surgical edits (objective, functional tests + discipline)
-`repo/` holds working-ish code plus a `REVIEW.md` of review comments, **exactly one of which is
-a deliberate noise/wrong comment**. The model applies the valid fixes and must NOT act on the
-noise. Measures correctness (hidden pytest) AND surgical discipline (did it touch only what was
+`repo/` holds working-ish code plus a `REVIEW.md` of review comments, **at least one of which is
+a deliberate noise/wrong comment**. C1–C4 plant exactly one; `C5_contradiction` plants a *pair*
+(comments #4 and #5 ask for opposite things), which is why its `grade/noise.json` is the only one
+carrying a list. The model applies the valid fixes and must NOT act on the noise. Measures correctness (hidden pytest) AND surgical discipline (did it touch only what was
 asked, did it correctly ignore the noise). 2 round-1 tasks (round 2 adds three more, carrying
 three further noise kinds — see §6.8):
 - `C1_inventory` — apply valid fixes to inventory helpers, ignore the noise comment
@@ -115,8 +116,8 @@ copy and the hidden `grade/` dir, and writes a JSON verdict. Graders exit 0 even
 grade (a failed task is data, not a script error); non-zero only on grader malfunction.
 
 ### A_coding → `pytest_grader.py` (functional tests)
-Copies the task's `grade/test_*.py` into a sibling of the model's `repo/` (never into `repo/`
-itself, so the diff grader still sees only the model's edits), points `PYTHONPATH` at `repo/`,
+Copies the task's `grade/test_*.py` into a throwaway temp dir outside the run dir (never into
+`repo/` itself, so the diff grader still sees only the model's edits), points `PYTHONPATH` at `repo/`,
 and runs `pytest --junitxml` parsed with stdlib XML (no plugin dependency). Verdict reports
 `passed / failed / errors / total`, a **`pass_rate`** (the headline number), and a
 `failure_class` (`no_file | import_error | syntax_error | timeout | assertion | null`). Tests
@@ -598,8 +599,10 @@ coverage is partial: a partial number is useful mid-run, it just may not claim t
 **The same rule, one lane over.** `load_external()` used to reduce `bcb__*.json` / `ifeval__*.json`
 to a bare float, so a 20-prompt gate probe and a 541-prompt full run were indistinguishable in the
 aggregate — the identical trap, and both shapes are on disk right now. Each external axis now
-records `n_measured` (the denominator that run actually scored: `n_tasks` for BigCodeBench,
-`n_prompts` for IFEval), `n_full_set`, `denominator_unit`, `measured_field`, `full_set_source`, a
+records `n_measured` (`n_scored` for IFEval — what that run actually graded; `n_tasks` for
+BigCodeBench — the *selected* slice, which equals what was scored on any run that completes and
+overstates it on one that dies partway), `n_full_set`, `denominator_unit`, `measured_field`,
+`full_set_source`, a
 `complete`/`PARTIAL`/`UNKNOWN` status with a coverage sentence, and the artifact's `ts` and
 `source_file` (`eval/harness/aggregate.py:598`). A missing denominator field degrades to `UNKNOWN`,
 never to an assumed full set — silence must not render as full coverage. Slice scores are not
@@ -639,35 +642,56 @@ recorded in `eval/results/AGGREGATE.json` still reads 9/9 models agreeing to one
 ### 6.13 Long-context D tasks vs. served context windows — an unresolved sizing decision
 
 The round-2 long-context `D_text` tasks (§6.8) are the only tasks in the tree whose declared
-`est_ctx_tokens` approaches or exceeds a served context window, and `katdev` is the config pair
-this bites. From `eval/harness/configs.json`, `katdev/q4` serves `real_ctx` **65,536** and
-`katdev/iq4` serves **81,920**; the other 13 scored configs all serve **131,072** — comfortably
-above every D task. (`qwen27` is served at 65,536 on q5 / 90,112 on q4 but smoke-failed both
-quants and contributes 0 units, so it does not enter this.)
+`est_ctx_tokens` approaches or exceeds a served context window, and two config pairs are bitten.
+From `eval/harness/configs.json`, `katdev/q4` serves `real_ctx` **65,536** and `katdev/iq4` serves
+**81,920**; `glm/q5` and `glm/q4` both serve **65,536**. The other 11 of the 15 scored configs
+serve **131,072** — comfortably above every D task. (`qwen27` is served at 65,536 on q5 / 90,112 on
+q4 but smoke-failed both quants and contributes 0 units, so it does not enter this.)
 
-| Task | `est_ctx_tokens` | vs. `katdev/q4` (65,536) | vs. `katdev/iq4` (81,920) |
+`glm` is the newer entry and a purely forward-looking one. Round 1 ran it at the full 131,072 —
+its result files record `served.real_ctx: 131072` against a `started_ts` of 2026-07-13, and round 1
+carried no long-context D task in any case. `~/bin/unsloth-serve` narrowed it to 60,000 on
+2026-07-19 (GLM loops and degrades at the wide window) and to **65,536** on 2026-07-29. No round-1
+number moves; round 2 is where the cap starts to bind.
+
+| Task | `est_ctx_tokens` | vs. 65,536 (`katdev/q4`, `glm/q5`, `glm/q4`) | vs. `katdev/iq4` (81,920) |
 |---|--:|---|---|
 | `D3_longctx_30k` | 32,609 | fits | fits |
 | `D4_longctx_60k` | 64,027 | **1,509 tokens under the cap** | fits |
 | `D5_longctx_100k` | 105,076 | **over by 39,540** | **over by 23,156** |
 
-`D5` therefore cannot fit either `katdev` config at all. `D4`'s 1,509-token margin against
-`katdev/q4` is the raw document only — OpenCode's system prompt, tool schemas and the task
-`PROMPT.md` are added on top of it. That overhead has not been measured anywhere in this repo, so
-whether `D4` fits `katdev/q4` in practice is untested; a 1,509-token margin is thin enough that it
-should not be assumed.
+`D5` therefore cannot fit any of the three 65,536 configs, nor `katdev/iq4`. `D4`'s 1,509-token
+margin is the raw document only — OpenCode's system prompt, tool schemas and the task `PROMPT.md`
+are added on top of it. That overhead has not been measured anywhere in this repo, so whether `D4`
+fits in practice is untested; a 1,509-token margin is thin enough that it should not be assumed.
+
+The two capped families **fail differently**, which changes how their rows should be read:
+
+- **`katdev` is direct-served** (`exec llama-server`, no `--no-context-shift`), so an oversized
+  session *shifts*: the model loses the head of the context and answers from what is left. The row
+  scores badly, but it exists.
+- **`glm` is Studio-served**, and Studio force-adds `--no-context-shift`, so llama-server returns a
+  hard error and OpenCode hangs with the GPU at 0 % (`setup/UNSLOTH-CHEATSHEET.md`). Auto-compaction
+  is the guard: the run machine's `~/.config/opencode/opencode.json` registers GLM at
+  `limit.context: 60000` under a global `compaction.reserved: 5000`, so OpenCode compacts at 55,000
+  — under the 65,536 wall (the replication bundle, `setup/assets/opencode.json`, pairs the same
+  60,000 with `reserved: 12000`, i.e. 48,000). But compaction rewrites *history*; it cannot shrink a
+  single 64,027-token user message. On `D4` and `D5` the guard does not apply to GLM at all, and the
+  expected outcome is a hang rather than a poor score.
 
 Two ways to handle it, and this document does not pick one — it is a scoring-surface decision:
 
 1. **Restrict the tasks per config.** `meta.json` already supports an optional per-task `configs`
    key (`task_applies_to_config`, `eval/harness/orchestrate.py`) which limits a task to the listed
    models or serve names; a task with no such key runs on all configs, which is every `meta.json`
-   in the tree today. Adding it would keep `katdev` out of the affected long-context rows — at the
-   cost of a task set that is no longer identical across configs, so those D rows would carry
-   partial coverage (§6.12) by construction.
-2. **Run them anyway and expect truncated `katdev` rows.** The numbers stay comparable in the sense
-   that every config ran the same task, but `katdev`'s long-context scores would measure the
-   context cap rather than the model, and must be read that way.
+   in the tree today. Adding it would keep `katdev` and `glm` out of the affected long-context rows
+   — at the cost of a task set that is no longer identical across configs, so those D rows would
+   carry partial coverage (§6.12) by construction.
+2. **Run them anyway and expect degraded rows.** The numbers stay comparable in the sense
+   that every config ran the same task, but the capped configs' long-context scores would measure
+   the context cap rather than the model, and must be read that way — as truncation for `katdev`
+   and, per the failure-mode split above, as a stalled run for `glm`, which costs wall-clock rather
+   than producing a low score.
 
 Nothing has been changed in the task tree for this — no `configs` key has been added anywhere.
 This section records the situation and the choice; the choice is Denis's.

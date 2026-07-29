@@ -124,7 +124,9 @@ uv run graders/<g>.py --task <taskdir> --run <rundir> --out <path.json>
   grade** (a failed task is data, not a script error); exit non-zero only on grader malfunction.
 
 ### pytest_grader.py  → verdict schema
-Copies the task's `grade/test_*.py` next to the model's `<rundir>/repo/`, runs
+Copies the task's `grade/test_*.py` into a throwaway `tempfile.TemporaryDirectory` outside the
+run dir (so `<rundir>/repo/` keeps reflecting only the model's own edits, which `diff_grader.py`
+depends on) with `PYTHONPATH=<rundir>/repo`, runs
 `pytest -q --tb=short --junitxml=<tmp>/junit.xml` and parses that JUnit XML with stdlib
 `xml.etree.ElementTree` — deliberately, so no pytest-json plugin is needed — deterministically.
 ```json
